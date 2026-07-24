@@ -66,6 +66,50 @@
 - Summon is serialized behind a mutex — rapid double hotkeys cannot
   interleave window transitions.
 
+## AI Workspace Integration
+
+```
+Todo Domain (core ops, store.apply, undo)
+        ↕  structured proposals only — never direct writes
+AI Orchestration (state/ai-runs: lifecycle, guards, persistence)
+        ↕
+AgentProvider boundary (core/ai-stream + ai-result normalize;
+                        src-tauri/src/ai: detection, argv, process)
+      ↙        ↘
+Claude Code   Codex        (locally installed CLIs, own auth)
+```
+
+- **Provider boundary**: the Rust side owns which executables may run
+  (claude/codex name lists), validates path/workspace/mode/run-id, builds
+  the fixed argv per provider+mode (Analyze/Plan → read-only flags,
+  Execute → provider-scoped write; bypass flags are impossible by
+  construction) and streams stdout as `ai-run:<id>` events. The prompt
+  travels via stdin. `.cmd` npm shims run through `cmd.exe /C` only after
+  a metacharacter check; cancel is a graceful → forced process-TREE kill.
+- **Stream/result normalization** lives in pure core modules: provider
+  JSON event shapes never leak past `core/ai-stream.ts`; the final text's
+  fenced-JSON envelope degrades to a summary-only result when malformed.
+- **The proposal pipeline is the mandatory boundary**:
+
+```
+AI result → proposed actions (strongly typed)
+          → parse (unknown kinds dropped)
+          → domain validation (same rules as manual edits)
+          → user review (Apply Selected)
+          → normal domain ops in ONE store.apply
+          → SQLite + activity log + single-step undo
+```
+
+- **Persistence**: run history in the `ai_runs` table (capped log lines,
+  newest 50 terminal runs per list, pruned on write); workspace links +
+  client config as portable settings keys (`workspaces`, `aiClients`) —
+  no credentials, ever. Interrupted (still-"running") rows surface as
+  failed on load.
+- **Zero-cost when unused**: no provider detection on startup or routine
+  actions — only on the AI Clients dialog, explicit Auto Detect/Test, or
+  a run attempt. Without a linked workspace or installed CLI the entire
+  todo app is unchanged.
+
 ## Live update
 
 - `tauri-plugin-updater` from GitHub Releases

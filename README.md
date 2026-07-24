@@ -106,6 +106,63 @@ cd src-tauri && cargo test   # Rust persistence tests
   dialog warns when a combination could block typing in other apps.
 - Shortcut settings live in the portable `data/` folder (not the registry).
 
+## AI Workspace Integration
+
+A todo list can be linked to **one project directory** (a Git repository or
+any folder), and locally installed AI CLIs can then investigate, plan,
+implement and verify todos against that directory. The AI is a contributor,
+never the owner: **every AI-origin todo change is a proposal you review and
+apply** — nothing touches your todo data automatically.
+
+### Setup
+
+- **Clients**: install [Claude Code](https://claude.com/claude-code) and/or
+  [Codex CLI](https://github.com/openai/codex) and authenticate them in
+  their own CLI (`claude` / `codex login`). myTODO **never asks for or
+  stores API keys or accounts** — it drives the CLIs you already use.
+- `File → AI Clients…` (or ✦ AI → AI Clients…): **Auto Detect** finds the
+  executables on your PATH (no drive scanning); **Browse…** lets you pick
+  one manually — an arbitrary file is validated (identity + version) before
+  it counts as detected. **Test** checks executable → version →
+  authentication readiness where the CLI supports a non-interactive check.
+  Pick a global **Default AI client**; each workspace can override it.
+- **Link a workspace**: right-click a list → *Link Workspace…* (or the ✦ AI
+  menu). The optional **AI Brief** is plain text added to every run's
+  context (build commands, conventions, no-go areas). Provider-native
+  project files (`CLAUDE.md`, `AGENTS.md`, …) are never read, written or
+  merged by myTODO — the CLI runs inside your workspace and uses them
+  natively.
+
+### Actions and modes
+
+Every action maps to a semantic mode, always shown before you run:
+
+| Mode | Meaning | Actions |
+| --- | --- | --- |
+| ● Analyze | read only | Investigate, Verify, Analyze Workspace, Suggest Todos, Reconcile, Ask Workspace |
+| ● Plan | read only | Break into Subtasks, Plan Implementation |
+| ● Execute | **may modify the linked workspace** | Implement only |
+
+Todo-level actions live in the todo's **AI tab** / context menu; workspace
+actions in the **✦ AI** menu. `Ctrl+Shift+A` opens the AI panel for the
+current selection. Runs stream compact progress, can be cancelled any time,
+keep running if you close the panel, and stay reopenable from the history.
+One run per workspace at a time.
+
+### Security model
+
+- The Rust backend only launches the **validated provider executables**
+  with fixed, mode-derived arguments — there is no generic "run a command"
+  IPC, and full permission-bypass flags are never used. Execute maps to the
+  provider's own scoped permission model (Claude Code `acceptEdits`, Codex
+  `workspace-write`).
+- The AI **never gets database access**. Results arrive as structured
+  proposals (create todo, change status, add subtask, …) that are validated
+  by the same rules as manual edits and applied only after your review —
+  **Apply Selected is one batch, one Ctrl+Z undoes it**.
+- The app is fully functional without any AI client installed; a missing
+  workspace or CLI degrades to a clear message, never an error state.
+
 ## Releasing (maintainer)
 
 1. Bump the version in all THREE places together: `package.json`,
@@ -124,10 +181,12 @@ The updater signing keypair lives in the owner's key vault
 
 - `doc/ARCHITECTURE.md` — architecture overview
 - `doc/WINDOWS-TESTS.md` — manual Windows integration test checklist
+- `doc/AI-TESTS.md` — manual AI integration test checklist
 - `doc/FUTURE.md` — deferred ideas (deliberately out of scope for now)
 - `doc/progress.md` — development log
-- `doc/daprompt.md`, `doc/shortcut.md` — original (Hungarian) specification
-  prompts, kept verbatim as historical source material
+- `doc/daprompt.md`, `doc/shortcut.md`, `doc/aiprompt.md` — original
+  (Hungarian) specification prompts, kept verbatim as historical source
+  material
 
 ## License
 

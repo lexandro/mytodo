@@ -374,7 +374,7 @@ handoff (existing design semantics untouched, token stylesheet byte-identical).
 | AI4 | Run engine: Rust process exec + streaming + cancel, provider adapters, result normalization | ✅ |
 | AI5 | Context builder + proposals: AIContextBuilder, parse/validate, batch apply, activity log | ✅ |
 | AI6 | AI UI: detail AI tab, ✦ AI menu, run panel, results, proposal review, history, keyboard | ✅ |
-| AI7 | Hardening + docs + manual test doc + Definition-of-Done walkthrough | 🔲 |
+| AI7 | Hardening + docs + manual test doc + Definition-of-Done walkthrough | ✅ |
 
 Phase workflow unchanged (implement pure-core-first → typecheck+tests green →
 self-review → commit → push → update this file). No release without an
@@ -545,23 +545,51 @@ explicit owner request; version stays until then.
 - Note: narrow-window exclusivity implemented; live resize verification →
   manual test doc (AI7)
 
-#### AI7 — Hardening, docs, manual tests 🔲
-- [ ] Error taxonomy pass (§42): CLI missing / invalid exe / version fail /
-      auth-readiness / workspace missing-inaccessible / process crash /
-      timeout / malformed result / proposal validation / cancellation /
-      permission failure — all with visible human messages, no silent catch
-- [ ] Quick-workflow regression check (§40): startup, Quick Add, tab
-      switch, search, DnD unaffected (no AI work on those paths)
-- [ ] README "AI Workspace Integration" section (§57: linked workspace,
-      Brief, Claude/Codex setup, Auto Detect, manual path, modes, actions,
-      proposal review, security model); `doc/ARCHITECTURE.md` AI
-      orchestration + proposal pipeline diagrams
-- [ ] `doc/AI-TESTS.md`: manual integration test checklist (§44 — both
-      providers × actions, generic/Git/deleted/relocated/Unicode-path
-      workspaces, cancellation, failure)
-- [ ] Definition-of-Done walkthrough (§58) recorded here, incl. the
-      NOT-implemented items (MCP, background AI, Codex App Server,
-      autonomous mutation)
+#### AI7 — Hardening, docs, manual tests ✅ (2026-07-24)
+- [x] Error taxonomy pass (§42): all AI-path catches either surface a
+      toast/panel/card message or are documented controlled degradations
+      (parser fallbacks). Gaps found+fixed: pickAndLink IPC failure →
+      toast; refreshMissing IPC failure keeps last known state (never
+      false-"missing"). Runs have no global timeout by design — Cancel is
+      always available and cancel/crash paths are covered.
+- [x] Quick-workflow check (§40): startup adds only ai_runs load +
+      settings normalize + linked-dir stat checks (no provider
+      detection); Quick Add/tab switch/search/DnD/keyboard paths touch no
+      AI code. CDP session confirmed normal responsiveness throughout.
+- [x] README: "AI Workspace Integration" section (setup, Auto Detect/
+      Browse/Test, modes table, actions, security model, no-API-keys) +
+      doc index updated
+- [x] `doc/ARCHITECTURE.md`: AI orchestration diagram + provider boundary
+      + proposal pipeline + persistence + zero-cost-when-unused
+- [x] `doc/AI-TESTS.md`: manual checklist (§44) — A clients / B workspaces
+      / C Claude actions / D Codex / E workspace actions / F app behavior
+      (narrow-window, kill-mid-run, no-AI baseline)
+- [x] Close-out: typecheck 0, 189 TS + 31 Rust tests green → push
+
+#### Definition of Done — AI V1 status (aiprompt §58)
+
+| Requirement | Status |
+|---|---|
+| Directory linkable to a todo list; Generic + Git detection | ✅ CDP e2e (AI2) |
+| AI Brief; preferred provider; global default | ✅ CDP e2e (AI2/AI3/AI6) |
+| Claude Code + Codex Auto Detect / manual Browse / validation / Test | ✅ against the real CLIs (AI3) |
+| App fully works without AI | ✅ (§40 pass; F5 manual re-check listed) |
+| Investigate / Break into Subtasks / Plan / Implement / Verify | ✅ implemented; Investigate+Ask exercised live, rest → AI-TESTS C |
+| Analyze Workspace / Suggest / Reconcile / Ask | ✅ implemented; Ask exercised live, rest → AI-TESTS E |
+| Analyze/Plan/Execute permission model | ✅ flag mapping test-asserted; bypass impossible |
+| Streaming, Cancel, persisted history | ✅ CDP e2e incl. real run (AI4/AI6) |
+| Structured proposals, review-only apply, activity log, batch undo | ✅ CDP e2e DB-verified (AI6) |
+| AI never writes todo SQLite directly | ✅ boundary by construction (§26 pipeline) |
+| Missing workspace / broken CLI graceful | ✅ CDP e2e (AI2/AI4) |
+| Updated design implemented | ✅ (panel/menu/tab/dialogs per design docs) |
+| Tests: §43 list | ✅ 189 TS + 31 Rust green |
+| future/backlog doc updated | ✅ doc/FUTURE.md (AI1) |
+| MCP / background AI / Codex App Server / autonomous mutation NOT built | ✅ none exists; deferred in FUTURE.md |
+
+**Remaining manual work (owner):** `doc/AI-TESTS.md` items — live-session
+checks per provider/action (esp. C4/D1 Implement on a real task, C6/D1
+cancel process-tree check in Task Manager, F3 narrow-window resize,
+F4 kill-mid-run, F5 no-AI baseline).
 
 ### Shortcut offer (portable) ✅ (2026-07-24)
 - [x] Rust `winint/app_shortcut.rs`: detects `myTODO.lnk` on the user's
@@ -581,6 +609,17 @@ explicit owner request; version stays until then.
 
 ## Log
 
+- **2026-07-24 (late night)** — **AI Workspace Integration V1 IMPLEMENTED**:
+  AI1–AI7 completed in one run, each phase closed with green typecheck+
+  tests, CDP end-to-end verification (incl. REAL claude -p runs through
+  the run engine and later through the panel UI), self-review + fixes,
+  commit + push. Two real bugs caught by live verification: (1) killing a
+  .cmd shim leaves the CLI grandchild holding the pipes → process-TREE
+  kill everywhere; (2) proposal-list $effect read+wrote its own state →
+  effect_update_depth_exceeded after Apply → rewritten effect-free.
+  Final: 189 TS + 31 Rust tests, docs updated (README, ARCHITECTURE,
+  AI-TESTS, FUTURE). No release (owner decides); manual AI-TESTS items
+  remain for a live session.
 - **2026-07-24 (night)** — **AI Workspace Integration V1 analysis done**:
   aiprompt.md (verbatim) + updated design package cross-checked against the
   codebase — coherent; design package replaced in assets (strict superset,

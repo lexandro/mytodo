@@ -42,23 +42,27 @@ class AiConfigState {
    * brief + preferred provider survive). No-op when the picker is cancelled.
    */
   async pickAndLink(listId: string): Promise<void> {
-    const path = await pickDirectory();
-    if (path === null) return;
-    const status = await workspaceCheck(path);
-    if (!isUsableWorkspace(status)) {
-      ui.showToast("That directory cannot be read — workspace not linked.");
-      return;
+    try {
+      const path = await pickDirectory();
+      if (path === null) return;
+      const status = await workspaceCheck(path);
+      if (!isUsableWorkspace(status)) {
+        ui.showToast("That directory cannot be read — workspace not linked.");
+        return;
+      }
+      const prev = this.workspaces[listId];
+      this.workspaces = {
+        ...this.workspaces,
+        [listId]: prev === undefined
+          ? newWorkspaceLink(path, status)
+          : relocatedWorkspaceLink(prev, path, status),
+      };
+      this.missing = { ...this.missing, [listId]: false };
+      this.persistWorkspaces();
+      ui.showToast(prev === undefined ? "Workspace linked" : "Workspace directory updated");
+    } catch (e) {
+      ui.showToast(`Workspace linking failed: ${e instanceof Error ? e.message : String(e)}`);
     }
-    const prev = this.workspaces[listId];
-    this.workspaces = {
-      ...this.workspaces,
-      [listId]: prev === undefined
-        ? newWorkspaceLink(path, status)
-        : relocatedWorkspaceLink(prev, path, status),
-    };
-    this.missing = { ...this.missing, [listId]: false };
-    this.persistWorkspaces();
-    ui.showToast(prev === undefined ? "Workspace linked" : "Workspace directory updated");
   }
 
   unlink(listId: string): void {
@@ -93,8 +97,13 @@ class AiConfigState {
   async refreshMissing(listId: string): Promise<void> {
     const link = this.workspaces[listId];
     if (link === undefined) return;
-    const status = await workspaceCheck(link.path);
-    this.missing = { ...this.missing, [listId]: !isUsableWorkspace(status) };
+    try {
+      const status = await workspaceCheck(link.path);
+      this.missing = { ...this.missing, [listId]: !isUsableWorkspace(status) };
+    } catch {
+      // IPC failure ≠ missing directory — keep the last known state; the
+      // run-start guard re-checks and surfaces its own error
+    }
   }
 
   async refreshAllMissing(): Promise<void> {
