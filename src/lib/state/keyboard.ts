@@ -20,8 +20,20 @@ function isEditable(target: EventTarget | null): boolean {
 
 /** Esc closes strictly in priority order (INTERACTIONS.md). */
 function handleEscape(): void {
+  if (ui.menuOpen !== null) {
+    ui.menuOpen = null;
+    return;
+  }
+  if (ui.shortcutsOpen) {
+    ui.shortcutsOpen = false;
+    return;
+  }
   if (ui.ctxMenu !== null) {
     ui.ctxMenu = null;
+    return;
+  }
+  if (ui.scalePopOpen) {
+    ui.scalePopOpen = false;
     return;
   }
   if (ui.settingsOpen) {
@@ -74,6 +86,12 @@ export function handleKeydown(e: KeyboardEvent): void {
 
   if (e.key === "Escape") {
     handleEscape();
+    return;
+  }
+  if (e.key === "F1") {
+    e.preventDefault();
+    ui.shortcutsOpen = !ui.shortcutsOpen;
+    ui.menuOpen = null;
     return;
   }
   if (e.ctrlKey && e.shiftKey && key === "n") {

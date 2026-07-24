@@ -14,6 +14,26 @@ interface LayoutSettings {
 
 const LAYOUTS: LayoutName[] = ["1", "2v", "2h", "4"];
 const VIEWS: ViewName[] = ["main", "pinned", "trash"];
+const THEMES = ["system", "dark", "light"] as const;
+export const UI_SCALES = [80, 90, 100, 110, 125, 150];
+export const TODO_FS_MIN = 10;
+export const TODO_FS_MAX = 20;
+
+interface AppearanceSettings {
+  theme: (typeof THEMES)[number];
+  uiScale: number;
+  todoFs: number;
+}
+
+function isAppearance(value: unknown): value is AppearanceSettings {
+  if (typeof value !== "object" || value === null) return false;
+  const v = value as Record<string, unknown>;
+  return (
+    THEMES.includes(v.theme as AppearanceSettings["theme"]) &&
+    typeof v.uiScale === "number" &&
+    typeof v.todoFs === "number"
+  );
+}
 
 function isLayoutSettings(value: unknown): value is LayoutSettings {
   if (typeof value !== "object" || value === null) return false;
@@ -38,6 +58,12 @@ export async function restoreUiSettings(): Promise<Record<string, unknown>> {
   } catch {
     return {}; // DB error already surfaces via store.loadError
   }
+  const appearance = all["appearance"];
+  if (isAppearance(appearance)) {
+    ui.theme = appearance.theme;
+    ui.uiScale = UI_SCALES.includes(appearance.uiScale) ? appearance.uiScale : 100;
+    ui.todoFs = Math.max(TODO_FS_MIN, Math.min(TODO_FS_MAX, Math.round(appearance.todoFs)));
+  }
   const raw = all["layout"];
   if (!isLayoutSettings(raw)) return all;
   ui.layout = raw.layout;
@@ -48,6 +74,18 @@ export async function restoreUiSettings(): Promise<Record<string, unknown>> {
   ui.activePane = Math.max(0, Math.min(3, raw.activePane));
   ui.view = raw.view;
   return all;
+}
+
+/** Effect body: persists theme/scale/font-size on change. */
+export function persistAppearance(): void {
+  const snapshot: AppearanceSettings = {
+    theme: ui.theme,
+    uiScale: ui.uiScale,
+    todoFs: ui.todoFs,
+  };
+  void settingsSet("appearance", snapshot).catch(() => {
+    // non-fatal
+  });
 }
 
 /**

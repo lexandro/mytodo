@@ -78,6 +78,52 @@ export function windowHide(): Promise<void> {
   return getCurrentWindow().hide();
 }
 
+// ── window state persistence (position / size / maximized) ──────────────────
+
+export interface WindowStateSnapshot {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  maximized: boolean;
+}
+
+export async function readWindowState(): Promise<WindowStateSnapshot> {
+  const win = getCurrentWindow();
+  const [pos, size, maximized] = await Promise.all([
+    win.outerPosition(),
+    win.outerSize(),
+    win.isMaximized(),
+  ]);
+  return { x: pos.x, y: pos.y, width: size.width, height: size.height, maximized };
+}
+
+/** Monitor bounds in physical pixels — for the off-screen guard. */
+export async function monitorBounds(): Promise<{ x: number; y: number; width: number; height: number }[]> {
+  const { availableMonitors } = await import("@tauri-apps/api/window");
+  const monitors = await availableMonitors();
+  return monitors.map((m) => ({
+    x: m.position.x,
+    y: m.position.y,
+    width: m.size.width,
+    height: m.size.height,
+  }));
+}
+
+export async function applyWindowState(state: WindowStateSnapshot): Promise<void> {
+  const { PhysicalPosition, PhysicalSize } = await import("@tauri-apps/api/dpi");
+  const win = getCurrentWindow();
+  await win.setSize(new PhysicalSize(state.width, state.height));
+  await win.setPosition(new PhysicalPosition(state.x, state.y));
+  if (state.maximized) await win.maximize();
+}
+
+export function onWindowStateChange(handler: () => void): Promise<() => void> {
+  const win = getCurrentWindow();
+  const unlisteners = Promise.all([win.onMoved(handler), win.onResized(handler)]);
+  return unlisteners.then((fns) => () => fns.forEach((fn) => fn()));
+}
+
 // ── global shortcuts (Tauri accelerator format, e.g. "Control+Alt+T") ───────
 
 export function registerGlobalShortcut(accelerator: string, handler: () => void): Promise<void> {

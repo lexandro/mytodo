@@ -68,7 +68,7 @@ export function paletteCommands(query: string): PaletteCommand[] {
       name: "Toggle light / dark theme",
       hint: "",
       run: () => {
-        ui.theme = ui.theme === "dark" ? "light" : "dark";
+        ui.theme = ui.effectiveTheme === "dark" ? "light" : "dark";
         close();
       },
     },

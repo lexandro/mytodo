@@ -6,16 +6,20 @@
   import { createTodo } from "$lib/core/todos-ops";
   import { onQuickAdd } from "$lib/ipc";
   import { handleKeydown } from "$lib/state/keyboard";
-  import { persistUiSettings, restoreUiSettings } from "$lib/state/settings-sync.svelte";
+  import {
+    TODO_FS_MAX, TODO_FS_MIN, persistAppearance, persistUiSettings, restoreUiSettings,
+  } from "$lib/state/settings-sync.svelte";
   import { SHORTCUT_SETTINGS_KEY, shortcutManager } from "$lib/state/shortcut-manager.svelte";
   import { store } from "$lib/state/store.svelte";
   import { ui } from "$lib/state/ui.svelte";
+  import { WINDOW_STATE_KEY, restoreWindowState, startWindowStateSaving } from "$lib/state/window-state";
   import CommandPalette from "./CommandPalette.svelte";
   import ContextMenu from "./ContextMenu.svelte";
   import DetailPanel from "./DetailPanel.svelte";
   import GlobalPinnedStrip from "./GlobalPinnedStrip.svelte";
   import GlobalSearch from "./GlobalSearch.svelte";
   import SettingsDialog from "./SettingsDialog.svelte";
+  import ShortcutsDialog from "./ShortcutsDialog.svelte";
   import ListRail from "./ListRail.svelte";
   import PinnedView from "./PinnedView.svelte";
   import StatusBar from "./StatusBar.svelte";
@@ -34,6 +38,7 @@
         settingsRestored = true;
         // startup registration never blocks the app (shortcut.md §16)
         void shortcutManager.init(all[SHORTCUT_SETTINGS_KEY]);
+        void restoreWindowState(all[WINDOW_STATE_KEY]).then(() => startWindowStateSaving());
       });
   });
 
@@ -71,9 +76,43 @@
   const paneCount = $derived({ "1": 1, "2v": 2, "2h": 2, "4": 4 }[ui.layout]);
   const paneIndexes = $derived([0, 1, 2, 3].slice(0, paneCount));
 
-  // theme attribute drives the token overrides in tokens.css
+  // theme attribute drives the token overrides in tokens.css; "system"
+  // follows the Windows dark-mode setting live
   $effect(() => {
-    document.documentElement.dataset.theme = ui.theme;
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    ui.systemDark = media.matches;
+    const onChange = (e: MediaQueryListEvent): void => {
+      ui.systemDark = e.matches;
+    };
+    media.addEventListener("change", onChange);
+    return () => media.removeEventListener("change", onChange);
+  });
+  $effect(() => {
+    document.documentElement.dataset.theme = ui.effectiveTheme;
+  });
+
+  // UI scale zooms the whole shell; todo font size only touches todo rows.
+  // --ui-zoom compensates vh units (zoom scales layout but not vh).
+  $effect(() => {
+    document.documentElement.style.setProperty("zoom", String(ui.uiScale / 100));
+    document.documentElement.style.setProperty("--ui-zoom", String(ui.uiScale / 100));
+    document.documentElement.style.setProperty("--tfs", `${ui.todoFs}px`);
+  });
+  $effect(() => {
+    if (settingsRestored) persistAppearance();
+  });
+
+  // Ctrl + wheel resizes todo text (SHORTCUTS.md); explicit non-passive
+  // listener because preventDefault must suppress browser zoom
+  $effect(() => {
+    const onWheel = (e: WheelEvent): void => {
+      if (!e.ctrlKey) return;
+      e.preventDefault();
+      const next = ui.todoFs + (e.deltaY < 0 ? 1 : -1);
+      ui.todoFs = Math.max(TODO_FS_MIN, Math.min(TODO_FS_MAX, next));
+    };
+    window.addEventListener("wheel", onWheel, { passive: false });
+    return () => window.removeEventListener("wheel", onWheel);
   });
 
   // custom menus replace the native context menu app-wide (INTERACTIONS.md)
@@ -130,13 +169,14 @@
 <GlobalSearch />
 <CommandPalette />
 <SettingsDialog />
+<ShortcutsDialog />
 <Toast />
 
 <style>
   .shell {
     display: flex;
     flex-direction: column;
-    height: 100vh;
+    height: calc(100vh / var(--ui-zoom, 1));
     overflow: hidden;
     user-select: none;
   }

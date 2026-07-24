@@ -4,6 +4,8 @@
   import { showQuickAddWindow, windowClose, windowMinimize, windowToggleMaximize } from "$lib/ipc";
   import { ui } from "$lib/state/ui.svelte";
   import LayoutSwitcher from "./LayoutSwitcher.svelte";
+  import MenuBar from "./MenuBar.svelte";
+  import ScaleControls from "./ScaleControls.svelte";
 </script>
 
 <header class="titlebar" data-tauri-drag-region>
@@ -11,6 +13,7 @@
     <span class="brand-mark">✓</span>
     <span class="brand-name">myTODO</span>
   </div>
+  <MenuBar />
   <div class="spacer" data-tauri-drag-region></div>
   <LayoutSwitcher />
   <button
@@ -21,6 +24,23 @@
     <svg width="13" height="14" viewBox="0 0 12 14">
       <path d="M7 1 1.5 8H5.5L4.5 13 10.5 5.5H6.5z" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" />
     </svg>
+  </button>
+  <ScaleControls />
+  <button
+    class="tool-btn"
+    title="Toggle light / dark"
+    onclick={() => (ui.theme = ui.effectiveTheme === "dark" ? "light" : "dark")}
+  >
+    {#if ui.effectiveTheme === "dark"}
+      <svg width="13" height="13" viewBox="0 0 14 14">
+        <path d="M12.5 8.6A5.5 5.5 0 1 1 5.4 1.5a4.4 4.4 0 0 0 7.1 7.1z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" />
+      </svg>
+    {:else}
+      <svg width="14" height="14" viewBox="0 0 14 14">
+        <circle cx="7" cy="7" r="3" fill="none" stroke="currentColor" stroke-width="1.3" />
+        <path d="M7 .8v1.6M7 11.6v1.6M.8 7h1.6M11.6 7h1.6M2.6 2.6l1.1 1.1M10.3 10.3l1.1 1.1M11.4 2.6l-1.1 1.1M3.7 10.3l-1.1 1.1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+      </svg>
+    {/if}
   </button>
   <button class="tool-btn" title="Settings" onclick={() => (ui.settingsOpen = true)}>
     <svg width="13" height="13" viewBox="0 0 14 14">

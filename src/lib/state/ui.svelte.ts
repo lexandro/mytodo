@@ -64,10 +64,27 @@ class UiState {
   globalSearch = $state<{ query: string; index: number } | null>(null);
   /** Command palette (Ctrl+K); null = closed. */
   palette = $state<{ query: string; index: number } | null>(null);
-  /** Visual theme — full System/Light/Dark handling lands in F9. */
-  theme = $state<"dark" | "light">("dark");
+  /** Theme preference; "system" follows the Windows setting. */
+  theme = $state<"system" | "dark" | "light">("system");
+  /** Live system dark-mode flag (updated by AppShell's media listener). */
+  systemDark = $state(true);
+  /** UI scale percent (80–150) — zooms the whole shell. */
+  uiScale = $state(100);
+  /** Todo title font size in px (10–20) — todo rows only. */
+  todoFs = $state(13);
   /** Settings dialog (global shortcuts, …). */
   settingsOpen = $state(false);
+  /** Open menu-bar menu (File/Edit/…); null = closed. */
+  menuOpen = $state<string | null>(null);
+  /** Keyboard shortcuts dialog (F1). */
+  shortcutsOpen = $state(false);
+  /** Scale controls popover in the title bar. */
+  scalePopOpen = $state(false);
+
+  get effectiveTheme(): "dark" | "light" {
+    if (this.theme === "system") return this.systemDark ? "dark" : "light";
+    return this.theme;
+  }
 
   /** Quick-add input elements per pane — for Ctrl+N focus. Not reactive. */
   quickAddEls: (HTMLInputElement | null)[] = [null, null, null, null];

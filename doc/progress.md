@@ -27,8 +27,8 @@ Forrás-dokumentumok:
 | F6 | Keresés (filter, global, palette) | ✅ |
 | F7 | Split pane rendszer + layout persist | ✅ |
 | F8 | Global shortcuts, Quick Add ablak, Summon | ✅ |
-| F9 | Scale, theme, keyboard polish, window state | 🔄 |
-| F10 | Backup, import/export, hardening, portable release | 🔲 |
+| F9 | Scale, theme, keyboard polish, window state | ✅ |
+| F10 | Backup, import/export, hardening, portable release | 🔄 |
 
 Jelmagyarázat: 🔲 nincs elkezdve · 🔄 folyamatban · ✅ kész (review+push megvolt)
 
@@ -219,18 +219,26 @@ Jelmagyarázat: 🔲 nincs elkezdve · 🔄 folyamatban · ✅ kész (review+pus
       desktop viselkedést kézzel kell igazolni
 - [x] Zárás: typecheck 0, 95 teszt, cargo check tiszta → push
 
-### F9 — Scale, theme, keyboard polish, window state
-- [ ] UI scale (80–150%, teljes chrome skálázás) + Todo font size (10–20px) külön;
-      ScaleControls popover (chipek, A−/A+), Ctrl+wheel a todo-szövegre
-- [ ] Light / Dark / System theme (token-swap, Windows theme követés), toolbar +
-      View menü toggle, persist
-- [ ] Teljes MenuBar (File/Edit/View/Go/Help + Alt-accelerátorok, roaming), F1
-      ShortcutsDialog, Esc prioritás-lánc véglegesítés
-- [ ] Teljes shortcut-térkép (SHORTCUTS.md) centralizált handlerben; text-input
-      guardok (Delete/F2/nyilak inputban nem todo-akciók)
-- [ ] Window state persist: pozíció/méret/maximized, multi-monitor + eltűnt monitor
-      → látható területre clamp
-- [ ] Zárás: review → refactor → push
+### F9 — Scale, theme, keyboard polish, window state ✅ (2026-07-24)
+- [x] UI scale (80–150% zoom, vh-kompenzációval — review-ban talált overflow
+      javítva) + Todo font size (10–20px) külön; ScaleControls popover
+      (chipek, A−/A+, hint), Ctrl+wheel non-passive listenerrel
+- [x] System / Light / Dark theme: matchMedia-követés élőben, toolbar toggle
+      + View menü (Follow system ✓ jelöléssel), persist az appearance kulcsban
+- [x] MenuBar (File/Edit/View/Go/Help): design szerinti tartalom, roaming
+      hover, shortcut-hintek, Edit menü selection-függő disabled állapotok;
+      Alt-accelerátorok kimaradtak (jegyzet: nice-to-have)
+- [x] F1 ShortcutsDialog (SHORTCUTS.md két oszlopban); Esc-lánc véglegesítve:
+      menu → shortcuts → ctx → scalePop → settings → palette → gsearch →
+      rename → picker → filter → detail
+- [x] Window state: pozíció/méret/maximized persist (debounced onMoved/
+      onResized), restore induláskor monitor-metszet ellenőrzéssel (100px
+      látható minimum — lecsatolt monitor esetén default marad)
+- [x] **CDP-verifikáció**: menük tartalma + layout-státusz pöttyök, light
+      téma váltás (bg #eceef5), 125% zoom + scrollbar-fix, A+/Ctrl+wheel
+      fontméret, F1 nyit/Esc zár; **restart után visszaállt** a light+125%+
+      12px, majd vissza defaultra. Zöld.
+- [x] Zárás: typecheck 0, 95 teszt zöld → push
 
 ### F10 — Backup, import/export, hardening, portable release
 - [ ] Backup: indításkor naponta egyszer + Backup Now (File menü), `backup/todo-YYYY-MM-DD.db`,
