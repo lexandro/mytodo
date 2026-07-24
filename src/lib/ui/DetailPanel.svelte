@@ -6,6 +6,7 @@
   import { store } from "$lib/state/store.svelte";
   import { ui } from "$lib/state/ui.svelte";
   import ActivityList from "./ActivityList.svelte";
+  import DetailAiTab from "./DetailAiTab.svelte";
   import DetailForm from "./DetailForm.svelte";
 
   const todo = $derived(ui.selectedId !== null ? findTodo(store.data, ui.selectedId) : undefined);
@@ -29,6 +30,13 @@
       >
         Activity
       </button>
+      <button
+        class="tab"
+        class:active={ui.detailTab === "ai"}
+        onclick={() => (ui.detailTab = "ai")}
+      >
+        AI
+      </button>
       <div class="spacer"></div>
       <span class="crumb" title={crumb}>{crumb}</span>
       <button class="close" title="Close — Esc" onclick={() => (ui.detailOpen = false)}>✕</button>
@@ -36,8 +44,10 @@
     <div class="body">
       {#if ui.detailTab === "details"}
         <DetailForm {todo} />
-      {:else}
+      {:else if ui.detailTab === "activity"}
         <ActivityList todoId={todo.id} />
+      {:else}
+        <DetailAiTab {todo} />
       {/if}
     </div>
   </aside>

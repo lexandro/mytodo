@@ -373,7 +373,7 @@ handoff (existing design semantics untouched, token stylesheet byte-identical).
 | AI3 | Provider infra: detection, validation, version, Test, AI Clients dialog, default client | ✅ |
 | AI4 | Run engine: Rust process exec + streaming + cancel, provider adapters, result normalization | ✅ |
 | AI5 | Context builder + proposals: AIContextBuilder, parse/validate, batch apply, activity log | ✅ |
-| AI6 | AI UI: detail AI tab, ✦ AI menu, run panel, results, proposal review, history, keyboard | 🔲 |
+| AI6 | AI UI: detail AI tab, ✦ AI menu, run panel, results, proposal review, history, keyboard | ✅ |
 | AI7 | Hardening + docs + manual test doc + Definition-of-Done walkthrough | 🔲 |
 
 Phase workflow unchanged (implement pure-core-first → typecheck+tests green →
@@ -508,29 +508,42 @@ explicit owner request; version stays until then.
       (non-undoable — Ctrl+Z never eats run notes)
 - [x] Close-out: typecheck 0, 189 TS (+13) tests green → push
 
-#### AI6 — AI UI 🔲
-- [ ] DetailPanel: Details | Activity | **AI** tab (5 todo actions with
-      read-only/may-modify hints, runs history, unlinked CTA); `ui.detailTab`
-      union extended
-- [ ] AIActionMenu (✦ AI toolbar button, 276px dropdown): TODO + WORKSPACE
-      sections, Run history, AI Clients…; todo section follows selection;
-      unlinked CTA; todo context menu "AI actions…" morph
-- [ ] AIRunPanel (336px right drawer): ready (Task, action radio-cards, Ask
-      question textarea, provider select + status hint, mode display with
-      amber Execute, brief preview, Run) · running (spinner, elapsed,
-      last-4 progress lines, Show details, Cancel) · result · failed/
-      cancelled (⚠ + human message + Retry + Open AI Clients…) · history ·
-      unlinked · missing; narrow-window mutual exclusion with detail panel
-- [ ] AIResult blocks (Verdict 4-value, Summary, Answer, Checks, Mapping,
-      Findings, Recommendation + Apply Recommendation, log) + ProposalList
-      (kind tags, select all/clear, keyboard-operable rows, applied dim,
-      Apply/Add Selected) per COMPONENTS.md
-- [ ] Keyboard: Ctrl+Shift+A (app-local, no new OS-global shortcuts), Esc
-      chain per updated INTERACTIONS.md order; F1 + SHORTCUTS.md row;
-      status colors green/amber/red per AI_INTEGRATION.md (amber never
-      fills); single ✦ glyph, no AI decoration
-- [ ] CDP verification against the running app (linked/unlinked/missing,
-      run lifecycle, proposals, history)
+#### AI6 — AI UI ✅ (2026-07-24)
+- [x] DetailPanel: Details | Activity | **AI** tab (DetailAiTab: 5 actions
+      with read-only/may-modify hints + todo run history, unlinked CTA);
+      `ui.detailTab` union extended
+- [x] AIActionMenu (✦ AI title-bar button + 276px dropdown): TODO —
+      <selected> + WORKSPACE — <list> two-line sections, Run history +
+      AI Clients… footer, unlinked Link CTA; todo context menu
+      "AI actions…" morph (unlinked → single Link item)
+- [x] AIPanel (336px drawer) + AIPanelReady (task box, action cards, Ask
+      question, provider + hint + AI Clients link, mode display — Execute
+      amber + "Run — may modify workspace", brief preview, in-panel guard
+      errors with Open AI Clients…) + AIRunView (running: spinner/elapsed/
+      last-4 log/Show details/Cancel/background note; failed/cancelled:
+      ⚠ + message + Retry + Open AI Clients; New run) + AIResultView (all
+      design blocks) + AIProposalList (kind tags, recommended pre-check,
+      Select all/Clear, per-row errors, applied dim + green tail,
+      Apply/Add Selected (n)) + AIRunHistoryList (status-tag rows)
+- [x] `state/ai-actions.ts`: open/close/run/retry transitions, Ctrl+Shift+A
+      selection resolution, narrow-window (<1250px effective) detail↔AI
+      panel exclusivity; Esc chain slots (AI menu top, panel before rename)
+- [x] **Fixed during verification**: AIProposalList used a $effect that
+      read AND wrote its own `checked` state → Svelte
+      effect_update_depth_exceeded killed the flush after Apply (no toast,
+      no applied tails). Rewritten to overrides-map + derived selection —
+      no effect at all.
+- [x] **CDP verification (pure DOM, no shortcuts into internals)**: ✦ menu
+      sections/CTA; ready phase content; Execute label; AI tab; seeded run
+      reopened from history → proposals with recommended pre-check; Apply
+      Selected → applied tails + batch toast + DB-verified status/subtask/
+      AI activity; ONE Ctrl+Z reverted the whole batch (DB-verified); Esc
+      close + Ctrl+Shift+A reopen; REAL Ask Workspace run through the
+      panel UI (running spinner → result blocks); history via clock icon.
+      Screenshot matches the design (light theme).
+- [x] Close-out: typecheck 0, 189 TS + 31 Rust tests green → push
+- Note: narrow-window exclusivity implemented; live resize verification →
+  manual test doc (AI7)
 
 #### AI7 — Hardening, docs, manual tests 🔲
 - [ ] Error taxonomy pass (§42): CLI missing / invalid exe / version fail /

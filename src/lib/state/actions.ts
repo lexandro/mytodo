@@ -5,6 +5,7 @@ import { formatEmojiName, parseEmojiName } from "$lib/core/emoji";
 import { createGroup, deleteGroup, renameGroup, toggleGroupCollapsed } from "$lib/core/groups-ops";
 import { createList, deleteList, renameList, reorderList } from "$lib/core/lists-ops";
 import { createTodo, cycleStatus, findTodo, moveTodo, reorderTodo, setStatus, trashTodo } from "$lib/core/todos-ops";
+import { detailOpened } from "./ai-actions";
 import { aiConfig } from "./ai-config.svelte";
 import { store } from "./store.svelte";
 import { ui } from "./ui.svelte";
@@ -20,6 +21,7 @@ export function openDetails(id: string, paneIndex?: number): void {
   selectTodo(id, paneIndex);
   ui.detailOpen = true;
   ui.detailTab = "details";
+  detailOpened(); // narrow windows: detail and AI panel never show together
 }
 
 export function switchList(listId: string, paneIndex = ui.activePane): void {

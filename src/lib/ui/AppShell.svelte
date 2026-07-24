@@ -18,6 +18,7 @@
   import { updater } from "$lib/state/updater.svelte";
   import { WINDOW_STATE_KEY, restoreWindowState, startWindowStateSaving } from "$lib/state/window-state";
   import AIClientsDialog from "./AIClientsDialog.svelte";
+  import AIPanel from "./AIPanel.svelte";
   import CommandPalette from "./CommandPalette.svelte";
   import ContextMenu from "./ContextMenu.svelte";
   import DetailPanel from "./DetailPanel.svelte";
@@ -173,6 +174,7 @@
       {#if ui.view === "main"}
         <DetailPanel />
       {/if}
+      <AIPanel />
     {/if}
   </div>
   <StatusBar />

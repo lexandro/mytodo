@@ -21,6 +21,7 @@
     ["Delete (to Trash)", "Delete"],
     ["Undo", "Ctrl+Z"],
     ["Todo text size", "Ctrl+MouseWheel"],
+    ["AI panel (todo / list)", "Ctrl+Shift+A"],
     ["Summon workspace", "Ctrl+Alt+T (global)"],
     ["Close popup / panel", "Esc"],
   ];

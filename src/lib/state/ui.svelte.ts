@@ -37,6 +37,22 @@ export interface ToastState {
   undoable: boolean;
 }
 
+/** AI panel context; see state/ai-actions.ts for the transitions. */
+export interface AiPanelState {
+  listId: string;
+  todoId: string | null;
+  /** Selected action in the ready phase. */
+  action: import("$lib/core/ai-types").AIAction;
+  /** Ask Workspace's question draft. */
+  question: string;
+  /** Bound run (running or reopened from history); null = ready phase. */
+  runId: string | null;
+  /** History list view. */
+  history: boolean;
+  /** Guard error from the last start attempt (shown in the panel). */
+  error: { message: string; openAiClients?: boolean } | null;
+}
+
 const TOAST_MS = 4200;
 
 function emptyPane(): PaneState {
@@ -50,7 +66,7 @@ class UiState {
   view = $state<ViewName>("main");
   selectedId = $state<string | null>(null);
   detailOpen = $state(false);
-  detailTab = $state<"details" | "activity">("details");
+  detailTab = $state<"details" | "activity" | "ai">("details");
   renaming = $state<RenamingState | null>(null);
   drag = $state<DragPayload>(null);
   drop = $state<DropTarget>(null);
@@ -78,6 +94,13 @@ class UiState {
   workspaceSettings = $state<string | null>(null);
   /** AI Clients settings dialog. */
   aiClientsOpen = $state(false);
+  /** ✦ AI action menu (title bar dropdown). */
+  aiMenuOpen = $state(false);
+  /**
+   * AI run panel (right drawer). Bound to the list/todo context it was
+   * opened from (aiprompt §39); a running run keeps going when this closes.
+   */
+  aiPanel = $state<AiPanelState | null>(null);
   /** Backup restore picker dialog. */
   restoreOpen = $state(false);
   /** Open menu-bar menu (File/Edit/…); null = closed. */

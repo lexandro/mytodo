@@ -3,6 +3,7 @@
   // caption buttons. The whole bar is the drag region.
   import { showQuickAddWindow, windowClose, windowMinimize, windowToggleMaximize } from "$lib/ipc";
   import { ui } from "$lib/state/ui.svelte";
+  import AIActionMenu from "./AIActionMenu.svelte";
   import LayoutSwitcher from "./LayoutSwitcher.svelte";
   import MenuBar from "./MenuBar.svelte";
   import ScaleControls from "./ScaleControls.svelte";
@@ -16,6 +17,7 @@
   <MenuBar />
   <div class="spacer" data-tauri-drag-region></div>
   <LayoutSwitcher />
+  <AIActionMenu />
   <button
     class="tool-btn"
     title="Global quick add — Ctrl+Shift+Space"

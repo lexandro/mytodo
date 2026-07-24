@@ -2,6 +2,7 @@
 // also selects it (INTERACTIONS.md).
 
 import { STATUS_LABEL, locationPath } from "$lib/core/activity";
+import { ACTION_LABELS, ACTION_MODES, TODO_ACTIONS } from "$lib/core/ai-types";
 import { groupDepth } from "$lib/core/groups-ops";
 import { createTodo, setStatus } from "$lib/core/todos-ops";
 import { MAX_GROUP_DEPTH, type Group, type List, type Todo, type TodoStatus } from "$lib/core/types";
@@ -10,6 +11,7 @@ import {
   openDetails, trashTodoAction,
 } from "./actions";
 import { duplicateAction, setArchivedAction, togglePinAction } from "./actions-detail";
+import { openAiPanel } from "./ai-actions";
 import { aiConfig } from "./ai-config.svelte";
 import { store } from "./store.svelte";
 import { ui, type CtxItem } from "./ui.svelte";
@@ -60,6 +62,7 @@ export function todoMenuItems(todo: Todo): CtxItem[] {
       : { label: "Move up one level", hint: "at root", disabled: true, action: () => {} },
     { label: "Move to…", action: () => (ui.ctxMenu = ui.ctxMenu === null ? null : { ...ui.ctxMenu, items: moveTargetItems(todo) }) },
     { label: "Duplicate", action: () => duplicateAction(todo.id) },
+    { label: "AI actions…", action: () => (ui.ctxMenu = ui.ctxMenu === null ? null : { ...ui.ctxMenu, items: aiActionItems(todo) }) },
     { separator: true },
     {
       label: todo.archived ? "Restore from archive" : "Archive",
@@ -94,6 +97,23 @@ export function moveTargetItems(todo: Todo): CtxItem[] {
     });
   }
   return items;
+}
+
+/** "AI actions…" morphs the todo menu into the 5 todo-level AI actions. */
+export function aiActionItems(todo: Todo): CtxItem[] {
+  if (aiConfig.linkFor(todo.listId) === undefined) {
+    return [
+      {
+        label: "Link a workspace to use AI",
+        action: closeAnd(() => (ui.workspaceSettings = todo.listId)),
+      },
+    ];
+  }
+  return TODO_ACTIONS.map((action): CtxItem => ({
+    label: ACTION_LABELS[action],
+    hint: ACTION_MODES[action] === "execute" ? "may modify files" : "read only",
+    action: closeAnd(() => openAiPanel(todo.listId, todo.id, action)),
+  }));
 }
 
 export function groupMenuItems(group: Group): CtxItem[] {

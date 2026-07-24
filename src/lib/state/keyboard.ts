@@ -5,6 +5,7 @@
 
 import { buildPaneRows } from "$lib/core/rows";
 import { findTodo } from "$lib/core/todos-ops";
+import { openAiPanelForSelection } from "./ai-actions";
 import {
   cancelRename, newList, switchList, toggleSelectedDone, trashTodoAction,
   undoAction,
@@ -22,6 +23,10 @@ function isEditable(target: EventTarget | null): boolean {
 function handleEscape(): void {
   if (ui.menuOpen !== null) {
     ui.menuOpen = null;
+    return;
+  }
+  if (ui.aiMenuOpen) {
+    ui.aiMenuOpen = false;
     return;
   }
   if (ui.shortcutsOpen) {
@@ -54,6 +59,11 @@ function handleEscape(): void {
   }
   if (ui.globalSearch !== null) {
     ui.globalSearch = null;
+    return;
+  }
+  if (ui.aiPanel !== null) {
+    // closing the panel never stops a running run (INTERACTIONS.md §AI runs)
+    ui.aiPanel = null;
     return;
   }
   if (ui.renaming !== null) {
@@ -110,6 +120,11 @@ export function handleKeydown(e: KeyboardEvent): void {
   if (e.ctrlKey && e.shiftKey && key === "f") {
     e.preventDefault();
     ui.globalSearch = { query: "", index: 0 };
+    return;
+  }
+  if (e.ctrlKey && e.shiftKey && key === "a") {
+    e.preventDefault();
+    openAiPanelForSelection();
     return;
   }
   if (e.ctrlKey && !e.shiftKey && key === "k") {

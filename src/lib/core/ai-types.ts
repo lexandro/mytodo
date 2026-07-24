@@ -87,6 +87,18 @@ export const ACTION_LABELS: Record<AIAction, string> = {
   askWorkspace: "Ask Workspace…",
 };
 
+export const ACTION_DESCRIPTIONS: Record<AIAction, string> = {
+  investigate: "Read the workspace, report what's going on",
+  breakIntoSubtasks: "Propose a subtask checklist for this todo",
+  planImplementation: "Draft a concrete implementation plan",
+  implement: "Make the changes in the workspace",
+  verify: "Check the evidence and suggest a status",
+  analyzeWorkspace: "Read-only overview of the linked directory",
+  suggestTodos: "Propose new todos from the workspace state",
+  reconcile: "Compare todos with reality, suggest changes",
+  askWorkspace: "One read-only question about the workspace",
+};
+
 export function isTodoAction(action: AIAction): boolean {
   return TODO_ACTIONS.includes(action);
 }
