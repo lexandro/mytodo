@@ -609,6 +609,14 @@ F4 kill-mid-run, F5 no-AI baseline).
 
 ## Log
 
+- **2026-07-24 (late night, 2)** — **Real-mouse drag & drop fix**: todo
+  reordering did nothing when dragging with a real mouse in the packaged
+  app — Tauri's `dragDropEnabled` defaults to true and its native WebView2
+  drag-drop handling swallows HTML5 drag events on Windows. Earlier CDP
+  verification used synthetic events, so it never caught this. Fix:
+  `dragDropEnabled: false` on the main window (no native file drop is
+  used anywhere). Plus build.bat no longer wipes `release\myTODO` — a live
+  copy's data/ + backup/ survive a rebuild; only the exe is replaced.
 - **2026-07-24 (late night)** — **AI Workspace Integration V1 IMPLEMENTED**:
   AI1–AI7 completed in one run, each phase closed with green typecheck+
   tests, CDP end-to-end verification (incl. REAL claude -p runs through
