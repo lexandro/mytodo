@@ -34,8 +34,8 @@ cd src-tauri && cargo test   # Rust persistence tesztek
 - `build.bat` — teszt + release build + **portable mappa** összeállítása:
 
   ```
-  release\TodoWorkspace\
-      TodoWorkspace.exe
+  release\myTODO\
+      myTODO.exe
       data\        (első indításkor jön létre — todo.db, settings)
       backup\      (napi + kézi mentések)
   ```

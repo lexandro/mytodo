@@ -257,7 +257,7 @@ Jelmagyarázat: 🔲 nincs elkezdve · 🔄 folyamatban · ✅ kész (review+pus
       shortcuts, Windows Global Shortcuts kiemeléssel) + `doc/ARCHITECTURE.md`
       + `doc/FUTURE.md` (Minimal Markdown + design-halasztások)
 - [x] `build.bat`: typecheck + teszt + release build + portable mappa
-      (`release\TodoWorkspace\TodoWorkspace.exe` + data/ + backup/); CRLF
+      (`release\myTODO\myTODO.exe` + data/ + backup/); CRLF
       byte-szinten ellenőrizve
 - [x] Verzió: 1.0.0 mindhárom helyen (package.json, tauri.conf.json, Cargo.toml)
 - [x] **CDP-verifikáció**: File menü teljes; backup_now → fájl a backup/-ban;
@@ -268,7 +268,7 @@ Jelmagyarázat: 🔲 nincs elkezdve · 🔄 folyamatban · ✅ kész (review+pus
 
 | Követelmény | Állapot |
 |---|---|
-| Portable Windows build (installer nélkül indul) | ✅ `release\TodoWorkspace\` — futtatva, saját `data/`-t hozott létre |
+| Portable Windows build (installer nélkül indul) | ✅ `release\myTODO\` — futtatva, saját `data/`-t hozott létre |
 | Adat a portable data könyvtárban | ✅ SQLite az exe mellett, igazolva |
 | Inbox működik (fix, nem törölhető) | ✅ |
 | Több tab/lista, max 3 szintű groupok | ✅ (depth-cap tesztelve UI+import szinten) |

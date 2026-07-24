@@ -63,7 +63,7 @@
 
 ## Portable storage
 
-- Minden a `TodoWorkspace/` mappán belül: `data/todo.db` + settings
+- Minden a `myTODO/` mappán belül: `data/todo.db` + settings
   (SQLite `settings` tábla, JSON értékek) + `backup/`. Registry nincs.
 - A shortcut-konfig, layout, theme, window-state mind a settings táblában.
 

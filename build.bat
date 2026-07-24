@@ -1,6 +1,6 @@
 @echo off
 rem Portable release build: tests + release exe + portable folder.
-rem Output: release\TodoWorkspace\ (exe + empty data/ + backup/)
+rem Output: release\myTODO\ (exe + empty data/ + backup/)
 rem Full MSI installer instead: bun run tauri build
 
 echo === 1/4 Typecheck ===
@@ -25,18 +25,19 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 echo === 4/4 Portable folder ===
-set OUT=release\TodoWorkspace
+set OUT=release\myTODO
 if exist %OUT% rmdir /s /q %OUT%
 mkdir %OUT%
 mkdir %OUT%\data
 mkdir %OUT%\backup
-copy /y target\release\mytodo.exe %OUT%\TodoWorkspace.exe >nul
+copy /y target\release\mytodo.exe %OUT%\myTODO.exe >nul
 if %ERRORLEVEL% NEQ 0 (
   echo COPY FAILED
   exit /b 1
 )
 
 echo.
-echo Done: %OUT%\TodoWorkspace.exe
-echo Copy the whole TodoWorkspace folder anywhere - data moves with it.
+echo Done: %OUT%\myTODO.exe
+echo Copy the whole myTODO folder anywhere - data moves with it.
+
 

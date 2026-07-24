@@ -43,9 +43,14 @@
     {/if}
   </button>
   <button class="tool-btn" title="Settings" onclick={() => (ui.settingsOpen = true)}>
-    <svg width="13" height="13" viewBox="0 0 14 14">
-      <circle cx="7" cy="7" r="2.2" fill="none" stroke="currentColor" stroke-width="1.3" />
-      <path d="M7 1.2v1.8M7 11v1.8M1.2 7H3M11 7h1.8M2.9 2.9l1.3 1.3M9.8 9.8l1.3 1.3M11.1 2.9 9.8 4.2M4.2 9.8l-1.3 1.3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+    <svg width="14" height="14" viewBox="0 0 24 24">
+      <path
+        d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zm8.6 3.5c0-.6-.06-1.1-.17-1.63l2.04-1.6-2-3.46-2.4 1a8.3 8.3 0 0 0-2.83-1.64L14.87 2h-4l-.37 2.67c-1.05.36-2 .92-2.82 1.64l-2.4-1-2 3.47 2.04 1.59a8.5 8.5 0 0 0 0 3.26l-2.04 1.6 2 3.46 2.4-1c.82.72 1.77 1.28 2.82 1.64L10.87 22h4l.37-2.67a8.3 8.3 0 0 0 2.82-1.64l2.4 1 2-3.47-2.03-1.59c.11-.53.17-1.08.17-1.63z"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.6"
+        stroke-linejoin="round"
+      />
     </svg>
   </button>
   <div class="caption-buttons">

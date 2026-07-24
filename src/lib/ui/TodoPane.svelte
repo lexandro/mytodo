@@ -2,6 +2,7 @@
   // One pane: TabBar → QuickAdd → row list (pinned / tree / archived) →
   // empty state. The pane background is a drop target: dropping a todo from
   // another list moves it to this list's root.
+  import inboxWatermark from "$lib/assets/inbox-watermark.png";
   import { buildPaneRows } from "$lib/core/rows";
   import { todoMatches } from "$lib/core/search";
   import { moveTodoAction } from "$lib/state/actions";
@@ -82,6 +83,10 @@
     {#if pane.filterOpen}
       <FilterBar {paneIndex} matchCount={paneRows.visibleTodoIds.length} />
     {/if}
+    {#if isInbox}
+      <!-- faint app-icon watermark — Inbox only, behind the rows -->
+      <div class="inbox-watermark" style:background-image={`url(${inboxWatermark})`}></div>
+    {/if}
     <div class="rows">
       {#each paneRows.rows as row (row.key)}
         {#if row.kind === "section"}
@@ -122,6 +127,7 @@
 
 <style>
   .pane {
+    position: relative;
     display: flex;
     flex-direction: column;
     min-width: 0;
@@ -134,9 +140,22 @@
   .pane.active-pane {
     border-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
   }
+  .inbox-watermark {
+    position: absolute;
+    inset: 0;
+    background-repeat: no-repeat;
+    background-position: center 58%;
+    background-size: min(72%, 480px);
+    opacity: 0.05;
+    pointer-events: none;
+  }
+  :global([data-theme="light"]) .inbox-watermark {
+    opacity: 0.09;
+  }
   .rows {
     flex: 1;
     overflow-y: auto;
     padding: 2px 0 14px;
+    position: relative;
   }
 </style>
