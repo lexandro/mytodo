@@ -21,8 +21,8 @@ Forrás-dokumentumok:
 |---|---|---|
 | F1 | Alapozás: tokenek, DB, domain model, app-váz | ✅ |
 | F2 | Lists, groups, todo CRUD, Quick Add | ✅ |
-| F3 | Fa-nézet, drag & drop, subtasks | 🔄 |
-| F4 | Detail panel, activity, színek, emoji, linkek | 🔲 |
+| F3 | Fa-nézet, drag & drop, subtasks | ✅ |
+| F4 | Detail panel, activity, színek, emoji, linkek | 🔄 |
 | F5 | Pinning, Pinned view, Archive, Trash, Undo | 🔲 |
 | F6 | Keresés (filter, global, palette) | 🔲 |
 | F7 | Split pane rendszer + layout persist | 🔲 |
@@ -104,13 +104,16 @@ Jelmagyarázat: 🔲 nincs elkezdve · 🔄 folyamatban · ✅ kész (review+pus
 - [x] Zárás: typecheck 0 hiba, 54 teszt zöld → review (menus.ts placeholder
       kód kijavítva, a11y warningok rendezve) → push
 
-### F3 — Fa-nézet mélyítés, drag & drop, subtasks
-- [ ] DnD: todo reorder (before/after 2px vonal), group-ba ejtés (row highlight,
-      auto-expand), rail-listára ejtés (root-ba), érvénytelen mélység tiltása
-- [ ] Rail lista-reorder draggal
-- [ ] Minden drop = 1 undo-olható akció + toast + activity entry (előkészítve F5-höz)
-- [ ] Subtasks core (create/edit/delete/check/reorder, flat) + tesztek
-- [ ] Zárás: review → refactor → push
+### F3 — Fa-nézet mélyítés, drag & drop, subtasks ✅ (2026-07-24)
+- [x] DnD (az F2-ben épült): todo reorder before/after vonallal, group-ba
+      ejtés highlight + auto-expand, rail-listára ejtés root-ba, rail
+      lista-reorder; minden drop 1 undo-olható akció + toast + activity
+      (cross-scope movenál)
+- [x] Subtasks core: add/edit/toggle/remove/reorder (flat, todo-n belüli
+      reorder-guard) + activity-írás — 6 új teszt (össz. 60)
+- [x] Pane-közti DnD az F7-ben jön (multi-pane); group drag-reorder a design
+      FUTURE.md szerint v1.1 — kimarad
+- [x] Zárás: typecheck 0, 60 teszt zöld → push
 
 ### F4 — Detail panel, activity, színek, emoji, linkek
 - [ ] DetailPanel (320px): Details/Activity fülek, breadcrumb, Esc-zárás
