@@ -11,6 +11,19 @@ hogy munka közben két másodperc alatt felírj egy tennivalót, aztán folytas
   desktopra hozza az appot (nem téged visz oda!)
 - **Local-first, portable** — nincs account, nincs felhő; minden adat az exe
   melletti `data/` mappában
+- **Élő frissítés** — aláírt automatikus update a GitHub Release-ekből
+
+## Telepítés
+
+A [Releases](https://github.com/lexandro/mytodo/releases/latest) oldalról:
+
+- **Telepítő** (ajánlott): `myTODO_x.y.z_x64-setup.exe` (NSIS) vagy `.msi` —
+  a telepített app **automatikusan frissül**: háttérben ellenőrzi az új
+  verziót (6 óránként), és a status barban ajánlja fel; a letöltés/telepítés
+  mindig a te döntésed. Kézi ellenőrzés: `Help → Check for updates…`
+- **Portable**: `myTODO-vx.y.z-portable.zip` — kicsomagolod, fut, az adatok
+  a mappában maradnak. A portable változat nem frissíti magát (jelzi az új
+  verziót, de a cserét kézzel végzed).
 
 ## Fejlesztés
 
@@ -92,9 +105,27 @@ cd src-tauri && cargo test   # Rust persistence tesztek
   ha olyan kombinációt választanál, ami gépelést blokkolhat.
 - A shortcut-beállítások is a portable `data/` alatt élnek (nem registry).
 
+## Kiadás (maintainer)
+
+1. Verzió-emelés HÁROM helyen együtt: `package.json`,
+   `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`
+2. `git tag vX.Y.Z && git push origin vX.Y.Z`
+3. A GitHub Actions (`release.yml`) megépíti az aláírt MSI + NSIS
+   telepítőket az updater-artifactokkal (`latest.json`), publikálja a
+   Release-t és mellécsatolja a portable zipet — a telepített appok innen
+   frissülnek automatikusan.
+
+Az updater-aláíró kulcspár a tulajdonos kulcstárában él (`E:\Mega\keys\
+mytodo-updater\`), a repón `TAURI_SIGNING_PRIVATE_KEY(_PASSWORD)` secretként.
+**A kulcs elvesztése = a meglévő telepítések nem frissíthetők tovább.**
+
 ## Dokumentáció
 
 - `doc/ARCHITECTURE.md` — architektúra-áttekintés
 - `doc/WINDOWS-TESTS.md` — manuális Windows integrációs teszt-checklist
 - `doc/FUTURE.md` — jövőbeli ötletek (most tudatosan kimaradtak)
 - `doc/progress.md` — fejlesztési napló
+
+## Licenc
+
+MIT — lásd [LICENSE](LICENSE).

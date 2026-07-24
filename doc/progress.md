@@ -300,3 +300,12 @@ felhasználói munkamenetet igényelnek, automatán nem futtathatók.
   typecheck+tesztek zölden, CDP-alapú end-to-end verifikáció a futó appon,
   self-review + javítások, commit + push. Végállapot: 102 TS + 6 Rust teszt,
   v1.0.0 portable release lefordítva és élesben ellenőrizve.
+- **2026-07-24 (délután)** — Windows integrációs tesztek levezényelve élő
+  munkameneten (A–F, I, K, L ✅ — lásd WINDOWS-TESTS.md); app-ikon beépítve
+  (valódi-alfás tisztítással) + Inbox-vízjel; portable átnevezve myTODO-ra.
+- **2026-07-24 (este)** — **Átköltözés GitHubra**: github.com/lexandro/mytodo
+  (public, explicit döntés — az updaternek nyilvános release kell), gitlab
+  remote backupként megtartva. Live update beépítve (tauri-plugin-updater,
+  mdedit-minta): aláírt artifactok, kulcspár az E:\Mega\keys\mytodo-updater
+  alatt, repo-secrets beállítva. release.yml (tag → aláírt MSI/NSIS +
+  latest.json + portable zip) + ci.yml. v1.0.0 tag kiadva.

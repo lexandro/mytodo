@@ -17,7 +17,7 @@ Natív Windows asztali app: **Tauri v2** (Rust héj) + **Svelte 5** (SvelteKit S
 ### Tooling
 - **Csomagkezelő: Bun** — SOHA npm/yarn/pnpm; a `bun.lock` commitolva van
 - CLI-k telepítve és authentikálva: `glab`, `gh`, `wrangler` — ezeket használd, ne curl/REST hívásokat
-- Git: minden repo alapból **privát GitLab**; GitHub-ra csak külön, explicit kérésre. Conventional commits angolul (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`)
+- Git: **ez a projekt a github.com/lexandro/mytodo PUBLIC repóban él** (`origin`; explicit döntés 2026-07-24 — az auto-update a nyilvános release-ekből táplálkozik). A `gitlab` remote backup-tükör, szinkronja opcionális (`git push gitlab main`). Conventional commits angolul (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`)
 
 ### Kódminőség
 - ~150 sor/fájl felett állj meg és gondold át a bontást — ez smell, nem kemény plafon (kivétel: pure types, generált kód, tesztadat). Egy fájl = egy felelősség. Max ~20-25 sor/függvény.
@@ -50,13 +50,21 @@ Natív Windows asztali app: **Tauri v2** (Rust héj) + **Svelte 5** (SvelteKit S
 - `bun run dev` — csak a frontend (port 1420, strict — foglalt portnál hibázik)
 - `bun run typecheck` — svelte-check (commit előtt kötelező zöld)
 - `bun run test` — vitest
-- `build.bat` — gyors lokális release exe (`target\release\` alá, installer nélkül)
-- `bun run tauri build` — teljes release + MSI installer
+- `cd src-tauri && cargo test` — Rust persistence tesztek
+- `build.bat` — typecheck + tesztek + release build + portable mappa (`release\myTODO\myTODO.exe`)
+- `bun run tauri build` — teljes release + MSI/NSIS installer
+
+## Kiadás és live update
+
+- **Release folyamat**: verzió-emelés HÁROM helyen → `git tag vX.Y.Z` → `git push origin vX.Y.Z` → a `.github/workflows/release.yml` (tauri-action) megépíti az aláírt MSI+NSIS telepítőket updater-artifactokkal, publikálja a GitHub Release-t és csatolja a portable zipet. Kézi publish lépés nincs.
+- **Updater**: `tauri-plugin-updater`; endpoint `releases/latest/download/latest.json`, pubkey a `tauri.conf.json`-ban. A frontend a `state/updater.svelte.ts`-en át 6 óránként csendben ellenőriz, és csak FELAJÁNLJA a frissítést (status bar chip / Help menü) — letöltés-telepítés mindig user-indított.
+- **Aláíró kulcspár**: `E:\Mega\keys\mytodo-updater\` (mytodo.key + password.txt); a repón `TAURI_SIGNING_PRIVATE_KEY` és `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` secret. A kulcs elvesztése = a kint lévő telepítések nem frissíthetők tovább. A pubkey cseréje breaking.
+- A CI (`ci.yml`) minden pushon typecheck + teszt + build — pirosat ne hagyj main-en.
 
 ## Sarokpontok
 
 - **Single-instance**: második indításkor a meglévő ablak kap fókuszt (plugin a `lib.rs`-ben).
 - **CSP szigorú** (`tauri.conf.json`): új külső forrás/inline script nem mehet be a CSP lazítása nélkül — ha lazítani kell, indokold.
 - **Verzió-emelés HÁROM helyen** (mindig együtt): `package.json`, `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`.
-- A `target/` a projekt gyökerében van (`.cargo/config.toml` állítja) — gitignore-olva.
+- A `target/` a projekt gyökerében van (`.cargo/config.toml` állítja) — gitignore-olva; a `release/` (lokális portable output) szintén.
 - Sorvégek: a `.gitattributes` LF-et kényszerít, `.bat` fájlok CRLF-ek.

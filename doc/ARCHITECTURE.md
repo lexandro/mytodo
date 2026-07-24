@@ -61,6 +61,16 @@
   minden saját aktiválás ELŐTT kerül lekérdezésre; desktop-váltás soha.
 - A summon mutex mögött serialized — gyors dupla hotkey nem interleave-el.
 
+## Live update
+
+- `tauri-plugin-updater` a GitHub Releases-ből (`releases/latest/download/
+  latest.json`), minisign-aláírt artifactokkal; a pubkey a `tauri.conf.json`-ban.
+- A `state/updater.svelte.ts` (mdedit-minta) 5 mp után + 6 óránként csendben
+  ellenőriz, és csak FELAJÁNLJA a frissítést (status bar chip + Help menü);
+  a letöltés-telepítés-újraindítás user-indított. A telepítős (MSI/NSIS)
+  változat frissül; a portable zip csak értesítést kap.
+- Release: tag push (`vX.Y.Z`) → `.github/workflows/release.yml` (tauri-action).
+
 ## Portable storage
 
 - Minden a `myTODO/` mappán belül: `data/todo.db` + settings
