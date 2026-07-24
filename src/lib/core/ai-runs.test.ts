@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { MAX_RUN_LOG_LINES, emptyRunResult, type AIRun } from "./ai-types";
-import { capLog, parseRunResult, rowToRun, rowsToRuns, runToRow } from "./ai-runs";
+import {
+  capLog, hasActiveRunForWorkspace, parseRunResult, rowToRun, rowsToRuns, runToRow,
+} from "./ai-runs";
 
 function sampleRun(overrides: Partial<AIRun> = {}): AIRun {
   return {
@@ -97,6 +99,22 @@ describe("parseRunResult", () => {
   it("returns an empty result for garbage", () => {
     expect(parseRunResult("boom")).toEqual(emptyRunResult());
     expect(parseRunResult(null)).toEqual(emptyRunResult());
+  });
+});
+
+describe("hasActiveRunForWorkspace — one run per workspace (decision #11)", () => {
+  const paths = { l1: "C:\\Projects\\conference", l2: "c:\\projects\\CONFERENCE", l3: "D:\\other" };
+
+  it("blocks a second run on the same directory, case-insensitively", () => {
+    const runs = [sampleRun({ status: "running", listId: "l1" })];
+    expect(hasActiveRunForWorkspace(runs, paths, "C:\\Projects\\conference")).toBe(true);
+    // ANOTHER LIST linked to the same directory is also blocked
+    expect(hasActiveRunForWorkspace(runs, paths, "c:\\projects\\CONFERENCE")).toBe(true);
+  });
+
+  it("a different workspace or a finished run does not block", () => {
+    expect(hasActiveRunForWorkspace([sampleRun({ status: "running", listId: "l1" })], paths, "D:\\other")).toBe(false);
+    expect(hasActiveRunForWorkspace([sampleRun({ status: "completed", listId: "l1" })], paths, paths.l1)).toBe(false);
   });
 });
 

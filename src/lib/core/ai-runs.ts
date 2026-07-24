@@ -161,3 +161,21 @@ export function rowToRun(row: AIRunRow): AIRun | null {
 export function rowsToRuns(rows: readonly AIRunRow[]): AIRun[] {
   return rows.map(rowToRun).filter((run): run is AIRun => run !== null);
 }
+
+/**
+ * Concurrency guard (decision #11): ONE run per workspace directory at a
+ * time, regardless of mode. Two lists linked to the same directory share
+ * the guard — the workspace, not the list, is the unit.
+ */
+export function hasActiveRunForWorkspace(
+  runs: readonly AIRun[],
+  workspacePathByList: Readonly<Record<string, string>>,
+  workspacePath: string,
+): boolean {
+  const normalized = workspacePath.toLowerCase();
+  return runs.some(
+    (run) =>
+      run.status === "running" &&
+      (workspacePathByList[run.listId] ?? "").toLowerCase() === normalized,
+  );
+}

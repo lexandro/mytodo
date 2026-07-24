@@ -371,7 +371,7 @@ handoff (existing design semantics untouched, token stylesheet byte-identical).
 | AI1 | Domain + persistence: types, migrations, settings keys, FUTURE.md | ✅ |
 | AI2 | Workspace linking: picker, validation, Git detect, chip, settings dialog, missing state | ✅ |
 | AI3 | Provider infra: detection, validation, version, Test, AI Clients dialog, default client | ✅ |
-| AI4 | Run engine: Rust process exec + streaming + cancel, provider adapters, result normalization | 🔲 |
+| AI4 | Run engine: Rust process exec + streaming + cancel, provider adapters, result normalization | ✅ |
 | AI5 | Context builder + proposals: AIContextBuilder, parse/validate, batch apply, activity log | 🔲 |
 | AI6 | AI UI: detail AI tab, ✦ AI menu, run panel, results, proposal review, history, keyboard | 🔲 |
 | AI7 | Hardening + docs + manual test doc + Definition-of-Done walkthrough | 🔲 |
@@ -456,24 +456,36 @@ explicit owner request; version stays until then.
       aiClients persisted; codex Test → ready:true (logged in); Esc closes.
 - [x] Close-out: typecheck 0, 155 TS + 26 Rust tests green → push
 
-#### AI4 — Run engine 🔲
-- [ ] Rust process execution: spawn with structured argv (no cmd.exe /c
-      strings §14), workspace as working directory, CREATE_NO_WINDOW,
-      non-blocking stdout/stderr streaming → Tauri events, exit codes,
-      graceful cancel → timeout → forced kill (§13/§33), cleanup on app exit
-- [ ] ClaudeCodeProvider + CodexProvider adapters: headless invocation,
-      streaming JSON event parsing (unknown event types tolerated §24),
-      Analyze/Plan/Execute → permission/sandbox flags (decision #16),
-      session/thread id retention (§35), normalization to AgentRunResult
-      (summary, findings, recommendation, proposals, metadata §23)
-- [ ] Run lifecycle state (`state/ai-runs.svelte.ts`): start/stream/cancel/
-      complete/fail; concurrency guard 1 run/workspace (decision #11);
-      run bound to its pane/list/todo context, survives panel close +
-      tab/pane switches (§39); completion toast
-- [ ] AIRun persistence: capped log lines + result on the run row;
-      history cap per list (decision #13)
-- [ ] Tests: cancelled run state, failed run state, concurrency restriction,
-      event parsing incl. unknown events, mode→flag mapping
+#### AI4 — Run engine ✅ (2026-07-24)
+- [x] Rust `ai/run.rs`: streaming spawn (prompt via STDIN → argv stays a
+      fixed provider+mode set, no cmdline length limits), CREATE_NO_WINDOW,
+      line events `ai-run:<id>`, waiter thread → Exit event, run registry;
+      cancel = graceful taskkill /T → forced /F after 3s (§33); backend
+      validates provider/exe/workspace/mode/run-id (§14) — 5 tests incl.
+      "args never contain a permission bypass" (31 Rust total)
+- [x] Mode→flag mapping (decision #16): claude analyze/plan →
+      `--permission-mode plan`, execute → `acceptEdits`; codex →
+      `--sandbox read-only` / `workspace-write` + `--skip-git-repo-check`;
+      never dangerously-skip-permissions (test-asserted)
+- [x] `core/ai-stream.ts`: claude stream-json + codex JSONL → human
+      progress lines / final text / session id / error; unknown events +
+      non-JSON noise ignored (§24) — 11 tests
+- [x] `core/ai-result.ts`: final text → AIRunResult via LAST fenced json
+      envelope → bare JSON → controlled fallback (text = summary);
+      proposals get local ids + derived labels; recommendation.proposal
+      becomes a proposal row (Verify's Apply Recommendation) — 8 tests
+- [x] `state/ai-runs.svelte.ts` engine: guards (link, missing, provider
+      selection without fallback, 1-run-per-workspace-directory —
+      case-insensitive, shared across lists), lifecycle, stderr tail for
+      failures, persistence at start+finish, completion/failed toasts;
+      runs survive panel close (§39 — state, not UI, owns them)
+- [x] ipc: aiRunStart/aiRunCancel/onAiRunEvent (+ UnlistenFn re-export)
+- [x] **CDP verification with a REAL `claude -p` run** (dev-mode module
+      singleton access): analyze run completed with parsed envelope
+      (answer=PONG), session id + progress captured; concurrency guard
+      message; cancel → cancelled; fake exit-3 CLI → failed with exit
+      detail; ai_runs history persisted completed+cancelled+failed.
+- [x] Close-out: typecheck 0, 176 TS (+21) + 31 Rust (+5) tests green → push
 
 #### AI5 — Context builder + proposals 🔲
 - [ ] `core/ai/context.ts` (AIContextBuilder): action definition + mode +

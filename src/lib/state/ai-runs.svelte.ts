@@ -1,0 +1,223 @@
+// AI run engine: lifecycle (start → stream → finish/cancel), concurrency
+// guard, persistence and toasts. The provider stream shapes stay inside
+// core/ai-stream + core/ai-result — this module only orchestrates.
+// A run is bound to its list/todo context and survives panel close and
+// pane/tab switches (aiprompt §39); the panel (AI6) merely renders `runs`.
+
+import { selectProvider } from "$lib/core/ai-providers";
+import { resultFromText } from "$lib/core/ai-result";
+import {
+  capLog, hasActiveRunForWorkspace, rowsToRuns, runToRow,
+} from "$lib/core/ai-runs";
+import { parseStreamLine } from "$lib/core/ai-stream";
+import {
+  ACTION_LABELS, ACTION_MODES, type AIAction, type AIRun,
+} from "$lib/core/ai-types";
+import { newId } from "$lib/core/ids";
+import {
+  aiRunCancel, aiRunPut, aiRunStart, aiRunsLoad, onAiRunEvent, type UnlistenFn,
+} from "$lib/ipc";
+import { aiConfig } from "./ai-config.svelte";
+import { ui } from "./ui.svelte";
+
+export type StartRunError = { message: string; openAiClients?: boolean };
+
+interface LiveRunState {
+  unlisten: UnlistenFn | null;
+  resultText: string;
+  providerError: string | null;
+  stderrTail: string[];
+  cancelRequested: boolean;
+}
+
+class AiRunsState {
+  runs = $state<AIRun[]>([]);
+  private live = new Map<string, LiveRunState>();
+
+  /** Startup load; interrupted rows already surface as failed via rowToRun. */
+  async load(): Promise<void> {
+    try {
+      this.runs = rowsToRuns(await aiRunsLoad());
+    } catch (e) {
+      ui.showToast(`Could not load AI run history: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
+  runsForList(listId: string): AIRun[] {
+    return this.runs.filter((run) => run.listId === listId);
+  }
+
+  runsForTodo(todoId: string): AIRun[] {
+    return this.runs.filter((run) => run.todoId === todoId);
+  }
+
+  runById(runId: string): AIRun | undefined {
+    return this.runs.find((run) => run.id === runId);
+  }
+
+  /**
+   * Starts a run for a prepared prompt. All guards fail with a human
+   * message and NO side effects: missing/unusable workspace, unavailable
+   * provider (no silent fallback), one-run-per-workspace concurrency.
+   */
+  async startRun(params: {
+    listId: string;
+    todoId: string | null;
+    action: AIAction;
+    prompt: string;
+  }): Promise<StartRunError | null> {
+    const link = aiConfig.linkFor(params.listId);
+    if (link === undefined) {
+      return { message: "Link a workspace to use AI." };
+    }
+    await aiConfig.refreshMissing(params.listId);
+    if (aiConfig.isMissing(params.listId)) {
+      return { message: "Workspace not found." };
+    }
+    const selection = selectProvider(link, aiConfig.clients);
+    if (!selection.ok) {
+      return { message: selection.message, openAiClients: true };
+    }
+    const pathByList = this.workspacePathByList();
+    if (hasActiveRunForWorkspace(this.runs, pathByList, link.path)) {
+      return { message: "Another AI operation is already running for this workspace." };
+    }
+
+    const run: AIRun = {
+      id: newId(),
+      listId: params.listId,
+      todoId: params.todoId,
+      provider: selection.provider,
+      action: params.action,
+      mode: ACTION_MODES[params.action],
+      status: "running",
+      startedAt: Date.now(),
+      finishedAt: null,
+      sessionId: null,
+      log: [],
+      result: null,
+      error: null,
+    };
+    const liveState: LiveRunState = {
+      unlisten: null,
+      resultText: "",
+      providerError: null,
+      stderrTail: [],
+      cancelRequested: false,
+    };
+    this.live.set(run.id, liveState);
+    this.runs = [run, ...this.runs];
+    this.persist(run);
+
+    try {
+      // subscribe BEFORE spawn — no event can be lost
+      liveState.unlisten = await onAiRunEvent(run.id, (event) => this.onEvent(run.id, event));
+      await aiRunStart({
+        runId: run.id,
+        provider: selection.provider,
+        exePath: selection.path,
+        workspaceDir: link.path,
+        mode: run.mode,
+        prompt: params.prompt,
+      });
+      return null;
+    } catch (e) {
+      this.cleanupLive(run.id);
+      const message = e instanceof Error ? e.message : String(e);
+      this.updateRun(run.id, { status: "failed", finishedAt: Date.now(), error: message });
+      return { message, openAiClients: true };
+    }
+  }
+
+  /** Explicit user cancel; the run finishes as "cancelled" on exit. */
+  async cancelRun(runId: string): Promise<void> {
+    const liveState = this.live.get(runId);
+    if (liveState !== undefined) liveState.cancelRequested = true;
+    try {
+      await aiRunCancel(runId);
+    } catch (e) {
+      ui.showToast(`Cancel failed: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
+  private onEvent(runId: string, event: { kind: string; [key: string]: unknown }): void {
+    const run = this.runById(runId);
+    const liveState = this.live.get(runId);
+    if (run === undefined || liveState === undefined) return;
+    if (event.kind === "line") {
+      const line = event.line as string;
+      if (event.stream === "stderr") {
+        liveState.stderrTail = [...liveState.stderrTail.slice(-9), line];
+        return;
+      }
+      const update = parseStreamLine(run.provider, line);
+      const patch: Partial<AIRun> = {};
+      if (update.progress !== null) patch.log = capLog([...run.log, update.progress]);
+      if (update.sessionId !== null) patch.sessionId = update.sessionId;
+      if (update.resultText !== null) liveState.resultText = update.resultText;
+      if (update.error !== null) liveState.providerError = update.error;
+      if (Object.keys(patch).length > 0) this.updateRun(runId, patch);
+      return;
+    }
+    if (event.kind === "exit") {
+      this.finishRun(runId, event.code as number | null);
+    }
+  }
+
+  private finishRun(runId: string, code: number | null): void {
+    const run = this.runById(runId);
+    const liveState = this.live.get(runId);
+    if (run === undefined || liveState === undefined) return;
+    this.cleanupLive(runId);
+
+    let patch: Partial<AIRun>;
+    if (liveState.cancelRequested) {
+      patch = { status: "cancelled", error: null };
+    } else if (liveState.providerError !== null) {
+      patch = { status: "failed", error: liveState.providerError };
+    } else if (code === 0) {
+      patch = { status: "completed", result: resultFromText(liveState.resultText), error: null };
+    } else {
+      const detail = liveState.stderrTail.join("\n").trim();
+      patch = {
+        status: "failed",
+        error: detail === "" ? `The AI client exited with code ${code ?? "unknown"}.` : detail,
+      };
+    }
+    patch.finishedAt = Date.now();
+    this.updateRun(runId, patch);
+
+    const finished = this.runById(runId);
+    if (finished !== undefined) {
+      this.persist(finished);
+      const label = ACTION_LABELS[finished.action];
+      if (finished.status === "completed") ui.showToast(`AI ${label} completed`);
+      else if (finished.status === "failed") ui.showToast(`AI ${label} failed`);
+    }
+  }
+
+  /** Marks proposals applied + persists (used by the apply flow in AI5). */
+  updateRun(runId: string, patch: Partial<AIRun>): void {
+    this.runs = this.runs.map((run) => (run.id === runId ? { ...run, ...patch } : run));
+  }
+
+  persist(run: AIRun): void {
+    void aiRunPut(runToRow(run)).catch(() => {
+      ui.showToast("Could not save the AI run — check the data folder.");
+    });
+  }
+
+  private cleanupLive(runId: string): void {
+    const liveState = this.live.get(runId);
+    if (liveState !== undefined && liveState.unlisten !== null) liveState.unlisten();
+    this.live.delete(runId);
+  }
+
+  private workspacePathByList(): Record<string, string> {
+    return Object.fromEntries(
+      Object.entries(aiConfig.workspaces).map(([listId, link]) => [listId, link.path]),
+    );
+  }
+}
+
+export const aiRuns = new AiRunsState();

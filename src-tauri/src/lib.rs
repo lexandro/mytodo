@@ -30,6 +30,7 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_opener::init())
         .manage(commands::DbState::init())
+        .manage(ai::run::AiRunManager::default())
         .setup(|_app| {
             // once-a-day background backup; failures only log (daprompt §5)
             db::backup::daily_backup_if_needed();
@@ -46,6 +47,8 @@ pub fn run() {
             commands::ai_detect_provider,
             commands::ai_probe_provider,
             commands::ai_test_provider,
+            commands::ai_run_start,
+            commands::ai_run_cancel,
             commands::backup_now,
             commands::list_backups,
             commands::restore_backup,

@@ -3,6 +3,8 @@
 // and every native capability is auditable in one place.
 import { invoke } from "@tauri-apps/api/core";
 import { emit, listen, type UnlistenFn } from "@tauri-apps/api/event";
+
+export type { UnlistenFn };
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
@@ -75,6 +77,37 @@ export function aiProbeProvider(provider: AIProviderId, path: string): Promise<P
 /** Probe + best-effort authentication readiness (never modifies anything). */
 export function aiTestProvider(provider: AIProviderId, path: string): Promise<TestOutcome> {
   return invoke<TestOutcome>("ai_test_provider", { provider, path });
+}
+
+// ── AI runs (streaming execution) ───────────────────────────────────────────
+
+export interface AiRunStartRequest {
+  runId: string;
+  provider: AIProviderId;
+  exePath: string;
+  workspaceDir: string;
+  mode: string;
+  prompt: string;
+}
+
+export type AiRunEvent =
+  | { kind: "line"; stream: "stdout" | "stderr"; line: string }
+  | { kind: "exit"; code: number | null };
+
+export function aiRunStart(req: AiRunStartRequest): Promise<void> {
+  return invoke<void>("ai_run_start", { req });
+}
+
+/** Graceful stop, forced after a grace period; Exit event still arrives. */
+export function aiRunCancel(runId: string): Promise<void> {
+  return invoke<void>("ai_run_cancel", { runId });
+}
+
+export function onAiRunEvent(
+  runId: string,
+  handler: (event: AiRunEvent) => void,
+): Promise<UnlistenFn> {
+  return listen<AiRunEvent>(`ai-run:${runId}`, (e) => handler(e.payload));
 }
 
 // ── backup / restore ────────────────────────────────────────────────────────

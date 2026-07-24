@@ -124,7 +124,11 @@ pub fn kill_process_tree(child: &mut std::process::Child) {
             use std::os::windows::process::CommandExt;
             kill.creation_flags(CREATE_NO_WINDOW);
         }
-        let _ = kill.stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null()).status();
+        let _ = kill
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status();
     }
     let _ = child.kill();
     let _ = child.wait();

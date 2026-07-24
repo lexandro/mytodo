@@ -110,6 +110,44 @@ pub async fn ai_probe_provider(
         .map_err(|e| format!("probe task failed: {e}"))?
 }
 
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AiRunRequest {
+    pub run_id: String,
+    pub provider: String,
+    pub exe_path: String,
+    pub workspace_dir: String,
+    pub mode: String,
+    pub prompt: String,
+}
+
+/// Starts a streaming AI run; progress arrives as `ai-run:<id>` events.
+#[tauri::command]
+pub fn ai_run_start(
+    app: tauri::AppHandle,
+    manager: State<'_, crate::ai::run::AiRunManager>,
+    req: AiRunRequest,
+) -> Result<(), String> {
+    crate::ai::run::start(
+        app,
+        &manager,
+        req.run_id,
+        req.provider,
+        req.exe_path,
+        req.workspace_dir,
+        req.mode,
+        req.prompt,
+    )
+}
+
+#[tauri::command]
+pub fn ai_run_cancel(
+    manager: State<'_, crate::ai::run::AiRunManager>,
+    run_id: String,
+) -> Result<(), String> {
+    crate::ai::run::cancel(&manager, &run_id)
+}
+
 #[tauri::command]
 pub async fn ai_test_provider(
     provider: String,

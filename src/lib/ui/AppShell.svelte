@@ -6,6 +6,7 @@
   import { createTodo } from "$lib/core/todos-ops";
   import { onQuickAdd } from "$lib/ipc";
   import { aiConfig } from "$lib/state/ai-config.svelte";
+  import { aiRuns } from "$lib/state/ai-runs.svelte";
   import { handleKeydown } from "$lib/state/keyboard";
   import {
     TODO_FS_MAX, TODO_FS_MIN, persistAppearance, persistUiSettings, restoreUiSettings,
@@ -49,6 +50,7 @@
         updater.startAutoCheck();
         void shortcutOffer.init(all[SHORTCUT_OFFER_KEY]);
         aiConfig.restore(all, store.data.lists.map((l) => l.id));
+        void aiRuns.load();
       });
   });
 
