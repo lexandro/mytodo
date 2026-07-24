@@ -14,6 +14,18 @@
   let errors = $state<Partial<Record<GlobalAction, string>>>({});
   let warnings = $state<Partial<Record<GlobalAction, string>>>({});
 
+  // While the recorder is armed, live OS hotkeys are suspended — otherwise
+  // pressing an active shortcut (e.g. Ctrl+Alt+T) would trigger its action
+  // mid-recording AND be swallowed before the recorder could capture it.
+  // The cleanup also covers Esc, backdrop close and dialog unmount.
+  $effect(() => {
+    if (recording === null) return;
+    void shortcutManager.suspendRegistrations();
+    return () => {
+      void shortcutManager.resumeRegistrations();
+    };
+  });
+
   async function onRecorderKey(e: KeyboardEvent, action: GlobalAction): Promise<void> {
     e.preventDefault();
     e.stopPropagation();
@@ -23,11 +35,13 @@
     }
     const accelerator = acceleratorFromEvent(e);
     if (accelerator === null) return; // still holding modifiers
-    recording = null;
     const validation = validateAccelerator(accelerator);
     warnings = { ...warnings, [action]: validation.warning ?? undefined };
+    // rebind BEFORE disarming: the resume in the effect cleanup then
+    // re-registers from the already-updated config (no transient old accel)
     const error = await shortcutManager.rebind(action, accelerator);
     errors = { ...errors, [action]: error ?? undefined };
+    recording = null;
   }
 
   async function toggleEnabled(action: GlobalAction): Promise<void> {

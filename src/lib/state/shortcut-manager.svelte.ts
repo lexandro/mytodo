@@ -5,7 +5,7 @@
 import {
   defaultShortcutConfig, toTauriAccelerator, validateAccelerator,
   conflictingAction, ACTION_LABELS,
-  type GlobalAction, type ShortcutConfig, type SummonBehavior,
+  type GlobalAction, type ShortcutBinding, type ShortcutConfig, type SummonBehavior,
 } from "$lib/core/shortcuts";
 import {
   registerGlobalShortcut, settingsSet, showQuickAddWindow, summonWorkspace,
@@ -49,6 +49,31 @@ class ShortcutManager {
   /** Actions whose startup registration failed (conflict with another app). */
   failures = $state<GlobalAction[]>([]);
   private registered = new Set<string>();
+  private suspended = false;
+
+  /**
+   * While the Settings recorder is armed, live shortcuts must not fire —
+   * a registered OS hotkey would both trigger its action (e.g. hide the
+   * window mid-recording) AND swallow the keypress before the recorder
+   * sees it. Config stays intact; only the OS registrations pause.
+   */
+  async suspendRegistrations(): Promise<void> {
+    if (this.suspended) return;
+    this.suspended = true;
+    for (const accelerator of [...this.registered]) {
+      await this.tryUnregister(accelerator);
+    }
+  }
+
+  async resumeRegistrations(): Promise<void> {
+    if (!this.suspended) return;
+    this.suspended = false;
+    for (const [action, binding] of Object.entries(this.config.bindings) as [GlobalAction, ShortcutBinding][]) {
+      if (binding.enabled && binding.accelerator !== null && !this.registered.has(binding.accelerator)) {
+        await this.tryRegister(action, binding.accelerator);
+      }
+    }
+  }
 
   /** Startup (§16): load config, register enabled shortcuts, collect failures. */
   async init(persisted: unknown): Promise<void> {
