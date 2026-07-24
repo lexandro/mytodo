@@ -3,8 +3,11 @@
   // → StatusBar. Owns startup (store.init), global keyboard handling and the
   // app-wide native-context-menu suppression.
   import { ensureInbox } from "$lib/core/bootstrap";
+  import { createTodo } from "$lib/core/todos-ops";
+  import { onQuickAdd } from "$lib/ipc";
   import { handleKeydown } from "$lib/state/keyboard";
   import { persistUiSettings, restoreUiSettings } from "$lib/state/settings-sync.svelte";
+  import { SHORTCUT_SETTINGS_KEY, shortcutManager } from "$lib/state/shortcut-manager.svelte";
   import { store } from "$lib/state/store.svelte";
   import { ui } from "$lib/state/ui.svelte";
   import CommandPalette from "./CommandPalette.svelte";
@@ -12,6 +15,7 @@
   import DetailPanel from "./DetailPanel.svelte";
   import GlobalPinnedStrip from "./GlobalPinnedStrip.svelte";
   import GlobalSearch from "./GlobalSearch.svelte";
+  import SettingsDialog from "./SettingsDialog.svelte";
   import ListRail from "./ListRail.svelte";
   import PinnedView from "./PinnedView.svelte";
   import StatusBar from "./StatusBar.svelte";
@@ -26,7 +30,26 @@
         ensureInbox(data);
       })
       .then(() => restoreUiSettings())
-      .then(() => (settingsRestored = true));
+      .then((all) => {
+        settingsRestored = true;
+        // startup registration never blocks the app (shortcut.md §16)
+        void shortcutManager.init(all[SHORTCUT_SETTINGS_KEY]);
+      });
+  });
+
+  // quickadd window emits; the MAIN window owns the write + toast
+  $effect(() => {
+    const unlisten = onQuickAdd(({ title, listId }) => {
+      const list = store.data.lists.find((l) => l.id === listId);
+      if (list === undefined) return;
+      store.apply("add todo", (data) => {
+        createTodo(data, listId, null, title, Date.now());
+      });
+      ui.showToast(`Added to ${list.name}`, true);
+    });
+    return () => {
+      void unlisten.then((fn) => fn());
+    };
   });
 
   // fallback after restore: panes without a list point at the first one
@@ -106,6 +129,7 @@
 <ContextMenu />
 <GlobalSearch />
 <CommandPalette />
+<SettingsDialog />
 <Toast />
 
 <style>

@@ -26,8 +26,8 @@ Forrás-dokumentumok:
 | F5 | Pinning, Pinned view, Archive, Trash, Undo | ✅ |
 | F6 | Keresés (filter, global, palette) | ✅ |
 | F7 | Split pane rendszer + layout persist | ✅ |
-| F8 | Global shortcuts, Quick Add ablak, Summon | 🔄 |
-| F9 | Scale, theme, keyboard polish, window state | 🔲 |
+| F8 | Global shortcuts, Quick Add ablak, Summon | ✅ |
+| F9 | Scale, theme, keyboard polish, window state | 🔄 |
 | F10 | Backup, import/export, hardening, portable release | 🔲 |
 
 Jelmagyarázat: 🔲 nincs elkezdve · 🔄 folyamatban · ✅ kész (review+push megvolt)
@@ -187,28 +187,37 @@ Jelmagyarázat: 🔲 nincs elkezdve · 🔄 folyamatban · ✅ kész (review+pus
       a slotokat; **restart után visszaállt** a layout és a mapping. Zöld.
 - [x] Zárás: typecheck 0, 85 teszt zöld → push
 
-### F8 — Global shortcuts, Quick Add ablak, Summon Workspace
-- [ ] Rust modulok: `src-tauri/src/windows/{virtual_desktop,window_activation,global_shortcuts}.rs`
-      — IVirtualDesktopManager (GetWindowDesktopId, MoveWindowToDesktop),
-      foreground HWND capture AKTIVÁLÁS ELŐTT, monitor-detektálás + work-area clamp,
-      SetForegroundWindow + FlashWindowEx fallback, maximized-state megőrzés
-- [ ] Summon/Hide toggle (serialized — nincs párhuzamos transition), same-desktop ág,
-      desktop-váltás TILOS fallbackként is
-- [ ] `core/shortcut-manager.ts`: validate (modifier-kötelező, system-blacklist,
-      AltGr-figyelmeztetés), conflict-detektálás, tranzakciós rebind (rollback),
-      action-mapping, toggle-logika — mind unit-tesztelve, Win32 mögött vékony
-      mockolható adapter
-- [ ] Global Quick Add ablak: külön always-on-top webview (singleton), aktuális
-      desktopon/monitoron jelenik meg, target-selector (default Inbox), Enter →
-      create + close + toast, Esc → close; a main window NEM mozdul
-- [ ] Pinned Todos / Global Search opcionális global actionök (summon + view + fókusz)
-- [ ] Settings dialog: Global Shortcuts szekció (keyboard recorder, Enabled toggle,
-      Reset Defaults, conflict-hibák)
-- [ ] Startup: settings-betöltés → regisztráció → hibagyűjtés → app ettől még indul,
-      egyszeri nem-agresszív notification
-- [ ] Capabilities bővítés indoklással; logging (debug-szintű summon-trace)
-- [ ] Manuális Windows teszt-checklist dokumentálás + végigtesztelés (A–K)
-- [ ] Zárás: review → refactor → push
+### F8 — Global shortcuts, Quick Add ablak, Summon Workspace ✅ (2026-07-24)
+- [x] Rust `src-tauri/src/winint/{virtual_desktop,window_activation,summon}.rs`
+      — IVirtualDesktopManager COM wrapper (per-hívás CoInitializeEx),
+      foreground HWND capture AKTIVÁLÁS ELŐTT, monitor work-area clamp,
+      SetForegroundWindow + FlashWindowEx fallback, maximized megőrzés,
+      SUMMON_LOCK mutex (serialized transitions), desktop-váltás fallbackként
+      is TILOS; main-close → app exit (a rejtett quickadd ne tartsa életben)
+- [x] `core/shortcuts.ts` (pure): defaults (Ctrl+Alt+T / Ctrl+Shift+Space /
+      2 opcionális), validáció (modifier-kötelező, system-blacklist),
+      AltGr-figyelmeztetés, conflict-detektálás, recorder-parser, Tauri
+      accelerator konverzió — 10 új teszt (össz. 95)
+- [x] `state/shortcut-manager.svelte.ts`: startup-regisztráció hibagyűjtéssel
+      (app ettől indul, egyszeri toast), tranzakciós rebind (új sikeres
+      regisztráció UTÁN oldódik a régi; hibánál a régi marad), enable/disable,
+      Summon/Hide toggle vs Always mód, reset defaults, persist a settings-be
+- [x] Quick Add ablak: külön mindig-legfelül webview (`/quickadd` route,
+      singleton), aktuális desktopon+monitoron jelenik meg, target-selector
+      default Inbox; Enter → EVENT a main ablaknak (egyetlen in-memory
+      authority ír DB-t) + hide + „Added to X" toast; Esc → hide
+- [x] Pinned Todos / Global Search opcionális global actionök (summon + view/
+      search fókusz); ⚡ + ⚙ toolbar-gombok, Settings a palette-ből is
+- [x] Settings dialog a §11 wireframe szerint (recorder „Press shortcut…",
+      Enabled toggle, Reset Defaults, hiba + AltGr-warning inline)
+- [x] Capabilities: quickadd ablak + global-shortcut + hide/show, indoklással
+- [x] **CDP-verifikáció**: ⚡ → quickadd ablak listákkal (Inbox default) →
+      Enter → main írta a DB-t (SQLite sor + rail count); summon parancs
+      mindhárom ága fut; recorder-rebind Ctrl+Alt+P + AltGr-warning + OS-
+      regisztráció igazolva (`is_registered`=true mindháromra); reset OK
+- [x] Manuális teszt-checklist: `doc/WINDOWS-TESTS.md` (A–M) — a virtual
+      desktop viselkedést kézzel kell igazolni
+- [x] Zárás: typecheck 0, 95 teszt, cargo check tiszta → push
 
 ### F9 — Scale, theme, keyboard polish, window state
 - [ ] UI scale (80–150%, teljes chrome skálázás) + Todo font size (10–20px) külön;

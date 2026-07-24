@@ -71,3 +71,32 @@ pub fn settings_set(
 ) -> Result<(), String> {
     with_conn(&state, |conn| db::settings_set(conn, &key, &value))
 }
+
+// ── Windows integration (Summon Workspace, Quick Add window) ────────────────
+
+#[cfg(windows)]
+#[tauri::command]
+pub fn summon_workspace(
+    app: tauri::AppHandle,
+    toggle: bool,
+) -> Result<crate::winint::summon::SummonResult, String> {
+    crate::winint::summon::summon_workspace(&app, toggle)
+}
+
+#[cfg(not(windows))]
+#[tauri::command]
+pub fn summon_workspace(_toggle: bool) -> Result<(), String> {
+    Err("Summon Workspace is Windows-only".into())
+}
+
+#[cfg(windows)]
+#[tauri::command]
+pub fn show_quick_add(app: tauri::AppHandle) -> Result<(), String> {
+    crate::winint::summon::show_quick_add(&app)
+}
+
+#[cfg(not(windows))]
+#[tauri::command]
+pub fn show_quick_add() -> Result<(), String> {
+    Err("Quick Add window is Windows-only".into())
+}

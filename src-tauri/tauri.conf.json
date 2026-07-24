@@ -18,6 +18,19 @@
         "minWidth": 600,
         "minHeight": 400,
         "decorations": false
+      },
+      {
+        "label": "quickadd",
+        "title": "Quick Add — myTODO",
+        "url": "/quickadd",
+        "width": 400,
+        "height": 190,
+        "visible": false,
+        "decorations": false,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "center": true
       }
     ],
     "security": {

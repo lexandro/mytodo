@@ -26,16 +26,20 @@ function isLayoutSettings(value: unknown): value is LayoutSettings {
   );
 }
 
-/** Applies persisted layout state; unknown list ids fall back to null. */
-export async function restoreUiSettings(): Promise<void> {
+/**
+ * Applies persisted layout state; unknown list ids fall back to null.
+ * Returns the full settings map so other subsystems (shortcut manager)
+ * can consume their keys without a second query.
+ */
+export async function restoreUiSettings(): Promise<Record<string, unknown>> {
   let all: Record<string, unknown>;
   try {
     all = await settingsAll();
   } catch {
-    return; // DB error already surfaces via store.loadError
+    return {}; // DB error already surfaces via store.loadError
   }
   const raw = all["layout"];
-  if (!isLayoutSettings(raw)) return;
+  if (!isLayoutSettings(raw)) return all;
   ui.layout = raw.layout;
   raw.paneLists.slice(0, 4).forEach((listId, i) => {
     const exists = typeof listId === "string" && store.data.lists.some((l) => l.id === listId);
@@ -43,6 +47,7 @@ export async function restoreUiSettings(): Promise<void> {
   });
   ui.activePane = Math.max(0, Math.min(3, raw.activePane));
   ui.view = raw.view;
+  return all;
 }
 
 /**

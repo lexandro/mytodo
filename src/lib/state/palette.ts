@@ -72,6 +72,15 @@ export function paletteCommands(query: string): PaletteCommand[] {
         close();
       },
     },
+    {
+      emoji: "⚙",
+      name: "Settings: global shortcuts",
+      hint: "",
+      run: () => {
+        ui.settingsOpen = true;
+        close();
+      },
+    },
   ];
   return commands.filter((c) => fuzzyMatch(query, c.name)).slice(0, PALETTE_LIMIT);
 }

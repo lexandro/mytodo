@@ -2,9 +2,11 @@
 // Everything else stays pure .ts/.svelte so logic is testable under Node
 // and every native capability is auditable in one place.
 import { invoke } from "@tauri-apps/api/core";
+import { emit, listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
+import { register, unregister } from "@tauri-apps/plugin-global-shortcut";
 import { openPath, openUrl } from "@tauri-apps/plugin-opener";
 import type { DbOp } from "$lib/core/dbops";
 import type { DomainData } from "$lib/core/types";
@@ -70,4 +72,51 @@ export function windowToggleMaximize(): Promise<void> {
 
 export function windowClose(): Promise<void> {
   return getCurrentWindow().close();
+}
+
+export function windowHide(): Promise<void> {
+  return getCurrentWindow().hide();
+}
+
+// ── global shortcuts (Tauri accelerator format, e.g. "Control+Alt+T") ───────
+
+export function registerGlobalShortcut(accelerator: string, handler: () => void): Promise<void> {
+  return register(accelerator, (event) => {
+    if (event.state === "Pressed") handler();
+  });
+}
+
+export function unregisterGlobalShortcut(accelerator: string): Promise<void> {
+  return unregister(accelerator);
+}
+
+// ── Windows integration (Summon, Quick Add window) ──────────────────────────
+
+export interface SummonResult {
+  action: "summoned" | "hidden" | "focused";
+  movedDesktop: boolean;
+  foregroundGranted: boolean;
+}
+
+export function summonWorkspace(toggle: boolean): Promise<SummonResult> {
+  return invoke<SummonResult>("summon_workspace", { toggle });
+}
+
+export function showQuickAddWindow(): Promise<void> {
+  return invoke<void>("show_quick_add");
+}
+
+// ── cross-window events (quickadd → main) ───────────────────────────────────
+
+export interface QuickAddPayload {
+  title: string;
+  listId: string;
+}
+
+export function emitQuickAdd(payload: QuickAddPayload): Promise<void> {
+  return emit("quickadd:add", payload);
+}
+
+export function onQuickAdd(handler: (payload: QuickAddPayload) => void): Promise<UnlistenFn> {
+  return listen<QuickAddPayload>("quickadd:add", (e) => handler(e.payload));
 }

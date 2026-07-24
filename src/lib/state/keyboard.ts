@@ -24,6 +24,10 @@ function handleEscape(): void {
     ui.ctxMenu = null;
     return;
   }
+  if (ui.settingsOpen) {
+    ui.settingsOpen = false;
+    return;
+  }
   if (ui.palette !== null) {
     ui.palette = null;
     return;
