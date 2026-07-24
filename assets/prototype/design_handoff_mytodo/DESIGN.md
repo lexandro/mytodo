@@ -17,7 +17,8 @@ Workspace
 │  ├─ Root todos
 │  └─ Archived section (collapsed by default; "Archived (n)")
 ├─ Views: Pinned todos (Global section first, then per-list), Trash
-└─ Overlays: command palette, global search, global quick add, label manager, shortcuts dialog, context menus, toasts
+├─ AI (optional per list): linked workspace (path, Git/Generic, AI Brief, preferred client) → AI run panel (right drawer)
+└─ Overlays: command palette, global search, global quick add, label manager, shortcuts dialog, workspace settings, AI Clients settings, AI action menu, context menus, toasts
 ```
 
 ## Layout rules (all at 100% UI scale)
@@ -31,6 +32,7 @@ Workspace
 - **Group row**: min-height 26px; caret 8px; emoji 16px; name 12px weight 500 in `--color-neutral-300`; count 10px muted. Indent 16px/level.
 - **Section rows** (Pinned / Archived): 9.5px uppercase, letter-spacing .09em, `--color-neutral-500`; Archived has caret + count `(n)` and toggles.
 - **Detail panel**: 320px fixed right column, `--color-surface`, 1px left divider. Header: Details | Activity tabs (accent underline) + breadcrumb + ✕. Body scrolls, 12px padding, 13px gaps.
+- **AI run panel**: 336px fixed right column, right of the detail panel; `--color-surface`, 1px left divider. Header: ✦ sparkle (accent) + "AI" + context breadcrumb + history icon + ✕. On narrow windows (< ~1250px effective width) the detail panel and the AI panel never show together — opening one closes the other (a running run keeps going); the center pane keeps min-width 300px.
 - **Empty states**: centered, tray icon in `--color-neutral-700`, 13px title, 11.5px muted body, max-width 260px.
 - **Window resizing**: rail and detail are fixed-width; panes flex. Tab bar and pinned strip scroll horizontally with hidden scrollbars. Text truncates with ellipsis — chrome never wraps.
 
@@ -71,8 +73,14 @@ Todo  {id, listId, groupId|null, title, status: open|progress|done|cancelled,
        desc (plain text; auto-link URLs + windows paths), emoji, color|null (hex),
        pinLocal, pinGlobal, subtasks:[{text,done}], archived, trashed,
        created, updated, activity:[{t, text}]}
+List.ws? {path, type: git|generic, brief (plain text), provider|null, missing}   // linked workspace
+AIRun {id, todoId|null, listId, provider: claude|codex, action, mode: Analyze|Plan|Execute,
+       status: running|completed|failed|cancelled, startedAt, elapsed, log[] (progress lines),
+       res: {summary?, findings[]?, checks[]?, mapping[]?, verdict?, rec?, question?, answer?, proposals[]?}, err?}
+Proposal {kind: Add subtask|Change status|Create todo|Archive todo|…, label, checked, applied,
+          apply: {t: sub|status|todo|arch, to?, id?}}   // strongly typed, validated like manual actions
 ```
 Activity log = meaningful user actions only (Created, `Open → In Progress`, Added/Completed subtask "x", Moved to <path>, Pinned/Unpinned (globally), Archived/Restored, Renamed, Created — duplicate of "x"). Timestamps render as `Today 09:21` / `Yesterday 18:11` / `Mar 4 10:03`. Duplicate copies title/desc/subtasks/emoji/color; new id, created-now, status Open, pins cleared, fresh activity log.
 
 ## Behaviors summary
-Autosave everything immediately (status bar shows a quiet "Saved · local" dot). Global quick add is an OS-level tiny floating window (Ctrl+Shift+Space) targeting any list, defaulting to Inbox. Ctrl+wheel adjusts todo text size; toolbar % button opens UI-scale (80–150%) + text-size popover. Light/dark toggle in toolbar and View menu.
+Autosave everything immediately (status bar shows a quiet "Saved · local" dot). Global quick add is an OS-level tiny floating window (Ctrl+Shift+Space) targeting any list, defaulting to Inbox. Ctrl+wheel adjusts todo text size; toolbar % button opens UI-scale (80–150%) + text-size popover. Light/dark toggle in toolbar and View menu. AI is quiet chrome: one ✦ AI toolbar button, a 10.5px workspace chip, the AI detail tab — no gradients, no chat bubbles, no sparkle decoration beyond the single glyph; the accent is used exactly as elsewhere (lines, rings, thin tints). Amber #e0a36c marks Execute mode and warnings; it never fills.

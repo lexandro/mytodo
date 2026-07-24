@@ -20,6 +20,7 @@
 | Delete (to Trash) | Delete | soft delete + undo toast |
 | Undo | Ctrl+Z | app-wide, snapshot stack |
 | Todo text size | Ctrl+MouseWheel | 10–20px; also A−/A+ in scale popover |
+| AI panel (selected todo / current list) | Ctrl+Shift+A | app-local; V1 adds no new OS-global shortcuts for AI |
 | Keyboard shortcuts help | F1 | dialog; also Help menu |
 | Close popup / panel | Esc | priority: menu → dialogs → overlays → rename → picker → filter → detail |
 

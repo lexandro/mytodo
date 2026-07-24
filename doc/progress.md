@@ -3,8 +3,10 @@
 Source documents:
 - **Functional spec**: `doc/daprompt.md` (wins on functionality; original Hungarian prompt, kept verbatim)
 - **Design spec**: `assets/prototype/design_handoff_mytodo/` (wins on visuals + interactions;
-  `prototype/myTODO App.dc.html` is the executable spec)
+  `prototype/myTODO App.dc.html` is the executable spec; updated 2026-07-24 with the
+  AI Workspace Integration package — strict superset, tokens unchanged, adds `AI_INTEGRATION.md`)
 - **Shortcut addendum**: `doc/shortcut.md` (Summon Workspace + Global Shortcut Manager; original Hungarian prompt)
+- **AI functional spec**: `doc/aiprompt.md` (AI Workspace Integration V1; original Hungarian prompt, kept verbatim)
 
 ## Phase workflow (mandatory for every phase)
 
@@ -316,6 +318,190 @@ Hungarian layout) — these need a live user session.
 
 Features accumulate on main; release only on the owner's explicit request.
 
+### AI Workspace Integration V1 — plan (analysis done 2026-07-24)
+
+Sources: `doc/aiprompt.md` (functional, wins on behavior) + updated design package
+(visual/interaction source of truth, esp. `AI_INTEGRATION.md`). Analysis result:
+the two sources are coherent; the design package is a strict superset of the v1
+handoff (existing design semantics untouched, token stylesheet byte-identical).
+
+#### Recorded decisions (2026-07-24, AI V1)
+
+11. **Concurrency**: ONE AI run per workspace at a time, regardless of mode
+    (design rule; stricter than aiprompt §34 which only mandates it for
+    Execute — owner decision). "Another AI operation is already running for
+    this workspace." toast; no queue, no scheduler.
+12. **Design package**: the updated package REPLACED the old one in
+    `assets/prototype/design_handoff_mytodo/` (superset; zip removed). The
+    design README's "no environment exists yet" line is stale v1 copy —
+    ignored; we evolve the existing Tauri+Svelte app (aiprompt §1).
+13. **Run log storage**: capped, structured progress lines in SQLite on the
+    run row (no unlimited raw terminal dumps, no separate log files) +
+    capped run history per list; aiprompt §21 satisfied, startup
+    `db_load_all` stays lean.
+14. **Paths**: `doc/` (not `docs/`) as before — update the existing
+    `doc/FUTURE.md` / `doc/ARCHITECTURE.md`, never create parallel docs
+    (aiprompt §45/§54/§57). `doc/FUTURE.md`'s old "Deliberately NEVER: AI"
+    line is superseded (owner decision = this whole feature); the NEVER list
+    is reworded per the new design FUTURE.md (chatbot surfaces, autonomous
+    project management, Git client UIs — not "AI" wholesale).
+15. **Codex shim**: on this machine `codex` resolves to an npm `.ps1`/`.cmd`
+    shim — cannot be CreateProcess'd directly and `cmd.exe /c "<string>"` is
+    forbidden (§14). Detection must resolve the shim to its real target
+    (script + interpreter) and spawn with structured argv; `claude` is a
+    real `.exe`. Treat as a first-class detection case, not an edge case.
+16. **Read-only enforcement** (Analyze/Plan) maps to provider flags:
+    Claude Code permission modes / allowed-tools, Codex sandbox flags —
+    version-dependent, behind capability detection (§7–8, §15). Never
+    `dangerously-skip-permissions`. If a provider/version cannot guarantee
+    read-only, surface it as a capability and refuse the run with a human
+    message rather than silently degrading.
+
+#### Phase overview
+
+| Phase | Scope | Status |
+|---|---|---|
+| AI1 | Domain + persistence: types, migrations, settings keys, FUTURE.md | 🔲 |
+| AI2 | Workspace linking: picker, validation, Git detect, chip, settings dialog, missing state | 🔲 |
+| AI3 | Provider infra: detection, validation, version, Test, AI Clients dialog, default client | 🔲 |
+| AI4 | Run engine: Rust process exec + streaming + cancel, provider adapters, result normalization | 🔲 |
+| AI5 | Context builder + proposals: AIContextBuilder, parse/validate, batch apply, activity log | 🔲 |
+| AI6 | AI UI: detail AI tab, ✦ AI menu, run panel, results, proposal review, history, keyboard | 🔲 |
+| AI7 | Hardening + docs + manual test doc + Definition-of-Done walkthrough | 🔲 |
+
+Phase workflow unchanged (implement pure-core-first → typecheck+tests green →
+self-review → commit → push → update this file). No release without an
+explicit owner request; version stays until then.
+
+#### AI1 — Domain + persistence foundation 🔲
+- [ ] `core/types.ts` (or colocated `core/ai/types.ts` if size demands):
+      `WorkspaceLink {path, type: git|generic, brief, preferredProvider|null}`
+      on List (nullable), `AIRun` (id, listId, todoId|null, provider, action,
+      mode, status running|completed|failed|cancelled, startedAt/finishedAt,
+      sessionId|null, log[] capped, result blocks, error|null, proposals),
+      `Proposal` strongly-typed kinds (CreateTodo, UpdateTodo,
+      ChangeTodoStatus, AddSubtask, UpdateSubtask, MoveTodoToGroup,
+      ArchiveTodo) — per design DESIGN.md §Data model + aiprompt §20/§25
+- [ ] SQLite migration (append-only, user_version bump): workspace columns
+      on lists (or `list_workspace` table), `ai_runs` table with capped
+      JSON payload columns; Rust model + load/write + tests
+- [ ] Settings keys: `aiClients` (per-provider enabled/path/version/status),
+      `defaultClient` — portable settings table, credentials never (§41)
+- [ ] `doc/FUTURE.md`: add the 8 deferred AI features from the design
+      FUTURE.md; reword the NEVER list (preserve Markdown/group-drag/divider
+      items — §54)
+- [ ] Tests: types + migration roundtrip + run status transitions
+
+#### AI2 — Workspace linking 🔲
+- [ ] `core/workspace.ts`: link/unlink/relocate ops, missing-state logic;
+      Rust command: directory validation (exists, readable) + Git detection
+      (`.git` presence — no VCS features beyond detection)
+- [ ] Link Workspace flow: directory picker (existing dialog plugin), list
+      context menu + AI menu entries; WorkspaceSettings dialog (440px per
+      COMPONENTS.md): directory + Change…, type meta, AI Brief textarea,
+      preferred client select, Unlink
+- [ ] WorkspaceLink chip in QuickAdd row (basename + git mini-tag, ⚠ amber
+      when missing, tooltip, click → settings)
+- [ ] Missing directory: todos unaffected; AI surfaces show "Workspace not
+      found" + mono path + Locate… / Unlink (§4); portable move = same path
+- [ ] Tests: linking, unlink, missing state, Git detection, relocate
+
+#### AI3 — Provider infrastructure 🔲
+- [ ] Rust `ai/` module: `detect_provider` (PATH resolution incl. shim
+      targets — decision #15; no drive scanning §9), `validate_executable`
+      (exists, regular file, identity check, version with timeout §12),
+      `test_provider` (executable → version → readiness/auth distinction
+      §11/§37; never a real workspace modification)
+- [ ] TS `core/ai/providers.ts`: AgentProvider abstraction (id, displayName,
+      capabilities, mode→flags mapping), provider selection + preferred/
+      default fallback logic (no silent fallback §10 — unavailable →
+      explicit user prompt)
+- [ ] AIClientSettings dialog + ProviderCard per COMPONENTS.md (Enabled,
+      status ●◌○, path mono + Browse…, Version, Auto Detect, Test, amber
+      human messages; Default AI client select + workspace-override note)
+- [ ] No detection on routine UI actions (§40) — only on dialog open /
+      explicit Auto Detect / first run attempt
+- [ ] Tests: provider selection, preferred fallback, executable validation,
+      capability mapping (process exec behind a mockable adapter §43)
+
+#### AI4 — Run engine 🔲
+- [ ] Rust process execution: spawn with structured argv (no cmd.exe /c
+      strings §14), workspace as working directory, CREATE_NO_WINDOW,
+      non-blocking stdout/stderr streaming → Tauri events, exit codes,
+      graceful cancel → timeout → forced kill (§13/§33), cleanup on app exit
+- [ ] ClaudeCodeProvider + CodexProvider adapters: headless invocation,
+      streaming JSON event parsing (unknown event types tolerated §24),
+      Analyze/Plan/Execute → permission/sandbox flags (decision #16),
+      session/thread id retention (§35), normalization to AgentRunResult
+      (summary, findings, recommendation, proposals, metadata §23)
+- [ ] Run lifecycle state (`state/ai-runs.svelte.ts`): start/stream/cancel/
+      complete/fail; concurrency guard 1 run/workspace (decision #11);
+      run bound to its pane/list/todo context, survives panel close +
+      tab/pane switches (§39); completion toast
+- [ ] AIRun persistence: capped log lines + result on the run row;
+      history cap per list (decision #13)
+- [ ] Tests: cancelled run state, failed run state, concurrency restriction,
+      event parsing incl. unknown events, mode→flag mapping
+
+#### AI5 — Context builder + proposals 🔲
+- [ ] `core/ai/context.ts` (AIContextBuilder): action definition + mode +
+      workspace metadata + AI Brief + selected todo/desc/subtasks/activity
+      summary + list/group context; never the whole DB (§18); native
+      provider instructions untouched (§19)
+- [ ] `core/ai/proposals.ts`: parse provider proposals → strongly-typed
+      Proposal[]; validation with the SAME domain rules as manual edits
+      (status values, group depth ≤ 3, valid ids/targets, archive
+      semantics §27); invalid → visible per-row error, never applied
+- [ ] Batch apply: selected proposals → ONE `store.apply()` (one undo
+      snapshot, §29) via normal domain ops; per-item activity entries +
+      high-level AI events referencing the run id (§30); toast "Applied n
+      changes — one batch, Ctrl+Z undoes it"
+- [ ] Tests: context generation per action, proposal parsing, invalid
+      rejection, each proposal kind, depth validation, batch apply, undo
+      after batch apply
+
+#### AI6 — AI UI 🔲
+- [ ] DetailPanel: Details | Activity | **AI** tab (5 todo actions with
+      read-only/may-modify hints, runs history, unlinked CTA); `ui.detailTab`
+      union extended
+- [ ] AIActionMenu (✦ AI toolbar button, 276px dropdown): TODO + WORKSPACE
+      sections, Run history, AI Clients…; todo section follows selection;
+      unlinked CTA; todo context menu "AI actions…" morph
+- [ ] AIRunPanel (336px right drawer): ready (Task, action radio-cards, Ask
+      question textarea, provider select + status hint, mode display with
+      amber Execute, brief preview, Run) · running (spinner, elapsed,
+      last-4 progress lines, Show details, Cancel) · result · failed/
+      cancelled (⚠ + human message + Retry + Open AI Clients…) · history ·
+      unlinked · missing; narrow-window mutual exclusion with detail panel
+- [ ] AIResult blocks (Verdict 4-value, Summary, Answer, Checks, Mapping,
+      Findings, Recommendation + Apply Recommendation, log) + ProposalList
+      (kind tags, select all/clear, keyboard-operable rows, applied dim,
+      Apply/Add Selected) per COMPONENTS.md
+- [ ] Keyboard: Ctrl+Shift+A (app-local, no new OS-global shortcuts), Esc
+      chain per updated INTERACTIONS.md order; F1 + SHORTCUTS.md row;
+      status colors green/amber/red per AI_INTEGRATION.md (amber never
+      fills); single ✦ glyph, no AI decoration
+- [ ] CDP verification against the running app (linked/unlinked/missing,
+      run lifecycle, proposals, history)
+
+#### AI7 — Hardening, docs, manual tests 🔲
+- [ ] Error taxonomy pass (§42): CLI missing / invalid exe / version fail /
+      auth-readiness / workspace missing-inaccessible / process crash /
+      timeout / malformed result / proposal validation / cancellation /
+      permission failure — all with visible human messages, no silent catch
+- [ ] Quick-workflow regression check (§40): startup, Quick Add, tab
+      switch, search, DnD unaffected (no AI work on those paths)
+- [ ] README "AI Workspace Integration" section (§57: linked workspace,
+      Brief, Claude/Codex setup, Auto Detect, manual path, modes, actions,
+      proposal review, security model); `doc/ARCHITECTURE.md` AI
+      orchestration + proposal pipeline diagrams
+- [ ] `doc/AI-TESTS.md`: manual integration test checklist (§44 — both
+      providers × actions, generic/Git/deleted/relocated/Unicode-path
+      workspaces, cancellation, failure)
+- [ ] Definition-of-Done walkthrough (§58) recorded here, incl. the
+      NOT-implemented items (MCP, background AI, Codex App Server,
+      autonomous mutation)
+
 ### Shortcut offer (portable) ✅ (2026-07-24)
 - [x] Rust `winint/app_shortcut.rs`: detects `myTODO.lnk` on the user's
       Desktop and in the Start Menu (Programs), resolves targets via
@@ -334,6 +520,11 @@ Features accumulate on main; release only on the owner's explicit request.
 
 ## Log
 
+- **2026-07-24 (night)** — **AI Workspace Integration V1 analysis done**:
+  aiprompt.md (verbatim) + updated design package cross-checked against the
+  codebase — coherent; design package replaced in assets (strict superset,
+  tokens identical); decisions #11–16 recorded; AI1–AI7 phase plan added.
+  Implementation not started yet.
 - **2026-07-24** — Analysis done: the three sources are coherent;
   discrepancies resolved (see Recorded decisions).
 - **2026-07-24** — F1–F10 completed in one run: each phase closed with green

@@ -8,7 +8,7 @@
 - Todo row → open DetailPanel (Details tab). (Single-click select keeps browsing cheap; double-click is "go deeper".)
 
 ## Keyboard
-- Full map in SHORTCUTS.md. Rules: shortcuts with Ctrl work even while typing (except Ctrl+Z inside inputs = native text undo); plain keys (Delete, F2, arrows, Alt+←) are ignored while an input/textarea/select has focus. Esc closes strictly in priority order: menu → shortcuts dialog → context menu → palette → global search → global quick add → label manager → scale popover → inline rename → list-picker popover → filter bar → detail panel.
+- Full map in SHORTCUTS.md. Rules: shortcuts with Ctrl work even while typing (except Ctrl+Z inside inputs = native text undo); plain keys (Delete, F2, arrows, Alt+←) are ignored while an input/textarea/select has focus. Esc closes strictly in priority order: menu bar / AI menu → shortcuts dialog → context menu → palette → global search → global quick add → label manager → workspace settings → AI Clients dialog → scale popover → AI panel (closing it does NOT stop a running run) → inline rename → list-picker popover → filter bar → detail panel.
 - ↑/↓ move selection through the active pane's visible todo rows (pinned + tree + expanded archived, in render order). Enter in quick-add creates; Shift+Enter creates + opens detail. In palette/search: ↑↓ move highlight, Enter activates.
 - Quick-add target: new todo goes to the selected todo's group when the selection lives in that pane's list; else list root.
 
@@ -48,6 +48,14 @@
 
 ## Renaming
 - F2 / menu / context menu. Lists & groups: inline input in place (Enter commit, Esc cancel, blur commits; leading emoji + space edits the emoji). Todos: detail title (rename logged to activity once per edit session, undo-able).
+
+## AI runs
+- Ctrl+Shift+A opens the AI panel for the selected todo (or the active pane's list). The panel is bound to the pane/list/todo context it was opened from; switching tabs/panes or working elsewhere never loses the run.
+- A running run continues in the background if the panel is closed; on completion a toast announces it and the run is reachable from history / the todo's AI tab. Cancel is explicit (button); cancelled runs stay in history.
+- Concurrency: one AI run at a time per workspace — starting another shows "Another AI operation is already running for this workspace." No queue, no scheduler.
+- No silent provider fallback: if the chosen client is missing/not ready, the Run fails with a human-readable message + Retry + Open AI Clients; the ready-state hint warns beforehand.
+- Proposals: checkbox review; Apply Selected performs all selected proposals as ONE undoable batch through normal domain commands (same validation as manual edits — status values, group depth ≤ 3, archive semantics); each applied item writes an activity entry. Verify's Apply Recommendation likewise never auto-fires.
+- Narrow windows (< ~1250px effective): AI panel and detail panel are mutually exclusive — opening one closes the other.
 
 ## Autosave & persistence
 - Every mutation persists immediately (local file/db). Status bar shows the quiet saved indicator; on write error it may switch to a warning state (same slot, red-tinted). Restore on launch: full data + layout, pane lists, view, theme, scale, text size, collapsed/archived/strip states, custom labels.

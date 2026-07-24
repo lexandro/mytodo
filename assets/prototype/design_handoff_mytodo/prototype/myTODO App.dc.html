@@ -19,6 +19,7 @@ a{color:var(--color-accent)}a:hover{color:var(--color-accent-300)}
 ::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--color-text) 16%,transparent);border-radius:6px;border:3px solid transparent;background-clip:content-box}
 ::-webkit-scrollbar-track{background:transparent}
 @keyframes mtIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes mtSpin{to{transform:rotate(360deg)}}
 </style>
 </helmet>
 <div ref="{{ rootRef }}" onContextMenu="{{ preventCtx }}" style="height:100vh;display:flex;flex-direction:column;background:var(--color-bg);color:var(--color-text);font-family:var(--font-body);font-size:13px;overflow:hidden;user-select:none">
@@ -53,6 +54,35 @@ a{color:var(--color-accent)}a:hover{color:var(--color-accent-300)}
       <button title="Split vertical" onClick="{{ lay.s2v.onClick }}" style="background:{{ lay.s2v.bg }};color:{{ lay.s2v.c }};border:none;border-left:1px solid var(--color-divider);width:32px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:color-mix(in srgb,var(--color-text) 8%,transparent)"><svg width="14" height="12" viewBox="0 0 14 12"><rect x="0.75" y="0.75" width="12.5" height="10.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"></rect><line x1="7" y1="1" x2="7" y2="11" stroke="currentColor" stroke-width="1.3"></line></svg></button>
       <button title="Split horizontal" onClick="{{ lay.s2h.onClick }}" style="background:{{ lay.s2h.bg }};color:{{ lay.s2h.c }};border:none;border-left:1px solid var(--color-divider);width:32px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:color-mix(in srgb,var(--color-text) 8%,transparent)"><svg width="14" height="12" viewBox="0 0 14 12"><rect x="0.75" y="0.75" width="12.5" height="10.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"></rect><line x1="1" y1="6" x2="13" y2="6" stroke="currentColor" stroke-width="1.3"></line></svg></button>
       <button title="2 × 2 grid" onClick="{{ lay.s4.onClick }}" style="background:{{ lay.s4.bg }};color:{{ lay.s4.c }};border:none;border-left:1px solid var(--color-divider);width:32px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:color-mix(in srgb,var(--color-text) 8%,transparent)"><svg width="14" height="12" viewBox="0 0 14 12"><rect x="0.75" y="0.75" width="12.5" height="10.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"></rect><line x1="7" y1="1" x2="7" y2="11" stroke="currentColor" stroke-width="1.3"></line><line x1="1" y1="6" x2="13" y2="6" stroke="currentColor" stroke-width="1.3"></line></svg></button>
+    </div>
+    <div style="position:relative">
+      <button title="AI — Ctrl+Shift+A" onClick="{{ aiBtn.onClick }}" style="display:flex;align-items:center;gap:5px;background:{{ aiBtn.bg }};border:none;color:{{ aiBtn.c }};height:26px;padding:0 9px;border-radius:6px;cursor:pointer;font:inherit;font-size:11.5px" style-hover="background:color-mix(in srgb,var(--color-text) 8%,transparent);color:var(--color-accent)"><svg width="11" height="11" viewBox="0 0 12 12"><path d="M6 .8 7.3 4.7 11.2 6 7.3 7.3 6 11.2 4.7 7.3 .8 6 4.7 4.7z" fill="currentColor"></path></svg><span>AI</span></button>
+      <sc-if value="{{ aiMenuV }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;top:29px;right:0;z-index:66;width:276px;background:var(--color-surface);border-radius:8px;box-shadow:var(--shadow-md);padding:4px;display:flex;flex-direction:column;animation:mtIn .1s ease">
+          <sc-if value="{{ aiMenuV.linked }}" hint-placeholder-val="{{ true }}">
+            <div style="padding:5px 10px 2px;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-500);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Todo — {{ aiMenuV.todoTitle }}</div>
+            <sc-for list="{{ aiMenuV.todoItems }}" as="mi" hint-placeholder-count="5">
+              <button onClick="{{ mi.onClick }}" style="display:flex;flex-direction:column;align-items:stretch;gap:1px;padding:4px 10px;border:none;background:transparent;color:{{ mi.c }};font:inherit;border-radius:5px;cursor:pointer;text-align:left" style-hover="background:color-mix(in srgb,var(--color-text) 7%,transparent)">
+                <span style="font-size:12.5px">{{ mi.nm }}</span><span style="font-size:10px;color:var(--color-neutral-600)">{{ mi.ds }}</span>
+              </button>
+            </sc-for>
+            <div style="height:1px;background:var(--color-divider);margin:4px 8px"></div>
+            <div style="padding:3px 10px 2px;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-500);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Workspace — {{ aiMenuV.listName }}</div>
+            <sc-for list="{{ aiMenuV.wsItems }}" as="wi" hint-placeholder-count="4">
+              <button onClick="{{ wi.onClick }}" style="display:flex;flex-direction:column;align-items:stretch;gap:1px;padding:4px 10px;border:none;background:transparent;color:{{ wi.c }};font:inherit;border-radius:5px;cursor:pointer;text-align:left" style-hover="background:color-mix(in srgb,var(--color-text) 7%,transparent)">
+                <span style="font-size:12.5px">{{ wi.nm }}</span><span style="font-size:10px;color:var(--color-neutral-600)">{{ wi.ds }}</span>
+              </button>
+            </sc-for>
+          </sc-if>
+          <sc-if value="{{ aiMenuV.unlinked }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:10px 10px 6px;font-size:11.5px;color:var(--color-neutral-500);line-height:1.5">Link a workspace to use AI on this list.</div>
+            <button class="btn btn-primary" style="font-size:12px;margin:0 8px 6px" onClick="{{ aiMenuV.onLink }}">Link Workspace…</button>
+          </sc-if>
+          <div style="height:1px;background:var(--color-divider);margin:4px 8px"></div>
+          <button onClick="{{ aiMenuV.onHistory }}" style="display:flex;align-items:center;gap:8px;padding:5px 10px;border:none;background:transparent;color:inherit;font:inherit;font-size:12.5px;border-radius:5px;cursor:pointer;text-align:left" style-hover="background:color-mix(in srgb,var(--color-text) 7%,transparent)"><span style="flex:1">Run history</span></button>
+          <button onClick="{{ aiMenuV.onClients }}" style="display:flex;align-items:center;gap:8px;padding:5px 10px;border:none;background:transparent;color:inherit;font:inherit;font-size:12.5px;border-radius:5px;cursor:pointer;text-align:left" style-hover="background:color-mix(in srgb,var(--color-text) 7%,transparent)"><span style="flex:1">AI Clients…</span></button>
+        </div>
+      </sc-if>
     </div>
     <button title="Global quick add — Ctrl+Shift+Space" onClick="{{ onGqaBtn }}" style="background:transparent;border:none;color:var(--color-neutral-400);width:28px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:6px" style-hover="background:color-mix(in srgb,var(--color-text) 8%,transparent);color:var(--color-accent)"><svg width="13" height="14" viewBox="0 0 12 14"><path d="M7 1 1.5 8H5.5L4.5 13 10.5 5.5H6.5z" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"></path></svg></button>
     <button title="Global search — Ctrl+Shift+F" onClick="{{ onGlobalSearch }}" style="background:transparent;border:none;color:var(--color-neutral-400);width:28px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:6px" style-hover="background:color-mix(in srgb,var(--color-text) 8%,transparent);color:var(--color-accent)"><svg width="14" height="14" viewBox="0 0 14 14"><circle cx="6" cy="6" r="4.2" fill="none" stroke="currentColor" stroke-width="1.4"></circle><line x1="9.2" y1="9.2" x2="12.8" y2="12.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"></line></svg></button>
@@ -150,7 +180,7 @@ a{color:var(--color-accent)}a:hover{color:var(--color-accent-300)}
     </div>
 
     <!-- center -->
-    <div style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">
+    <div style="flex:1;min-width:300px;display:flex;flex-direction:column;min-height:0">
 
       <sc-if value="{{ viewMain }}" hint-placeholder-val="{{ true }}">
         <div ref="{{ gridRef }}" style="flex:1;min-height:0;display:grid;grid-template-columns:1fr;grid-template-rows:1fr;gap:8px;padding:8px">
@@ -189,6 +219,14 @@ a{color:var(--color-accent)}a:hover{color:var(--color-accent-300)}
 
               <div style="display:flex;align-items:center;gap:6px;padding:8px 8px 4px;flex:none">
                 <input class="input" ref="{{ pane.qaRef }}" placeholder="{{ pane.qaPlaceholder }}" value="{{ pane.qv }}" onChange="{{ pane.onQv }}" onKeyDown="{{ pane.onQaKey }}" style="min-height:30px;font-size:12.5px">
+                <sc-if value="{{ pane.wsChip }}" hint-placeholder-val="{{ false }}">
+                  <button title="{{ pane.wsChip.title }}" onClick="{{ pane.wsChip.onClick }}" style="display:flex;align-items:center;gap:5px;height:30px;padding:0 9px;flex:none;max-width:170px;border:1px solid var(--color-divider);background:transparent;border-radius:7px;cursor:pointer;font:inherit;font-size:10.5px;color:{{ pane.wsChip.c }}" style-hover="border-color:var(--color-accent)">
+                    <sc-if value="{{ pane.wsChip.missing }}" hint-placeholder-val="{{ false }}"><span style="font-size:10px;flex:none">⚠</span></sc-if>
+                    <sc-if value="{{ pane.wsChip.ok }}" hint-placeholder-val="{{ true }}"><svg width="11" height="10" viewBox="0 0 12 10" style="flex:none"><path d="M1 2.2C1 1.5 1.5 1 2.2 1h2.3l1.2 1.5h4.1c.7 0 1.2.5 1.2 1.2v4.1c0 .7-.5 1.2-1.2 1.2H2.2C1.5 9 1 8.5 1 7.8z" fill="none" stroke="currentColor" stroke-width="1.1"></path></svg></sc-if>
+                    <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ pane.wsChip.name }}</span>
+                    <sc-if value="{{ pane.wsChip.git }}" hint-placeholder-val="{{ false }}"><span style="font-size:8.5px;border:1px solid var(--color-divider);border-radius:4px;padding:0 3px;color:var(--color-neutral-500);flex:none">git</span></sc-if>
+                  </button>
+                </sc-if>
                 <button title="Filter this list — Ctrl+F" onClick="{{ pane.onToggleSearch }}" style="background:transparent;border:1px solid {{ pane.searchBd }};color:{{ pane.searchC }};width:30px;height:30px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:7px" style-hover="border-color:var(--color-accent);color:var(--color-accent)"><svg width="13" height="13" viewBox="0 0 14 14"><circle cx="6" cy="6" r="4.2" fill="none" stroke="currentColor" stroke-width="1.4"></circle><line x1="9.2" y1="9.2" x2="12.8" y2="12.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"></line></svg></button>
               </div>
               <sc-if value="{{ pane.searchOpen }}" hint-placeholder-val="{{ false }}">
@@ -295,8 +333,9 @@ a{color:var(--color-accent)}a:hover{color:var(--color-accent-300)}
         <div style="display:flex;align-items:center;gap:2px;padding:8px 8px 0;border-bottom:1px solid var(--color-divider);flex:none">
           <button onClick="{{ detail.onTabD }}" style="border:none;background:transparent;color:{{ detail.dC }};font:inherit;font-size:12.5px;padding:5px 10px 8px;cursor:pointer;box-shadow:{{ detail.dUnder }}">Details</button>
           <button onClick="{{ detail.onTabA }}" style="border:none;background:transparent;color:{{ detail.aC }};font:inherit;font-size:12.5px;padding:5px 10px 8px;cursor:pointer;box-shadow:{{ detail.aUnder }}">Activity</button>
+          <button onClick="{{ detail.onTabAI }}" style="border:none;background:transparent;color:{{ detail.aiTabC }};font:inherit;font-size:12.5px;padding:5px 8px 8px;cursor:pointer;box-shadow:{{ detail.aiTabUnder }}">AI</button>
           <div style="flex:1"></div>
-          <span style="font-size:10px;color:var(--color-neutral-600);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{{ detail.crumbText }}">{{ detail.crumbText }}</span>
+          <span style="font-size:10px;color:var(--color-neutral-600);max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{{ detail.crumbText }}">{{ detail.crumbText }}</span>
           <button title="Close — Esc" onClick="{{ detail.onClose }}" style="border:none;background:transparent;color:var(--color-neutral-500);font-size:12px;width:24px;height:24px;cursor:pointer;border-radius:5px" style-hover="background:color-mix(in srgb,var(--color-text) 8%,transparent);color:inherit">✕</button>
         </div>
         <div style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:13px">
@@ -373,6 +412,203 @@ a{color:var(--color-accent)}a:hover{color:var(--color-accent-300)}
                   <span style="font-size:12px">{{ a.text }}</span>
                 </div>
               </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ detail.tabAI }}" hint-placeholder-val="{{ false }}">
+            <sc-if value="{{ detail.aiLinked }}" hint-placeholder-val="{{ true }}">
+              <div class="field"><label>Actions — run against the linked workspace</label>
+                <div style="display:flex;flex-direction:column;gap:4px">
+                  <sc-for list="{{ detail.aiActs }}" as="aa" hint-placeholder-count="5">
+                    <button onClick="{{ aa.onClick }}" style="display:flex;align-items:center;gap:8px;padding:5px 9px;border:1px solid var(--color-divider);background:transparent;color:inherit;font:inherit;border-radius:6px;cursor:pointer;text-align:left" style-hover="border-color:var(--color-accent)">
+                      <span style="flex:1;display:flex;flex-direction:column;gap:1px"><span style="font-size:12px">{{ aa.nm }}</span><span style="font-size:10px;color:var(--color-neutral-600)">{{ aa.ds }}</span></span>
+                      <span style="font-size:9px;color:var(--color-neutral-600);flex:none">{{ aa.hint }}</span>
+                    </button>
+                  </sc-for>
+                </div>
+              </div>
+              <div class="field"><label>Runs</label>
+                <div style="display:flex;flex-direction:column;gap:4px">
+                  <sc-for list="{{ detail.aiHist }}" as="r" hint-placeholder-count="2">
+                    <div onClick="{{ r.onClick }}" style="display:flex;flex-direction:column;gap:1px;padding:5px 9px;border:1px solid var(--color-divider);border-radius:6px;cursor:pointer" style-hover="border-color:var(--color-accent)">
+                      <div style="display:flex;align-items:center;gap:6px"><span style="font-size:12px">{{ r.action }}</span><span style="flex:1"></span><span style="font-size:9px;color:{{ r.tagC }};border:1px solid color-mix(in srgb,{{ r.tagC }} 45%,transparent);border-radius:999px;padding:0 6px">{{ r.status }}</span></div>
+                      <div style="font-size:10px;color:var(--color-neutral-500)">{{ r.time }} · {{ r.provider }} · {{ r.mode }}</div>
+                    </div>
+                  </sc-for>
+                  <sc-if value="{{ detail.aiHistEmpty }}" hint-placeholder-val="{{ false }}"><div style="font-size:11px;color:var(--color-neutral-600);padding:4px 0">No AI runs yet for this todo.</div></sc-if>
+                </div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ detail.aiUnlinked }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:36px 10px;text-align:center">
+                <span style="font-size:12.5px;color:var(--color-neutral-400)">Link a workspace to use AI</span>
+                <span style="font-size:11px;color:var(--color-neutral-600);max-width:230px;line-height:1.5">Connect this list to a project directory so the agent can work on this todo.</span>
+                <button class="btn btn-primary" style="font-size:12px;margin-top:2px" onClick="{{ detail.onLinkWs }}">Link Workspace…</button>
+              </div>
+            </sc-if>
+          </sc-if>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- AI run panel -->
+    <sc-if value="{{ aiPanelV }}" hint-placeholder-val="{{ false }}">
+      <div style="width:336px;flex:none;display:flex;flex-direction:column;border-left:1px solid var(--color-divider);background:var(--color-surface);min-height:0">
+        <div style="display:flex;align-items:center;gap:7px;padding:8px 10px;border-bottom:1px solid var(--color-divider);flex:none">
+          <svg width="12" height="12" viewBox="0 0 12 12" style="color:var(--color-accent);flex:none"><path d="M6 .8 7.3 4.7 11.2 6 7.3 7.3 6 11.2 4.7 7.3 .8 6 4.7 4.7z" fill="currentColor"></path></svg>
+          <span style="font-size:12.5px;font-weight:500">AI</span>
+          <span style="flex:1;min-width:0;font-size:10px;color:var(--color-neutral-600);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{{ aiPanelV.crumbText }}">{{ aiPanelV.crumbText }}</span>
+          <button title="Run history" onClick="{{ aiPanelV.onHistory }}" style="border:none;background:transparent;color:var(--color-neutral-500);width:22px;height:22px;cursor:pointer;border-radius:5px;display:flex;align-items:center;justify-content:center" style-hover="background:color-mix(in srgb,var(--color-text) 8%,transparent);color:inherit"><svg width="12" height="12" viewBox="0 0 12 12"><circle cx="6" cy="6" r="4.6" fill="none" stroke="currentColor" stroke-width="1.1"></circle><path d="M6 3.4V6l1.8 1.2" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"></path></svg></button>
+          <button title="Close — Esc (a running run keeps going)" onClick="{{ aiPanelV.onClose }}" style="border:none;background:transparent;color:var(--color-neutral-500);font-size:12px;width:22px;height:22px;cursor:pointer;border-radius:5px" style-hover="background:color-mix(in srgb,var(--color-text) 8%,transparent);color:inherit">✕</button>
+        </div>
+        <div style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:12px">
+          <sc-if value="{{ aiPanelV.ready }}" hint-placeholder-val="{{ false }}">
+            <div class="field"><label>Task</label><div style="font-size:12.5px;padding:6px 9px;border:1px solid var(--color-divider);border-radius:6px;background:var(--color-bg)">{{ aiPanelV.ready.taskLabel }}</div></div>
+            <div class="field"><label>Action</label>
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <sc-for list="{{ aiPanelV.ready.actions }}" as="a" hint-placeholder-count="5">
+                  <button onClick="{{ a.onClick }}" style="display:flex;flex-direction:column;gap:1px;padding:5px 9px;border:1px solid {{ a.bd }};background:{{ a.bg }};color:inherit;font:inherit;border-radius:6px;cursor:pointer;text-align:left" style-hover="border-color:var(--color-accent)">
+                    <span style="font-size:12px">{{ a.nm }}</span><span style="font-size:10px;color:var(--color-neutral-600)">{{ a.ds }}</span>
+                  </button>
+                </sc-for>
+              </div>
+            </div>
+            <sc-if value="{{ aiPanelV.ready.askMode }}" hint-placeholder-val="{{ false }}">
+              <div class="field"><label>Question</label><textarea class="input" rows="2" placeholder="Ask something about this workspace…" value="{{ aiPanelV.ready.ask }}" onChange="{{ aiPanelV.ready.onAsk }}" style="font-size:12px;line-height:1.5"></textarea></div>
+            </sc-if>
+            <div class="field"><label>Provider</label>
+              <select class="input" value="{{ aiPanelV.ready.provVal }}" onChange="{{ aiPanelV.ready.onProv }}" style="min-height:28px;font-size:12px"><option value="claude">Claude Code</option><option value="codex">Codex</option></select>
+              <div style="display:flex;align-items:center;gap:6px;margin-top:3px"><span style="font-size:10.5px;color:{{ aiPanelV.ready.provHintC }}">{{ aiPanelV.ready.provHintTxt }}</span><span style="flex:1"></span><button class="btn btn-ghost" style="font-size:10.5px;padding:1px 5px" onClick="{{ aiPanelV.ready.onClients }}">AI Clients…</button></div>
+            </div>
+            <div class="field"><label>Mode</label>
+              <div style="display:flex;flex-direction:column;gap:2px">
+                <sc-for list="{{ aiPanelV.ready.modes }}" as="m" hint-placeholder-count="3">
+                  <div style="display:flex;align-items:center;gap:7px;font-size:11.5px;color:{{ m.c }}"><span style="font-size:9px;width:9px">{{ m.dot }}</span><span>{{ m.nm }}</span><span style="font-size:10px;opacity:.75">— {{ m.ds }}</span></div>
+                </sc-for>
+              </div>
+            </div>
+            <sc-if value="{{ aiPanelV.ready.brief }}" hint-placeholder-val="{{ false }}">
+              <div class="field"><label>AI Brief — from workspace settings</label><div style="font-size:10.5px;color:var(--color-neutral-500);line-height:1.5;white-space:pre-wrap;max-height:64px;overflow:hidden">{{ aiPanelV.ready.brief }}</div></div>
+            </sc-if>
+            <button class="btn btn-primary" style="font-size:12.5px" onClick="{{ aiPanelV.ready.onRun }}">{{ aiPanelV.ready.runLabel }}</button>
+          </sc-if>
+          <sc-if value="{{ aiPanelV.running }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="width:12px;height:12px;flex:none;border-radius:50%;border:1.5px solid var(--color-accent);border-top-color:transparent;animation:mtSpin .8s linear infinite"></span>
+              <span style="font-size:12.5px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ aiPanelV.running.label }}</span>
+              <span style="font-size:11px;color:var(--color-neutral-500);font-variant-numeric:tabular-nums">{{ aiPanelV.running.elapsed }}</span>
+            </div>
+            <div style="font-family:ui-monospace,Consolas,monospace;font-size:10.5px;line-height:1.6;color:var(--color-neutral-500);background:var(--color-bg);border-radius:6px;padding:8px 10px;min-height:70px">
+              <sc-for list="{{ aiPanelV.running.lines }}" as="ln" hint-placeholder-count="3"><div>{{ ln }}</div></sc-for>
+            </div>
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-ghost" style="font-size:11.5px;padding:3px 8px" onClick="{{ aiPanelV.running.onDet }}">{{ aiPanelV.running.detLabel }}</button>
+              <span style="flex:1"></span>
+              <button class="btn btn-secondary" style="font-size:11.5px;padding:3px 10px" onClick="{{ aiPanelV.running.onCancel }}">Cancel</button>
+            </div>
+            <div style="font-size:10px;color:var(--color-neutral-600)">You can keep working — closing this panel does not stop the run.</div>
+          </sc-if>
+          <sc-if value="{{ aiPanelV.result }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;gap:6px"><span style="font-size:11px;color:#7cc98f">✓</span><span style="font-size:12.5px;font-weight:500">{{ aiPanelV.result.action }}</span><span style="flex:1"></span><span style="font-size:10px;color:var(--color-neutral-500)">{{ aiPanelV.result.statusLine }}</span></div>
+            <sc-if value="{{ aiPanelV.result.question }}" hint-placeholder-val="{{ false }}"><div class="field"><label>Question</label><div style="font-size:11.5px;color:var(--color-neutral-400);line-height:1.5">{{ aiPanelV.result.question }}</div></div></sc-if>
+            <sc-if value="{{ aiPanelV.result.verdict }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:2px;border:1px solid color-mix(in srgb,{{ aiPanelV.result.verdictC }} 40%,transparent);border-radius:7px;padding:8px 10px">
+                <span style="font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-500)">Verdict</span>
+                <span style="font-size:13px;font-weight:500;color:{{ aiPanelV.result.verdictC }}">{{ aiPanelV.result.verdict }}</span>
+                <span style="font-size:10.5px;color:var(--color-neutral-500)">{{ aiPanelV.result.verdictWhy }}</span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ aiPanelV.result.summary }}" hint-placeholder-val="{{ false }}"><div class="field"><label>Summary</label><div style="font-size:12px;line-height:1.55">{{ aiPanelV.result.summary }}</div></div></sc-if>
+            <sc-if value="{{ aiPanelV.result.answer }}" hint-placeholder-val="{{ false }}"><div class="field"><label>Answer</label><div style="font-size:12px;line-height:1.55">{{ aiPanelV.result.answer }}</div></div></sc-if>
+            <sc-if value="{{ aiPanelV.result.hasChecks }}" hint-placeholder-val="{{ false }}">
+              <div class="field"><label>Checks</label>
+                <div style="display:flex;flex-direction:column;gap:3px">
+                  <sc-for list="{{ aiPanelV.result.checks }}" as="c" hint-placeholder-count="4"><div style="display:flex;gap:7px;font-size:11.5px;line-height:1.45"><span style="color:{{ c.c }};flex:none">{{ c.g }}</span><span style="color:var(--color-neutral-400)">{{ c.txt }}</span></div></sc-for>
+                </div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ aiPanelV.result.hasMapping }}" hint-placeholder-val="{{ false }}">
+              <div class="field"><label>Todos ↔ workspace</label>
+                <div style="display:flex;flex-direction:column;gap:4px">
+                  <sc-for list="{{ aiPanelV.result.mapping }}" as="mp" hint-placeholder-count="4"><div style="display:flex;align-items:baseline;gap:8px"><span style="flex:1;font-size:11.5px;color:var(--color-neutral-400)">{{ mp.t }}</span><span style="font-size:10px;color:{{ mp.c }};flex:none">{{ mp.v }}</span></div></sc-for>
+                </div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ aiPanelV.result.hasFindings }}" hint-placeholder-val="{{ false }}">
+              <div class="field"><label>Findings</label>
+                <div style="display:flex;flex-direction:column;gap:3px">
+                  <sc-for list="{{ aiPanelV.result.findings }}" as="f" hint-placeholder-count="3"><div style="font-size:11.5px;color:var(--color-neutral-400);line-height:1.45;padding-left:9px;border-left:2px solid var(--color-divider)">{{ f }}</div></sc-for>
+                </div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ aiPanelV.result.rec }}" hint-placeholder-val="{{ false }}">
+              <div style="border:1px solid color-mix(in srgb,var(--color-accent) 40%,transparent);border-radius:7px;padding:9px 10px;display:flex;flex-direction:column;gap:4px">
+                <span style="font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-500)">Recommendation</span>
+                <span style="font-size:12.5px;font-weight:500">{{ aiPanelV.result.rec.label }}</span>
+                <span style="font-size:10.5px;color:var(--color-neutral-500)">{{ aiPanelV.result.rec.why }}</span>
+                <button class="btn btn-secondary" style="font-size:11.5px;margin-top:3px;align-self:flex-start" onClick="{{ aiPanelV.result.rec.onApply }}">Apply Recommendation</button>
+              </div>
+            </sc-if>
+            <sc-if value="{{ aiPanelV.result.hasProps }}" hint-placeholder-val="{{ false }}">
+              <div class="field"><label>{{ aiPanelV.result.propsLabel }}</label>
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+                  <span style="flex:1;font-size:10px;color:var(--color-neutral-600)">{{ aiPanelV.result.note }}</span>
+                  <sc-if value="{{ aiPanelV.result.hasPending }}" hint-placeholder-val="{{ true }}"><button class="btn btn-ghost" style="font-size:10px;padding:1px 5px;flex:none" onClick="{{ aiPanelV.result.onSelAll }}">{{ aiPanelV.result.selAllLabel }}</button></sc-if>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:2px">
+                  <sc-for list="{{ aiPanelV.result.props }}" as="p" hint-placeholder-count="3">
+                    <div onClick="{{ p.onToggle }}" onKeyDown="{{ p.onKey }}" tabIndex="0" role="checkbox" style="display:flex;align-items:center;gap:8px;min-height:26px;padding:2px 4px;border-radius:5px;cursor:pointer;opacity:{{ p.op }}" style-hover="background:color-mix(in srgb,var(--color-text) 5%,transparent)" style-focus="outline:2px solid var(--color-accent);outline-offset:-2px">
+                      <span style="width:13px;height:13px;flex:none;border-radius:3.5px;border:1.5px solid {{ p.bd }};background:{{ p.bg }};color:var(--color-accent-100);font-size:8px;display:flex;align-items:center;justify-content:center">{{ p.glyph }}</span>
+                      <span style="font-size:8.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--color-neutral-500);flex:none;width:72px">{{ p.kind }}</span>
+                      <span style="flex:1;font-size:11.5px;line-height:1.35">{{ p.label }}</span>
+                      <span style="font-size:9px;color:#7cc98f;flex:none">{{ p.tail }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+                <button class="btn btn-primary" style="font-size:12px;margin-top:6px;opacity:{{ aiPanelV.result.applyOp }}" onClick="{{ aiPanelV.result.onApply }}">{{ aiPanelV.result.applyLabel }}</button>
+              </div>
+            </sc-if>
+            <sc-if value="{{ aiPanelV.result.hasLog }}" hint-placeholder-val="{{ false }}">
+              <button class="btn btn-ghost" style="font-size:11px;padding:2px 6px;align-self:flex-start" onClick="{{ aiPanelV.result.onDet }}">{{ aiPanelV.result.detLabel }}</button>
+              <sc-if value="{{ aiPanelV.result.showDet }}" hint-placeholder-val="{{ false }}">
+                <div style="font-family:ui-monospace,Consolas,monospace;font-size:10px;line-height:1.6;color:var(--color-neutral-500);background:var(--color-bg);border-radius:6px;padding:8px 10px">
+                  <sc-for list="{{ aiPanelV.result.log }}" as="ln" hint-placeholder-count="3"><div>{{ ln }}</div></sc-for>
+                </div>
+              </sc-if>
+            </sc-if>
+            <button class="btn btn-ghost" style="font-size:11.5px;align-self:flex-start;padding:2px 6px" onClick="{{ aiPanelV.result.onNew }}">New run</button>
+          </sc-if>
+          <sc-if value="{{ aiPanelV.failed }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;gap:7px"><span style="font-size:12px;color:#e0a36c">⚠</span><span style="font-size:13px;font-weight:500">{{ aiPanelV.failed.title }}</span></div>
+            <div style="font-size:11.5px;color:var(--color-neutral-400);line-height:1.55">{{ aiPanelV.failed.body }}</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-primary" style="font-size:12px" onClick="{{ aiPanelV.failed.onRetry }}">Retry</button>
+              <sc-if value="{{ aiPanelV.failed.canSet }}" hint-placeholder-val="{{ false }}"><button class="btn btn-secondary" style="font-size:12px" onClick="{{ aiPanelV.failed.onSettings }}">Open AI Clients…</button></sc-if>
+            </div>
+          </sc-if>
+          <sc-if value="{{ aiPanelV.history }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;gap:8px"><span style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-500)">Runs — {{ aiPanelV.history.scope }}</span><span style="flex:1"></span><button class="btn btn-ghost" style="font-size:11px;padding:2px 6px" onClick="{{ aiPanelV.history.onNew }}">New run</button></div>
+            <sc-for list="{{ aiPanelV.history.rows }}" as="r" hint-placeholder-count="3">
+              <div onClick="{{ r.onClick }}" style="display:flex;flex-direction:column;gap:1px;padding:6px 9px;border:1px solid var(--color-divider);border-radius:6px;cursor:pointer" style-hover="border-color:var(--color-accent)">
+                <div style="display:flex;align-items:center;gap:6px"><span style="font-size:12px">{{ r.action }}</span><span style="flex:1"></span><span style="font-size:9px;color:{{ r.tagC }};border:1px solid color-mix(in srgb,{{ r.tagC }} 45%,transparent);border-radius:999px;padding:0 6px">{{ r.status }}</span></div>
+                <div style="font-size:10px;color:var(--color-neutral-500)">{{ r.time }} · {{ r.provider }} · {{ r.mode }}</div>
+              </div>
+            </sc-for>
+            <sc-if value="{{ aiPanelV.history.empty }}" hint-placeholder-val="{{ false }}"><div style="font-size:11.5px;color:var(--color-neutral-600);text-align:center;padding:20px 0">No AI runs yet for {{ aiPanelV.history.scope }}.</div></sc-if>
+          </sc-if>
+          <sc-if value="{{ aiPanelV.unlinked }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:44px 14px;text-align:center">
+              <svg width="22" height="22" viewBox="0 0 12 12" style="color:var(--color-neutral-700)"><path d="M6 .8 7.3 4.7 11.2 6 7.3 7.3 6 11.2 4.7 7.3 .8 6 4.7 4.7z" fill="currentColor"></path></svg>
+              <span style="font-size:13px;color:var(--color-neutral-400)">Link a workspace to use AI</span>
+              <span style="font-size:11px;color:var(--color-neutral-600);max-width:240px;line-height:1.5">Connect this list to a project directory so the agent can investigate, plan, implement and verify todos against the real code.</span>
+              <button class="btn btn-primary" style="font-size:12px;margin-top:4px" onClick="{{ aiPanelV.unlinked.onLink }}">Link Workspace…</button>
+            </div>
+          </sc-if>
+          <sc-if value="{{ aiPanelV.missing }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:8px;padding:22px 4px">
+              <div style="display:flex;align-items:center;gap:7px"><span style="font-size:12px;color:#e0a36c">⚠</span><span style="font-size:13px;font-weight:500">Workspace not found</span></div>
+              <div style="font-family:ui-monospace,Consolas,monospace;font-size:10.5px;color:var(--color-neutral-500);word-break:break-all">{{ aiPanelV.missing.path }}</div>
+              <div style="font-size:11px;color:var(--color-neutral-600);line-height:1.5">The linked directory was moved or deleted. The todo list keeps working — only AI needs the workspace.</div>
+              <div style="display:flex;gap:6px"><button class="btn btn-primary" style="font-size:12px" onClick="{{ aiPanelV.missing.onLocate }}">Locate…</button><button class="btn btn-secondary" style="font-size:12px" onClick="{{ aiPanelV.missing.onUnlink }}">Unlink</button></div>
             </div>
           </sc-if>
         </div>
@@ -523,9 +759,97 @@ a{color:var(--color-accent)}a:hover{color:var(--color-accent-300)}
           <div style="display:flex;justify-content:space-between;gap:10px"><span>Undo</span><span style="color:var(--color-neutral-500)">Ctrl+Z</span></div>
           <div style="display:flex;justify-content:space-between;gap:10px"><span>Todo text size</span><span style="color:var(--color-neutral-500)">Ctrl+Wheel</span></div>
           <div style="display:flex;justify-content:space-between;gap:10px"><span>Close popup / panel</span><span style="color:var(--color-neutral-500)">Esc</span></div>
+          <div style="display:flex;justify-content:space-between;gap:10px"><span>AI panel (todo / list)</span><span style="color:var(--color-neutral-500)">Ctrl+Shift+A</span></div>
           <div style="display:flex;justify-content:space-between;gap:10px"><span>This dialog</span><span style="color:var(--color-neutral-500)">F1</span></div>
         </div>
         <div class="dialog-actions"><button class="btn btn-primary" style="font-size:12px" onClick="{{ onShortcutsClose }}">Done</button></div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ wsDlgV }}" hint-placeholder-val="{{ false }}">
+    <div class="dialog-backdrop" onClick="{{ wsDlgV.onClose }}" style="z-index:75">
+      <div class="dialog" onClick="{{ stop }}" style="width:min(440px,100%)">
+        <div class="dialog-title" style="font-size:16px">Workspace — {{ wsDlgV.name }}</div>
+        <sc-if value="{{ wsDlgV.unlinked }}" hint-placeholder-val="{{ false }}">
+          <div style="font-size:11.5px;color:var(--color-neutral-500);line-height:1.55">No directory is linked to this list. Linking one lets the AI clients read — and on explicit Execute runs, modify — that project. Todos work the same either way.</div>
+          <div class="dialog-actions"><button class="btn btn-secondary" style="font-size:12px" onClick="{{ wsDlgV.onClose }}">Cancel</button><button class="btn btn-primary" style="font-size:12px" onClick="{{ wsDlgV.onLink }}">Link Workspace…</button></div>
+        </sc-if>
+        <sc-if value="{{ wsDlgV.linked }}" hint-placeholder-val="{{ true }}">
+          <div class="field"><label>Directory</label>
+            <div style="display:flex;gap:6px"><input class="input" readOnly value="{{ wsDlgV.path }}" style="min-height:28px;font-size:11.5px;font-family:ui-monospace,Consolas,monospace"><button class="btn btn-secondary" style="font-size:11.5px;flex:none" onClick="{{ wsDlgV.onChangeDir }}">Change…</button></div>
+            <sc-if value="{{ wsDlgV.missing }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:center;gap:6px;margin-top:5px"><span style="font-size:11px;color:#e0a36c">⚠ Directory not found</span><span style="flex:1"></span><button class="btn btn-ghost" style="font-size:11px;padding:1px 6px" onClick="{{ wsDlgV.onLocate }}">Locate…</button></div>
+            </sc-if>
+            <sc-if value="{{ wsDlgV.okState }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;gap:12px;margin-top:5px;font-size:10.5px;color:var(--color-neutral-500)"><span>{{ wsDlgV.typeLabel }}</span><span>{{ wsDlgV.aiLine }}</span></div>
+            </sc-if>
+          </div>
+          <div class="field"><label>AI Brief — optional context added to every run</label>
+            <textarea class="input" rows="3" value="{{ wsDlgV.brief }}" onChange="{{ wsDlgV.onBrief }}" placeholder="Build commands, conventions, no-go areas… plain text" style="font-size:11.5px;line-height:1.5"></textarea>
+          </div>
+          <div class="field"><label>Preferred AI client</label>
+            <select class="input" value="{{ wsDlgV.provVal }}" onChange="{{ wsDlgV.onProv }}" style="min-height:28px;font-size:12px;width:auto">
+              <option value="">{{ wsDlgV.defName }}</option><option value="claude">Claude Code</option><option value="codex">Codex</option>
+            </select>
+          </div>
+          <div class="dialog-actions">
+            <button class="btn btn-ghost" style="font-size:12px;color:#e07b7b" onClick="{{ wsDlgV.onUnlink }}">Unlink</button>
+            <button class="btn btn-primary" style="font-size:12px" onClick="{{ wsDlgV.onClose }}">Done</button>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ aiClientsV }}" hint-placeholder-val="{{ false }}">
+    <div class="dialog-backdrop" onClick="{{ aiClientsV.onClose }}" style="z-index:78">
+      <div class="dialog" onClick="{{ stop }}" style="width:min(480px,100%)">
+        <div class="dialog-title" style="font-size:16px">AI Clients</div>
+        <div style="font-size:11px;color:var(--color-neutral-500);margin-top:-6px;line-height:1.5">myTODO drives locally installed AI CLIs. It never stores accounts or API keys — authentication happens in each client's own CLI.</div>
+        <div style="border:1px solid var(--color-divider);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:7px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:13px;font-weight:500">{{ aiClientsV.claude.name }}</span>
+            <span style="font-size:11px;color:{{ aiClientsV.claude.stC }}">{{ aiClientsV.claude.glyph }} {{ aiClientsV.claude.stTxt }}</span>
+            <span style="flex:1"></span>
+            <span style="font-size:10.5px;color:var(--color-neutral-500)">{{ aiClientsV.claude.version }}</span>
+            <button onClick="{{ aiClientsV.claude.onEnable }}" style="display:flex;align-items:center;gap:5px;border:none;background:transparent;color:inherit;font:inherit;font-size:11px;cursor:pointer;padding:0"><span style="width:13px;height:13px;border-radius:3.5px;border:1.5px solid {{ aiClientsV.claude.enBd }};background:{{ aiClientsV.claude.enBg }};color:var(--color-accent-100);font-size:8px;display:flex;align-items:center;justify-content:center">{{ aiClientsV.claude.enGlyph }}</span>Enabled</button>
+          </div>
+          <div style="display:flex;gap:6px">
+            <input class="input" value="{{ aiClientsV.claude.path }}" onChange="{{ aiClientsV.claude.onPath }}" placeholder="Executable path" style="min-height:26px;font-size:11px;font-family:ui-monospace,Consolas,monospace">
+            <button class="btn btn-secondary" style="font-size:11px;flex:none" onClick="{{ aiClientsV.claude.onBrowse }}">Browse…</button>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <button class="btn btn-ghost" style="font-size:11px;padding:2px 8px" onClick="{{ aiClientsV.claude.onDetect }}">Auto Detect</button>
+            <button class="btn btn-ghost" style="font-size:11px;padding:2px 8px" onClick="{{ aiClientsV.claude.onTest }}">Test</button>
+            <span style="flex:1"></span>
+          </div>
+          <sc-if value="{{ aiClientsV.claude.msg }}" hint-placeholder-val="{{ false }}"><div style="font-size:10.5px;color:#e0a36c;line-height:1.5">{{ aiClientsV.claude.msg }}</div></sc-if>
+        </div>
+        <div style="border:1px solid var(--color-divider);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:7px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:13px;font-weight:500">{{ aiClientsV.codex.name }}</span>
+            <span style="font-size:11px;color:{{ aiClientsV.codex.stC }}">{{ aiClientsV.codex.glyph }} {{ aiClientsV.codex.stTxt }}</span>
+            <span style="flex:1"></span>
+            <span style="font-size:10.5px;color:var(--color-neutral-500)">{{ aiClientsV.codex.version }}</span>
+            <button onClick="{{ aiClientsV.codex.onEnable }}" style="display:flex;align-items:center;gap:5px;border:none;background:transparent;color:inherit;font:inherit;font-size:11px;cursor:pointer;padding:0"><span style="width:13px;height:13px;border-radius:3.5px;border:1.5px solid {{ aiClientsV.codex.enBd }};background:{{ aiClientsV.codex.enBg }};color:var(--color-accent-100);font-size:8px;display:flex;align-items:center;justify-content:center">{{ aiClientsV.codex.enGlyph }}</span>Enabled</button>
+          </div>
+          <div style="display:flex;gap:6px">
+            <input class="input" value="{{ aiClientsV.codex.path }}" onChange="{{ aiClientsV.codex.onPath }}" placeholder="Executable path" style="min-height:26px;font-size:11px;font-family:ui-monospace,Consolas,monospace">
+            <button class="btn btn-secondary" style="font-size:11px;flex:none" onClick="{{ aiClientsV.codex.onBrowse }}">Browse…</button>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <button class="btn btn-ghost" style="font-size:11px;padding:2px 8px" onClick="{{ aiClientsV.codex.onDetect }}">Auto Detect</button>
+            <button class="btn btn-ghost" style="font-size:11px;padding:2px 8px" onClick="{{ aiClientsV.codex.onTest }}">Test</button>
+            <span style="flex:1"></span>
+          </div>
+          <sc-if value="{{ aiClientsV.codex.msg }}" hint-placeholder-val="{{ false }}"><div style="font-size:10.5px;color:#e0a36c;line-height:1.5">{{ aiClientsV.codex.msg }}</div></sc-if>
+        </div>
+        <div class="field"><label>Default AI client</label>
+          <select class="input" value="{{ aiClientsV.defVal }}" onChange="{{ aiClientsV.onDef }}" style="min-height:28px;font-size:12px;width:auto"><option value="claude">Claude Code</option><option value="codex">Codex</option></select>
+          <div style="font-size:10px;color:var(--color-neutral-600);margin-top:3px">A workspace can override this in its settings.</div>
+        </div>
+        <div class="dialog-actions"><button class="btn btn-primary" style="font-size:12px" onClick="{{ aiClientsV.onClose }}">Done</button></div>
       </div>
     </div>
   </sc-if>
@@ -541,7 +865,7 @@ a{color:var(--color-accent)}a:hover{color:var(--color-accent-300)}
   </sc-if>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;compact&quot;,&quot;cozy&quot;],&quot;default&quot;:&quot;compact&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Workspace&quot;},&quot;showStatusbar&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Workspace&quot;}}">
+<script type="text/x-dc" data-dc-script data-props="{&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;compact&quot;,&quot;cozy&quot;],&quot;default&quot;:&quot;cozy&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Workspace&quot;},&quot;showStatusbar&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Workspace&quot;}}">
 class Component extends DCLogic {
   constructor(p){
     super(p);
@@ -549,10 +873,15 @@ class Component extends DCLogic {
     this.CYCLE={open:'progress',progress:'done',done:'open',cancelled:'open'};
     this.PAL=[['#9397ab','Neutral'],['#e07b7b','Red'],['#e0a36c','Orange'],['#d4c26a','Yellow'],['#7cc98f','Green'],['#6ca3e0','Blue'],['#9184d9','Purple'],['#75798c','Gray']];
     this.LIGHT={'--color-bg':'#eceef5','--color-surface':'#f9fafd','--color-text':'#262837','--color-divider':'rgba(38,40,55,.14)','--color-accent':'#6a5cc4','--color-accent-300':'#544a8e','--color-accent-100':'#3c3474','--color-accent-800':'#dcd7fb','--color-neutral-300':'#3f424d','--color-neutral-400':'#4c4f5e','--color-neutral-500':'#6d7186','--color-neutral-600':'#8d91a4','--color-neutral-700':'#b0b3c2','--color-neutral-900':'#dfe2ec','--shadow-sm':'0 0 0 1px #d5d8e4','--shadow-md':'0 0 0 1px #cdd1df, 0 6px 18px rgba(35,38,60,.14)','--shadow-lg':'0 0 0 1px #b9bdd0, 0 16px 40px rgba(35,38,60,.2)'};
+    this.AI_TODO=[['investigate','Investigate','Read the linked workspace and report what is actually going on'],['break','Break into Subtasks','Propose a concrete subtask checklist for this todo'],['plan','Plan Implementation','Draft an implementation plan against the real code'],['implement','Implement','Make the change in the workspace files'],['verify','Verify','Check with evidence whether the todo is actually done']];
+    this.AI_WS=[['analyze','Analyze Workspace','Summarize the state of the linked directory'],['suggest','Suggest Todos','Propose todos from the workspace state'],['reconcile','Reconcile Todos ↔ Workspace','Compare this list against reality'],['ask','Ask Workspace…','One question, one answer — read only']];
+    this.AI_MODE={investigate:'analyze',verify:'analyze',analyze:'analyze',suggest:'analyze',reconcile:'analyze',ask:'analyze',break:'plan',plan:'plan',implement:'execute'};
+    this.MODES={analyze:['Analyze','read only'],plan:['Plan','read only'],execute:['Execute','may modify workspace']};
+    this.CLIENT_NAMES={claude:'Claude Code',codex:'Codex'};
     const now=Date.now(),H=36e5,D=864e5;
     const T=(id,listId,groupId,title,status,o)=>Object.assign({id,listId,groupId,title,status,desc:'',emoji:'',color:null,pinLocal:false,pinGlobal:false,subtasks:[],archived:false,trashed:false,created:now-2*D,updated:now-3*H,activity:[{t:now-2*D,x:'Created'}]},o||{});
     this.state={
-      lists:[{id:'inbox',name:'Inbox',emoji:'📥',fixed:true},{id:'conf',name:'Conference App',emoji:'🎤'},{id:'ai',name:'AI Todo',emoji:'🤖'},{id:'server',name:'Home Server',emoji:'🖥️'},{id:'rail',name:'Railway Simulator',emoji:'🚂'},{id:'misc',name:'Misc',emoji:'🧺'}],
+      lists:[{id:'inbox',name:'Inbox',emoji:'📥',fixed:true},{id:'conf',name:'Conference App',emoji:'🎤',ws:{path:'C:\\Projects\\conference',type:'git',brief:'Monorepo: backend/ (Node), app/ (React Native). Run tests with `pnpm test`. Never touch infra/.',provider:null,missing:false}},{id:'ai',name:'AI Todo',emoji:'🤖',ws:{path:'C:\\Projects\\ai-todo',type:'generic',brief:'',provider:null,missing:false}},{id:'server',name:'Home Server',emoji:'🖥️'},{id:'rail',name:'Railway Simulator',emoji:'🚂',ws:{path:'D:\\Games\\railsim-mods',type:'generic',brief:'',provider:null,missing:true}},{id:'misc',name:'Misc',emoji:'🧺'}],
       groups:[
         {id:'g1',listId:'conf',parentId:null,name:'Backend',emoji:''},
         {id:'g2',listId:'conf',parentId:'g1',name:'Authentication',emoji:'🔐'},
@@ -587,13 +916,15 @@ class Component extends DCLogic {
         T('t21','misc',null,'Prototype: voice capture for quick add','open',{trashed:true}),
         T('t22','misc',null,'Back up phone photos','done',{archived:true})],
       customLabels:[{hex:'#e0567a',name:'Fontos'},{hex:'#d98a3d',name:'Főnöknek'},{hex:'#5abfa6',name:'Saját'}],
+      aiClients:{claude:{enabled:true,status:'detected',path:'C:\\Users\\dev\\.local\\bin\\claude.exe',version:'2.1.4',msg:''},codex:{enabled:false,status:'notfound',path:'',version:'',msg:''}},defaultClient:'claude',aiRuns:[],
       layout:'1',
       panes:[{listId:'conf',qv:'',qs:'',searchOpen:false,pickerOpen:false},{listId:'ai',qv:'',qs:'',searchOpen:false,pickerOpen:false},{listId:'inbox',qv:'',qs:'',searchOpen:false,pickerOpen:false},{listId:'server',qv:'',qs:'',searchOpen:false,pickerOpen:false}],
       activePane:0,view:'main',selectedId:'t1',detailOpen:true,detailTab:'details',
       theme:'dark',scale:100,todoFs:13,pinsOpen:true,collapsed:{},archOpen:{},
       palette:null,gsearch:null,gqa:null,ctx:null,labelMgr:false,scalePop:false,menu:null,shortcuts:false,
-      renaming:null,subDraft:'',drag:null,drop:null,toastMsg:null};
+      renaming:null,subDraft:'',drag:null,drop:null,toastMsg:null,aiPanel:null,aiMenu:false,wsDlg:null,aiClientsDlg:false};
     this.undoStack=[];this.seq=100;this.qaEls=[];
+    this.state.aiRuns=[{id:'r1',todoId:'t1',listId:'conf',provider:'claude',action:'investigate',mode:'Analyze',status:'completed',t:now-4*H,elapsed:'2m 08s',elapsedS:128,log:[],res:this.aiResult('investigate'),err:null,ask:''},{id:'r2',todoId:'t1',listId:'conf',provider:'claude',action:'plan',mode:'Plan',status:'failed',t:now-3*H,elapsed:'0m 12s',elapsedS:12,log:[],res:null,err:'Provider error — Claude Code exited unexpectedly (exit code 1).',ask:''},{id:'r3',todoId:null,listId:'conf',provider:'claude',action:'analyze',mode:'Analyze',status:'completed',t:now-26*H,elapsed:'3m 41s',elapsedS:221,log:[],res:this.aiResult('analyze'),err:null,ask:''}];
     this.rootRef=(el)=>{this._root=el;this.applyChrome()};
     this.gridRef=(el)=>{this._grid=el;this.applyChrome()};
     this.stop=(e)=>e.stopPropagation();
@@ -605,8 +936,15 @@ class Component extends DCLogic {
     window.addEventListener('wheel',this._wheel,{passive:false});
     this.applyChrome();
   }
-  componentWillUnmount(){window.removeEventListener('keydown',this._key);window.removeEventListener('wheel',this._wheel);clearTimeout(this._tt)}
-  componentDidUpdate(){this.applyChrome()}
+  componentWillUnmount(){window.removeEventListener('keydown',this._key);window.removeEventListener('wheel',this._wheel);clearTimeout(this._tt);this.stopTimers()}
+  componentDidUpdate(){this.applyChrome();
+    const s=this.state;const narrow=(window.innerWidth/(s.scale/100))<1250;
+    const aiOpen=!!s.aiPanel;const detOpen=!!(s.detailOpen&&s.selectedId&&s.view==='main');
+    if(narrow&&aiOpen&&detOpen){
+      if(aiOpen&&!this._hadAi)this.setState({detailOpen:false});
+      else if(detOpen&&!this._hadDet)this.setState({aiPanel:null});
+      else this.setState({detailOpen:false})}
+    this._hadAi=aiOpen;this._hadDet=detOpen}
   applyChrome(){
     const s=this.state;
     if(this._root){this._root.style.zoom=String(s.scale/100);this._root.style.setProperty('--tfs',s.todoFs+'px');this._root.style.setProperty('--rowh',(this.props.density==='cozy')?'36px':'30px')}
@@ -668,6 +1006,7 @@ class Component extends DCLogic {
       t.groupId?mk('Move up one level',()=>{this.moveUp(t.id);this.setState({ctx:null})},'Alt+←'):{item:true,label:'Move up one level',hint:'at root',c:'var(--color-neutral-600)',onClick:()=>{}},
       mk('Move to…',()=>this.setState(s=>({ctx:{...s.ctx,items:this.moveItems(t)}}))),
       mk('Duplicate',()=>this.duplicate(t.id)),
+      mk('AI actions…',()=>this.setState(st=>({ctx:{...st.ctx,items:this.aiCtxItems(t)}}))),
       {sep:true},
       mk(t.archived?'Restore from archive':'Archive',()=>{this.setArchived(t.id,!t.archived);this.setState({ctx:null})}),
       mk('Delete',()=>this.trashTodo(t.id),'Del','#e07b7b')];
@@ -692,18 +1031,24 @@ class Component extends DCLogic {
       mk('Rename',()=>this.setState({renaming:{type:'list',id:l.id,v:(l.emoji?l.emoji+' ':'')+l.name},ctx:null}),'F2'),
       mk('New group',()=>this.addGroup(l.id,null)),
       {sep:true},
+      l.ws?mk('Workspace settings…',()=>this.setState({wsDlg:l.id,ctx:null})):mk('Link Workspace…',()=>this.linkWs(l.id)),
+      l.ws?mk('AI actions…',()=>this.setState(st=>({ctx:{...st.ctx,items:this.AI_WS.map(([id,nm])=>({item:true,label:nm,hint:id==='ask'?'read only':'',c:'inherit',onClick:()=>this.openAi({listId:l.id,todoId:null,action:id})}))}}))):{item:true,label:'AI actions…',hint:'link a workspace first',c:'var(--color-neutral-600)',onClick:()=>{}},
+      {sep:true},
       l.fixed?{item:true,label:'Delete list',hint:'Inbox is permanent',c:'var(--color-neutral-600)',onClick:()=>{}}:mk('Delete list',()=>this.delList(l.id),'','#e07b7b')];
     this.showCtx(e,items)}
   showCtx(e,items){const z=this.zf();const x=Math.min(e.clientX/z,(window.innerWidth/z)-230);const y=Math.min(e.clientY/z,(window.innerHeight/z)-Math.min(items.length*30+20,380));this.setState({ctx:{x,y,items}})}
   escapeKey(){const s=this.state;
-    if(s.menu)return this.setState({menu:null});
+    if(s.menu||s.aiMenu)return this.setState({menu:null,aiMenu:false});
     if(s.shortcuts)return this.setState({shortcuts:false});
     if(s.ctx)return this.setState({ctx:null});
     if(s.palette)return this.setState({palette:null});
     if(s.gsearch)return this.setState({gsearch:null});
     if(s.gqa)return this.setState({gqa:null});
     if(s.labelMgr)return this.setState({labelMgr:false});
+    if(s.wsDlg)return this.setState({wsDlg:null});
+    if(s.aiClientsDlg)return this.setState({aiClientsDlg:false});
     if(s.scalePop)return this.setState({scalePop:false});
+    if(s.aiPanel)return this.closeAi();
     if(s.renaming)return this.setState({renaming:null});
     if(s.panes.some(p=>p.pickerOpen))return this.setState({panes:s.panes.map(p=>({...p,pickerOpen:false}))});
     const ap=s.panes[s.activePane];if(ap&&ap.searchOpen)return this.updPane(s.activePane,{searchOpen:false,qs:''});
@@ -713,6 +1058,7 @@ class Component extends DCLogic {
     if(e.key==='F1'){e.preventDefault();this.setState({shortcuts:!s.shortcuts,menu:null});return}
     if(e.ctrlKey&&e.shiftKey&&e.code==='Space'){e.preventDefault();this.setState({gqa:{v:'',target:'inbox'}});return}
     if(e.ctrlKey&&e.shiftKey&&k==='f'){e.preventDefault();this.setState({gsearch:{q:'',idx:0}});return}
+    if(e.ctrlKey&&e.shiftKey&&k==='a'){e.preventDefault();const p=s.panes[s.activePane];const sel=this.todoById(s.selectedId);this.openAi({listId:p.listId,todoId:(sel&&sel.listId===p.listId&&!sel.trashed)?sel.id:null});return}
     if(e.ctrlKey&&e.shiftKey&&k==='n'){e.preventDefault();this.addList();return}
     if(e.ctrlKey&&!e.shiftKey&&k==='k'){e.preventDefault();this.setState({palette:{q:'',idx:0}});return}
     if(e.ctrlKey&&!e.shiftKey&&k==='f'){e.preventDefault();const p=s.panes[s.activePane];this.updPane(s.activePane,{searchOpen:!p.searchOpen,qs:''});return}
@@ -726,6 +1072,161 @@ class Component extends DCLogic {
     if(e.key==='Delete'&&s.selectedId){this.trashTodo(s.selectedId);return}
     if(e.key==='F2'&&s.selectedId){this.setState({detailOpen:true,detailTab:'details'});setTimeout(()=>{if(this._titleEl){this._titleEl.focus();this._titleEl.select()}},60);return}
     if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();const vis=this._vis||[];if(!vis.length)return;const cur=vis.indexOf(s.selectedId);let ni;if(cur<0)ni=0;else ni=e.key==='ArrowDown'?Math.min(vis.length-1,cur+1):Math.max(0,cur-1);this.setState({selectedId:vis[ni]})}}
+  wsOf(listId){const l=this.state.lists.find(x=>x.id===listId);return l?l.ws:null}
+  actionLabel(id){const a=this.AI_TODO.concat(this.AI_WS).find(x=>x[0]===id);return a?a[1]:id}
+  aiResult(a,P){
+    const sub=(label,ck)=>({kind:'Add subtask',label,checked:ck!==false,apply:{t:'sub'}});
+    const mkTodo=(label,ck)=>({kind:'Create todo',label,checked:ck!==false,apply:{t:'todo'}});
+    switch(a){
+      case 'investigate':return{summary:'The timeout comes from refreshToken(): when the conference wifi drops mid-request, retries are disabled, so the session silently expires and the next API call fails.',findings:['backend/auth/refresh.ts:88 — retries disabled on network errors','Session TTL is 15 min; the average talk slot is 20 min','No regression test covers refresh during an in-flight request'],proposals:[sub('Regression test: refresh during in-flight request'),sub('Enable retry with backoff in refreshToken()'),mkTodo('Update authentication documentation',false)]};
+      case 'break':return{summary:'Four steps, each independently verifiable.',proposals:[sub('Reproduce with network throttling'),sub('Add retry with exponential backoff'),sub('Raise session TTL to 30 min'),sub('Add refresh regression test')],propsLabel:'Proposed Subtasks'};
+      case 'plan':return{summary:'Three-step plan, smallest safe change first. No schema or API changes needed.',findings:['1 — Wrap refreshToken() in retry with exponential backoff (max 3 attempts)','2 — Raise session TTL from 15 to 30 min in config/auth.json','3 — Add refresh.spec.ts regression test for refresh-during-request'],proposals:[sub('Implement plan — steps 1–3'),{kind:'Change status',label:'Open → In Progress',checked:false,apply:{t:'status',to:'progress'}}]};
+      case 'implement':return{summary:'Implemented retry-with-backoff and raised the session TTL. 3 files changed, 1 test added; pnpm test passes (14/14).',findings:['M backend/auth/refresh.ts — retry with exponential backoff','M backend/config/auth.json — TTL 15 → 30 min','A backend/auth/refresh.spec.ts — regression test'],proposals:[{kind:'Change status',label:'In Progress → Done',checked:true,apply:{t:'status',to:'done'}},mkTodo('Update authentication documentation',false)]};
+      case 'verify':return{verdict:'Partially complete',verdictC:'#e0a36c',verdictWhy:'Implementation and tests are in place; documentation is stale.',checks:[{ok:1,txt:'Implementation found — backend/auth/refresh.ts'},{ok:1,txt:'Tests found — refresh.spec.ts'},{ok:1,txt:'Tests pass — 14/14'},{ok:0,txt:'Documentation appears outdated — docs/auth.md still says 15-min TTL'}],rec:{label:'Keep In Progress',why:'Mark Done once docs/auth.md is updated.',apply:{t:'status',to:'progress'}}};
+      case 'analyze':return{summary:'Node backend + React Native app monorepo. Healthy test suite; one stale area: auth documentation, plus two TODO comments not tracked in this list.',findings:['142 source files, 14 test suites, all passing','docs/auth.md is 6 commits behind the auth refactor','2 TODO comments in backend/api are not tracked as todos']};
+      case 'suggest':return{summary:'Three candidates found in the workspace that are missing from this list.',proposals:[mkTodo('Fix unhandled refresh error in offline mode'),mkTodo('Add test for the offline check-in flow'),mkTodo('Clean old deployment script (deploy_v1.sh)',false)],propsLabel:'Potential Todos',applyLabel:'Add Selected'};
+      case 'reconcile':return{mapping:[{t:'Rate-limit /login endpoint',v:'Likely completed',tone:'ok'},{t:'Rotate refresh tokens on use',v:'Still missing',tone:'warn'},{t:'Drop legacy v1 endpoints',v:'Partially completed',tone:'mid'},{t:'Update README',v:'New suggestion',tone:'new'}],proposals:[{kind:'Change status',label:'Mark "Rate-limit /login endpoint" Done',checked:true,apply:{t:'status',to:'done',id:'t3'}},mkTodo('Update README with the new auth flow'),{kind:'Archive todo',label:'Archive "Drop legacy v1 endpoints" — cancelled, removal confirmed in code',checked:false,apply:{t:'arch',id:'t6'}}],propsLabel:'Suggested Changes'};
+      case 'ask':return{question:(P&&P.ask)||'',answer:'Authentication lives in backend/auth/ (refresh.ts, session.ts). Tokens are JWTs with a 15-minute TTL, refreshed by refreshToken() on 401 responses. The app stores them in SecureStore.'};
+      default:return{summary:'Done.'}}}
+  aiLog(mode,ws){const git=ws&&ws.type==='git';return ['Launching client…','Reading workspace'+(git?' (git repository, clean tree)':'')+'…',(ws&&ws.brief?'Loading AI Brief…':'Collecting todo context…'),'Scanning source files…','Reasoning about the task…',mode==='execute'?'Applying changes to files…':'Drafting findings…',mode==='execute'?'Running tests…':'Cross-checking against the todo…','Composing summary…']}
+  clientErr(cl,prov){const nm=this.CLIENT_NAMES[prov];return !cl||cl.status==='notfound'?nm+' was not found. Select the executable in the AI Clients settings, or pick another provider.':cl.status==='notready'?nm+' is installed but not ready. Complete authentication using the '+nm+' CLI.':!cl.enabled?nm+' is disabled in the AI Clients settings.':nm+' could not be started.'}
+  openAi(o){const ws=this.wsOf(o.listId);const phase=o.phase||(ws?(ws.missing?'missing':'ready'):'unlinked');
+    this.setState({aiPanel:{listId:o.listId,todoId:o.todoId||null,action:o.action||(o.todoId?'investigate':'analyze'),provider:(ws&&ws.provider)||this.state.defaultClient,phase,runId:o.runId||null,ask:'',showDet:false,err:null,errTitle:'',canSet:false},aiMenu:false,ctx:null})}
+  closeAi(){this.setState({aiPanel:null})}
+  stopTimers(){clearInterval(this._aiT);clearTimeout(this._aiT);clearInterval(this._aiE)}
+  elLabel(sec){const v=Math.max(1,Math.round(sec||0));return Math.floor(v/60)+'m '+String(v%60).padStart(2,'0')+'s'}
+  updRun(id,patch){this.setState(s=>({aiRuns:s.aiRuns.map(r=>r.id===id?{...r,...patch}:r)}))}
+  startAiRun(){const P=this.state.aiPanel;if(!P)return;
+    if(P.action==='ask'&&!(P.ask||'').trim()){this.toastFn('Type a question first');return}
+    const busy=this.state.aiRuns.find(r=>r.status==='running');
+    if(busy){this.toastFn(busy.listId===P.listId?'Another AI operation is already running for this workspace.':'Another AI run is already in progress.');return}
+    const cl=this.state.aiClients[P.provider];
+    const id='r'+(++this.seq);const t0=Date.now();
+    const run={id,todoId:P.todoId,listId:P.listId,provider:P.provider,action:P.action,mode:this.MODES[this.AI_MODE[P.action]||'analyze'][0],status:'running',t:t0,elapsed:'',elapsedS:0,log:[],res:null,err:null,ask:P.ask||''};
+    this.setState(s=>({aiRuns:[run,...s.aiRuns],aiPanel:s.aiPanel?{...s.aiPanel,phase:'running',runId:id,showDet:false}:null}));
+    if(P.todoId)this.mutTodo(P.todoId,{},'AI '+this.actionLabel(P.action)+' started ('+this.CLIENT_NAMES[P.provider]+')');
+    this._aiE=setInterval(()=>this.updRun(id,{elapsedS:(Date.now()-t0)/1000}),150);
+    if(!cl||!cl.enabled||cl.status!=='detected'){this._aiT=setTimeout(()=>this.finishRun(id,'failed',{err:this.clientErr(cl,P.provider),clientIssue:true}),1200);return}
+    const lines=this.aiLog(this.AI_MODE[P.action],this.wsOf(P.listId));let i=0;
+    this._aiT=setInterval(()=>{i++;if(i<=lines.length){this.updRun(id,{log:lines.slice(0,i)})}else{this.finishRun(id,'completed',null)}},520)}
+  finishRun(id,status,extra){this.stopTimers();
+    this.setState(s=>{const run=s.aiRuns.find(r=>r.id===id);if(!run)return null;
+      const upd={status,elapsed:this.elLabel(run.elapsedS),res:status==='completed'?this.aiResult(run.action,{ask:run.ask}):null,err:(extra&&extra.err)||(status==='cancelled'?'Run cancelled before completion. Nothing was changed.':null)};
+      const aiRuns=s.aiRuns.map(r=>r.id===id?{...r,...upd}:r);
+      let aiPanel=s.aiPanel;
+      if(aiPanel&&aiPanel.runId===id)aiPanel={...aiPanel,phase:status==='completed'?'result':'failed',err:upd.err,errTitle:status==='cancelled'?'Cancelled':'Run failed',canSet:!!(extra&&extra.clientIssue)};
+      return{aiRuns,aiPanel}});
+    setTimeout(()=>{const r2=this.state.aiRuns.find(r=>r.id===id);if(!r2)return;
+      if(status==='completed'&&r2.todoId)this.mutTodo(r2.todoId,{},'AI '+this.actionLabel(r2.action)+' completed ('+this.CLIENT_NAMES[r2.provider]+')');
+      const p=this.state.aiPanel;
+      if(!(p&&p.runId===id))this.toastFn('AI run '+(status==='completed'?'completed':status)+' — '+this.actionLabel(r2.action))},0)}
+  cancelAiRun(){const P=this.state.aiPanel;if(P&&P.runId)this.finishRun(P.runId,'cancelled',null)}
+  applyAi(runId){const run=this.state.aiRuns.find(r=>r.id===runId);if(!run||!run.res)return;const sel=(run.res.proposals||[]).filter(p=>p.checked&&!p.applied);if(!sel.length)return;
+    this.snap('apply AI proposals');const now=Date.now();
+    this.setState(s=>{let todos=[...s.todos];
+      const log=(id,patch,txt)=>{todos=todos.map(x=>x.id===id?{...x,...patch,updated:now,activity:[{t:now,x:txt},...x.activity]}:x)};
+      sel.forEach(p=>{const ap=p.apply||{};const tid=ap.id||run.todoId;
+        if(ap.t==='sub'&&tid){const tt=todos.find(x=>x.id===tid);if(tt)log(tid,{subtasks:[...tt.subtasks,{x:p.label,d:false}]},'AI applied — added subtask "'+p.label+'"')}
+        else if(ap.t==='status'&&tid){const tt=todos.find(x=>x.id===tid);if(tt&&tt.status!==ap.to)log(tid,{status:ap.to},'AI applied — '+this.S[tt.status]+' → '+this.S[ap.to])}
+        else if(ap.t==='arch'&&tid){log(tid,{archived:true},'AI applied — archived')}
+        else if(ap.t==='todo'){todos.push({id:'t'+(++this.seq),listId:run.listId,groupId:null,title:p.label,status:'open',desc:'',emoji:'',color:null,pinLocal:false,pinGlobal:false,subtasks:[],archived:false,trashed:false,created:now,updated:now,activity:[{t:now,x:'Created — from AI proposal ('+this.actionLabel(run.action)+')'}]})}
+        p.applied=true;p.checked=false});
+      return{todos}});
+    this.toastFn('Applied '+sel.length+' change'+(sel.length===1?'':'s')+' — one batch, Ctrl+Z undoes it',true)}
+  applyRec(run){const rec=run.res&&run.res.rec;if(!rec)return;const t=run.todoId?this.todoById(run.todoId):null;if(!t)return;
+    if(rec.apply&&rec.apply.to!==t.status){this.setStatus(t.id,rec.apply.to);this.toastFn('Recommendation applied — '+rec.label,true)}
+    else{this.mutTodo(t.id,{},'AI Verify — recommendation: '+rec.label);this.toastFn('Recommendation noted — '+rec.label)}}
+  setWs(listId,patch){this.setState(s=>({lists:s.lists.map(l=>l.id===listId?{...l,ws:{...(l.ws||{}),...patch}}:l)}))}
+  linkWs(listId){this.snap('link workspace');const l=this.state.lists.find(x=>x.id===listId);const p='C:\\Projects\\'+(l?l.name.toLowerCase().replace(/[^a-z0-9]+/g,'-'):'workspace');
+    this.setState(s=>({lists:s.lists.map(x=>x.id===listId?{...x,ws:{path:p,type:'git',brief:'',provider:null,missing:false}}:x),wsDlg:listId,ctx:null,aiMenu:false,aiPanel:(s.aiPanel&&s.aiPanel.listId===listId&&s.aiPanel.phase==='unlinked')?{...s.aiPanel,phase:'ready'}:s.aiPanel}));
+    this.toastFn('Workspace linked — Git repository detected',true)}
+  unlinkWs(listId){this.snap('unlink workspace');this.setState(s=>({lists:s.lists.map(x=>x.id===listId?{...x,ws:undefined}:x),wsDlg:null,aiPanel:(s.aiPanel&&s.aiPanel.listId===listId)?{...s.aiPanel,phase:'unlinked'}:s.aiPanel}));this.toastFn('Workspace unlinked — todos untouched',true)}
+  setClient(id,patch){this.setState(s=>({aiClients:{...s.aiClients,[id]:{...s.aiClients[id],...patch}}}))}
+  aiCtxItems(t){const ws=this.wsOf(t.listId);
+    if(!ws)return[{item:true,label:'Link a workspace to use AI',hint:'',c:'inherit',onClick:()=>this.setState({ctx:null,wsDlg:t.listId})}];
+    return this.AI_TODO.map(([id,nm])=>({item:true,label:nm,hint:id==='implement'?'may modify files':'read only',c:'inherit',onClick:()=>this.openAi({listId:t.listId,todoId:t.id,action:id})}))}
+  runRowVm(r){return{time:this.fmt(r.t),provider:this.CLIENT_NAMES[r.provider],action:this.actionLabel(r.action),mode:r.mode,status:r.status==='completed'?'Completed':r.status==='failed'?'Failed':r.status==='cancelled'?'Cancelled':'Running',tagC:r.status==='completed'?'#7cc98f':r.status==='failed'?'#e07b7b':r.status==='running'?'var(--color-accent)':'var(--color-neutral-500)',onClick:()=>this.openRun(r)}}
+  openRun(r){this.setState({aiPanel:{listId:r.listId,todoId:r.todoId,action:r.action,provider:r.provider,phase:r.status==='running'?'running':(r.res?'result':'failed'),runId:r.id,ask:'',showDet:false,err:r.err||null,errTitle:r.status==='cancelled'?'Cancelled':'Run failed',canSet:false},aiMenu:false})}
+  aiVals(){const s=this.state;const out={aiMenuV:false,wsDlgV:false,aiClientsV:false,aiPanelV:false};
+    out.aiBtn={bg:(s.aiMenu||s.aiPanel)?'color-mix(in srgb,var(--color-accent) 14%,transparent)':'transparent',c:(s.aiMenu||s.aiPanel)?'var(--color-accent)':'var(--color-neutral-400)',onClick:(e)=>{e.stopPropagation();this.setState(st=>({aiMenu:!st.aiMenu,menu:null}))}};
+    const apn=s.panes[s.activePane];const curList=s.lists.find(l=>l.id===(apn&&apn.listId))||s.lists[0];
+    const selT=s.todos.find(t=>t.id===s.selectedId&&!t.trashed&&t.listId===curList.id);
+    if(s.aiMenu){out.aiMenuV={
+      todoTitle:selT?selT.title:'select a todo first',
+      listName:(curList.emoji?curList.emoji+' ':'')+curList.name,
+      linked:!!curList.ws,unlinked:!curList.ws,
+      todoItems:this.AI_TODO.map(([id,nm,ds])=>({nm,ds,c:selT?'inherit':'var(--color-neutral-600)',onClick:()=>{if(selT)this.openAi({listId:curList.id,todoId:selT.id,action:id})}})),
+      wsItems:this.AI_WS.map(([id,nm,ds])=>({nm,ds,c:'inherit',onClick:()=>this.openAi({listId:curList.id,todoId:null,action:id})})),
+      onLink:()=>this.setState({aiMenu:false,wsDlg:curList.id}),
+      onHistory:()=>this.openAi({listId:curList.id,phase:'history'}),
+      onClients:()=>this.setState({aiMenu:false,aiClientsDlg:true})}}
+    if(s.wsDlg){const l=s.lists.find(x=>x.id===s.wsDlg);if(l){const ws=l.ws;
+      out.wsDlgV={name:(l.emoji?l.emoji+' ':'')+l.name,linked:!!ws,unlinked:!ws,
+        path:ws?ws.path:'',typeLabel:ws?(ws.type==='git'?'Git repository':'Generic folder'):'',missing:!!(ws&&ws.missing),okState:!!(ws&&!ws.missing),
+        aiLine:ws?('AI — '+this.CLIENT_NAMES[ws.provider||s.defaultClient]):'',
+        brief:ws?(ws.brief||''):'',onBrief:(e)=>this.setWs(l.id,{brief:e.target.value}),
+        provVal:ws?(ws.provider||''):'',onProv:(e)=>this.setWs(l.id,{provider:e.target.value||null}),
+        defName:'Default ('+this.CLIENT_NAMES[s.defaultClient]+')',
+        onChangeDir:()=>{this.setWs(l.id,{missing:false});this.toastFn('Directory changed — re-detected as Git repository')},
+        onLocate:()=>{this.setWs(l.id,{missing:false});this.toastFn('Directory found — workspace available again')},
+        onLink:()=>this.linkWs(l.id),onUnlink:()=>this.unlinkWs(l.id),
+        onClose:()=>this.setState({wsDlg:null})}}}
+    if(s.aiClientsDlg){const stMap={detected:['●','Detected','#7cc98f'],detecting:['◌','Detecting…','var(--color-accent)'],notfound:['○','Not detected','var(--color-neutral-500)'],notready:['●','Installed — not ready','#e0a36c']};
+      const mkC=(id)=>{const c=s.aiClients[id];const m=stMap[c.status]||stMap.notfound;
+        return{name:this.CLIENT_NAMES[id],glyph:m[0],stTxt:m[1],stC:m[2],path:c.path,version:c.version?'Version '+c.version:'',msg:c.msg||'',
+          enGlyph:c.enabled?'✓':'',enBg:c.enabled?'var(--color-accent-600)':'transparent',enBd:c.enabled?'var(--color-accent-600)':'var(--color-neutral-600)',
+          onEnable:()=>this.setClient(id,{enabled:!c.enabled}),
+          onPath:(e)=>this.setClient(id,{path:e.target.value}),
+          onDetect:()=>{if(id==='claude'){this.toastFn('Claude Code detected — '+(c.path||''))}else{this.setClient(id,{status:'detecting',msg:''});setTimeout(()=>this.setClient(id,{status:'notfound',msg:'Codex was not found automatically. Select the executable manually with Browse.'}),1200)}},
+          onBrowse:()=>{if(id==='codex'){this.setClient(id,{path:'D:\\Tools\\codex\\codex.exe',status:'notready',version:'0.9.2',msg:'Codex was found, but is not authenticated. Complete authentication using the Codex CLI, then Test again.'})}else{this.toastFn('Executable selected — validated')}},
+          onTest:()=>{if(c.status==='detected'){this.toastFn(this.CLIENT_NAMES[id]+' responded — version '+(c.version||'?'))}else if(c.status==='notready'){this.toastFn('The client is installed but not ready. Complete authentication in its CLI.')}else{this.toastFn(this.CLIENT_NAMES[id]+' was not found. Set the executable first.')}}}};
+      out.aiClientsV={claude:mkC('claude'),codex:mkC('codex'),defVal:s.defaultClient,
+        onDef:(e)=>this.setState({defaultClient:e.target.value}),
+        onClose:()=>this.setState({aiClientsDlg:false})}}
+    const P=s.aiPanel;
+    if(P){const l=s.lists.find(x=>x.id===P.listId);const ws=l?l.ws:null;const t=P.todoId?this.todoById(P.todoId):null;
+      const run=P.runId?s.aiRuns.find(r=>r.id===P.runId):null;
+      const V={crumbText:(l?((l.emoji?l.emoji+' ':'')+l.name):'')+(t?' / '+t.title:''),onClose:()=>this.closeAi(),onHistory:()=>this.setState({aiPanel:{...P,phase:'history'}}),ready:false,running:false,result:false,failed:false,history:false,unlinked:false,missing:false};
+      if(P.phase==='unlinked')V.unlinked={onLink:()=>this.setState({wsDlg:P.listId})};
+      else if(P.phase==='missing')V.missing={path:ws?ws.path:'',onLocate:()=>{this.setWs(P.listId,{missing:false});this.setState({aiPanel:{...P,phase:'ready'}});this.toastFn('Directory found — workspace available again')},onUnlink:()=>this.unlinkWs(P.listId)};
+      else if(P.phase==='ready'){const acts=t?this.AI_TODO:this.AI_WS;const mode=this.AI_MODE[P.action]||'analyze';const c=s.aiClients[P.provider];
+        V.ready={taskLabel:t?t.title:((l.emoji?l.emoji+' ':'')+l.name+' — whole list'),
+          actions:acts.map(([id,nm,ds])=>({nm,ds,bd:id===P.action?'var(--color-accent)':'var(--color-divider)',bg:id===P.action?'color-mix(in srgb,var(--color-accent) 8%,transparent)':'transparent',onClick:()=>this.setState({aiPanel:{...P,action:id}})})),
+          askMode:P.action==='ask',ask:P.ask,onAsk:(e)=>this.setState({aiPanel:{...P,ask:e.target.value}}),
+          provVal:P.provider,onProv:(e)=>this.setState({aiPanel:{...P,provider:e.target.value}}),
+          provHintTxt:(c&&c.status==='detected'&&c.enabled)?'● Detected — v'+c.version:(c&&c.status==='notready')?'● Installed, not authenticated — the run will fail':'○ Not detected — pick another provider or set it up',
+          provHintC:(c&&c.status==='detected'&&c.enabled)?'#7cc98f':'#e0a36c',
+          onClients:()=>this.setState({aiClientsDlg:true}),
+          modes:['analyze','plan','execute'].map(m=>({dot:m===mode?'●':'○',nm:this.MODES[m][0],ds:this.MODES[m][1],c:m===mode?(m==='execute'?'#e0a36c':'var(--color-accent)'):'var(--color-neutral-600)'})),
+          brief:(ws&&ws.brief)||'',
+          runLabel:mode==='execute'?'Run — may modify workspace':'Run',
+          onRun:()=>this.startAiRun()}}
+      else if(P.phase==='running'&&run){V.running={label:this.actionLabel(run.action)+' · '+this.CLIENT_NAMES[run.provider],elapsed:(run.elapsedS||0).toFixed(1)+'s',lines:P.showDet?run.log:run.log.slice(-4),detLabel:P.showDet?'Hide details':'Show details',onDet:()=>this.setState({aiPanel:{...P,showDet:!P.showDet}}),onCancel:()=>this.cancelAiRun()}}
+      else if(P.phase==='result'&&run&&run.res){const r=run.res;
+        const props=(r.proposals||[]).map(p=>{const toggle=()=>{if(!p.applied){p.checked=!p.checked;this.forceUpdate()}};return{kind:p.kind,label:p.label,glyph:(p.applied||p.checked)?'✓':'',bg:(p.applied||p.checked)?'var(--color-accent-600)':'transparent',bd:(p.applied||p.checked)?'var(--color-accent-600)':'var(--color-neutral-600)',op:p.applied?'0.5':'1',tail:p.applied?'applied':'',onToggle:toggle,onKey:(e)=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();toggle()}}}});
+        const pending=(r.proposals||[]).filter(p=>!p.applied);
+        const allChecked=pending.length>0&&pending.every(p=>p.checked);
+        const selCount=(r.proposals||[]).filter(p=>p.checked&&!p.applied).length;
+        const allApplied=props.length>0&&(r.proposals||[]).every(p=>p.applied);
+        V.result={statusLine:this.CLIENT_NAMES[run.provider]+' · '+run.elapsed,action:this.actionLabel(run.action),
+          question:r.question||'',summary:r.summary||'',answer:r.answer||'',
+          verdict:r.verdict||'',verdictC:r.verdictC||'var(--color-neutral-500)',verdictWhy:r.verdictWhy||'',
+          hasFindings:!!(r.findings&&r.findings.length),findings:r.findings||[],
+          hasChecks:!!(r.checks&&r.checks.length),checks:(r.checks||[]).map(x=>({g:x.ok?'✓':'⚠',c:x.ok?'#7cc98f':'#e0a36c',txt:x.txt})),
+          hasMapping:!!(r.mapping&&r.mapping.length),mapping:(r.mapping||[]).map(x=>({t:x.t,v:x.v,c:x.tone==='ok'?'#7cc98f':x.tone==='warn'?'#e0a36c':x.tone==='new'?'var(--color-accent)':'var(--color-neutral-500)'})),
+          hasProps:props.length>0,props,propsLabel:r.propsLabel||'Proposed Todo Changes',
+          selAllLabel:allChecked?'Clear selection':'Select all',hasPending:pending.length>0,
+          onSelAll:()=>{pending.forEach(p=>{p.checked=!allChecked});this.forceUpdate()},
+          note:props.length?(allApplied?'Applied — one undoable batch; Ctrl+Z reverts it.':'The AI only proposes — nothing changes until you apply.'):'',
+          applyOp:selCount>0?'1':'0.45',applyLabel:(r.applyLabel||'Apply Selected')+(selCount?' ('+selCount+')':''),onApply:()=>this.applyAi(run.id),
+          rec:r.rec?{label:r.rec.label,why:r.rec.why,onApply:()=>this.applyRec(run)}:false,
+          hasLog:!!(run.log&&run.log.length),showDet:P.showDet,detLabel:P.showDet?'Hide details':'Show details',onDet:()=>this.setState({aiPanel:{...P,showDet:!P.showDet}}),log:run.log||[],
+          onNew:()=>this.setState({aiPanel:{...P,phase:'ready',runId:null}})}}
+      else if(P.phase==='failed'){V.failed={title:P.errTitle||'Run failed',body:P.err||'Unknown error.',canSet:!!P.canSet,onSettings:()=>this.setState({aiClientsDlg:true}),onRetry:()=>this.setState({aiPanel:{...P,phase:'ready',runId:null,err:null}})}}
+      else if(P.phase==='history'){const runs=s.aiRuns.filter(r=>r.listId===P.listId&&(P.todoId?r.todoId===P.todoId:true));
+        V.history={scope:P.todoId?'this todo':'this workspace',rows:runs.map(r=>this.runRowVm(r)),empty:runs.length===0,onNew:()=>this.setState({aiPanel:{...P,phase:(ws?(ws.missing?'missing':'ready'):'unlinked'),runId:null}})}}
+      out.aiPanelV=V}
+    return out}
   stMeta(st){return({open:{border:'var(--color-neutral-600)',bg:'transparent',glyph:'',fg:'transparent',deco:'none',opac:'1',title:'Open — click to start'},progress:{border:'var(--color-accent)',bg:'linear-gradient(90deg,var(--color-accent) 0 50%,transparent 50%)',glyph:'',fg:'transparent',deco:'none',opac:'1',title:'In progress — click to complete'},done:{border:'var(--color-accent-600)',bg:'var(--color-accent-600)',glyph:'✓',fg:'var(--color-accent-100)',deco:'line-through',opac:'0.55',title:'Done — click to reopen'},cancelled:{border:'var(--color-neutral-700)',bg:'transparent',glyph:'✕',fg:'var(--color-neutral-500)',deco:'line-through',opac:'0.45',title:'Cancelled'}})[st]}
   todoRow(t,depth,pi){const s=this.state;const m=this.stMeta(t.status);const sel=s.selectedId===t.id;const key=pi+'_'+t.id;
     const dr=(s.drop&&s.drop.key===key)?s.drop.pos:null;const done=t.subtasks.filter(x=>x.d).length;
@@ -792,7 +1293,9 @@ class Component extends DCLogic {
       const q=(p.searchOpen&&p.qs)?p.qs:'';
       let emptyVm=false;
       if(!rows.length){emptyVm=q?{title:'No matches',body:'Search is fuzzy and accent-insensitive — árvíztűrő matches ARVIZTURO. Try fewer letters.'}:(list.id==='inbox'?{title:'Inbox zero',body:'Quick-captured todos land here until you file them into a list. Ctrl+Shift+Space captures from anywhere.'}:{title:'Nothing here yet',body:'Type above and press Enter — capture takes seconds. Shift+Enter opens details right away.'})}
+      const wsx=list.ws;
       return{key:'pane'+i,
+        wsChip:wsx?{name:wsx.path.split('\\').pop(),git:wsx.type==='git',missing:!!wsx.missing,ok:!wsx.missing,c:wsx.missing?'#e0a36c':'var(--color-neutral-400)',title:wsx.path+(wsx.type==='git'?' · Git repository':' · Generic folder')+(wsx.missing?' — DIRECTORY NOT FOUND':'')+' · AI: '+this.CLIENT_NAMES[wsx.provider||s.defaultClient],onClick:(e)=>{e.stopPropagation();this.setState({wsDlg:list.id})}}:false,
         borderC:(!single&&i===s.activePane)?'color-mix(in srgb,var(--color-accent) 40%,transparent)':'var(--color-divider)',
         tabs:single,compact:!single,
         tabList:single?s.lists.map((l)=>({emoji:l.emoji,name:l.name,count:String(openCount(l.id)),
@@ -888,6 +1391,15 @@ class Component extends DCLogic {
         aC:s.detailTab==='activity'?'var(--color-accent)':'var(--color-neutral-400)',
         aUnder:s.detailTab==='activity'?'inset 0 -2px 0 var(--color-accent)':'none',
         onTabD:()=>this.setState({detailTab:'details'}),onTabA:()=>this.setState({detailTab:'activity'}),
+        tabAI:s.detailTab==='ai',
+        aiTabC:s.detailTab==='ai'?'var(--color-accent)':'var(--color-neutral-400)',
+        aiTabUnder:s.detailTab==='ai'?'inset 0 -2px 0 var(--color-accent)':'none',
+        onTabAI:()=>this.setState({detailTab:'ai'}),
+        aiLinked:!!this.wsOf(t.listId),aiUnlinked:!this.wsOf(t.listId),
+        aiActs:this.AI_TODO.map(([id,nm,ds])=>({nm,ds,hint:id==='implement'?'may modify files':'read only',onClick:()=>this.openAi({listId:t.listId,todoId:t.id,action:id})})),
+        aiHist:s.aiRuns.filter(r=>r.todoId===t.id).map(r=>this.runRowVm(r)),
+        aiHistEmpty:!s.aiRuns.some(r=>r.todoId===t.id),
+        onLinkWs:()=>this.setState({wsDlg:t.listId}),
         onClose:()=>this.setState({detailOpen:false}),
         crumbText:this.crumb(t),
         title:t.title,onTitle:(e)=>this.mutTodo(t.id,{title:e.target.value}),
@@ -978,7 +1490,8 @@ class Component extends DCLogic {
       onEnter:()=>{if(s.menu&&s.menu!==id)this.setState({menu:id})}}));
     return{
       rootRef:this.rootRef,gridRef:this.gridRef,stop:this.stop,preventCtx:this.preventCtx,
-      menusV,menuOverlay:!!s.menu,onMenuClose:()=>this.setState({menu:null}),
+      ...this.aiVals(),
+      menusV,menuOverlay:!!s.menu||s.aiMenu,onMenuClose:()=>this.setState({menu:null,aiMenu:false}),
       shortcutsV:s.shortcuts,onShortcutsClose:()=>this.setState({shortcuts:false}),
       lay:{s1:mkLay('1'),s2v:mkLay('2v'),s2h:mkLay('2h'),s4:mkLay('4')},
       onGqaBtn:()=>this.setState({gqa:{v:'',target:'inbox'}}),

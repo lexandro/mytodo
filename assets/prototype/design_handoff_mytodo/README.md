@@ -3,6 +3,8 @@
 ## Overview
 myTODO is a keyboard-first, local-first Windows desktop todo app for developers: a scratchpad / working-memory tool, NOT a project-management system. Its two defining concepts are **tabbed todo workspaces** (independent lists switched in one keystroke) and **optional split-pane layouts** (1 / 2 / 4 panes, each showing a different list). Every design decision serves: *speed over features, zero-friction capture, minimal dialogs*.
 
+**V1.1 adds AI Workspace Integration**: a list can be linked to one project directory, and locally installed AI CLIs (Claude Code, Codex) investigate, plan, implement and verify todos against that directory. The AI is a contributor, never the owner — every AI-origin todo change is a proposal the user reviews and applies. Full spec: `AI_INTEGRATION.md`.
+
 ## About the Design Files
 The file in `prototype/` is a **design reference created in HTML** (a Design Component: an HTML template plus a JS logic class in one file). It is a working interactive prototype showing intended look and behavior — **not production code to ship**. Your task is to **recreate this design in the target codebase's environment**. No environment exists yet; choose the most appropriate stack for a fast, local, portable Windows desktop app (e.g. Tauri + web frontend, or WinUI 3 / WPF — developer's choice; the design assumes nothing beyond a standard desktop window). The prototype's logic class is readable, plain JavaScript and documents the exact intended behavior of every interaction — treat it as an executable spec.
 
@@ -15,21 +17,24 @@ The file in `prototype/` is a **design reference created in HTML** (a Design Com
 - `DESIGN.md` — philosophy, information architecture, layout metrics, tokens (dark + light), data model
 - `COMPONENTS.md` — every component: anatomy, sizes, states
 - `INTERACTIONS.md` — click / keyboard / drag & drop / undo semantics
+- `AI_INTEGRATION.md` — AI workspace integration: linked workspaces, run lifecycle, results, proposals, AI clients
 - `SHORTCUTS.md` — full keyboard map
 - `SCREENS.md` — all screens & states and how to reach them in the prototype
 - `FUTURE.md` — deferred features (do not implement now)
 
 ## Hard product constraints (from the product spec)
 - Local-first, portable: **no account, no login, no cloud, no sync, no collaboration.** Fully autosaved; never show a Save button.
-- Do NOT build: kanban, gantt, calendar, due dates, reminders, assignees, story points, sprints, comments, AI features, VCS integrations, complex filter builders, priority scales, dashboards, plugins.
+- Do NOT build: kanban, gantt, calendar, due dates, reminders, assignees, story points, sprints, comments, chatbot/conversational AI surfaces, VCS browsing UIs (branch toolbar, commit browser, Git dashboard), complex filter builders, priority scales, dashboards, plugins.
+- AI never mutates todos directly: run → structured proposals → user review → Apply Selected (**one undoable batch**) → normal domain commands → activity log. Execute mode only permits modifying the **linked workspace**, never the todo data. No accounts or API keys — local CLIs only, authenticated in their own CLI.
 - Inbox is a permanent, undeletable list. Group nesting is capped at 3 levels (todos may additionally sit at list root). Subtasks are a flat checklist — not todo objects (no own description/activity/tree).
 - Delete is always soft (Trash → restore / delete permanently). Undo (Ctrl+Z) covers delete, move, reorder, status change, rename, archive, pin. Prefer undo toasts over confirmation dialogs.
-- Persist across restarts: pane layout, pane→list assignments, active list, UI scale, todo font size, theme, collapsed groups, archived-section open state, custom color labels.
+- Persist across restarts: pane layout, pane→list assignments, active list, UI scale, todo font size, theme, collapsed groups, archived-section open state, custom color labels, workspace links (path / type / AI Brief / preferred provider — portable, no credentials), AI client configuration, AI run history.
 
 ## State Management (reference implementation in the prototype logic class)
 - `lists[] {id,name,emoji,fixed}` · `groups[] {id,listId,parentId,name,emoji}` · `todos[]` (see DESIGN.md §Data model). Array order IS display order for lists and for todos within a group.
 - UI state: `layout ('1'|'2v'|'2h'|'4')`, `panes[4] {listId, quick-add draft, filter}`, `activePane`, `view ('main'|'pinned'|'trash')`, `selectedId`, `detailOpen`, `detailTab`, `theme`, `scale`, `todoFs`, `collapsed{}`, `archOpen{}`.
 - Undo = snapshot stack of `{lists,groups,todos}` (cap 30), pushed before every mutating action; Ctrl+Z pops and shows a toast.
+- AI: `lists[].ws {path,type,brief,provider}` · `aiRuns[]` (see AI_INTEGRATION.md §Data model) · `aiClients {claude,codex}` + `defaultClient` · UI: `aiPanel {listId,todoId,action,provider,phase,runId}`.
 
 ## Assets
 No image assets. Icons: use **Phosphor** (https://phosphoricons.com) in production; the prototype uses minimal inline SVG stand-ins with the same silhouettes (push-pin, magnifier, trash, lightning, sun/moon, pane-split glyphs, inbox tray). Emoji are user content, rendered with the system emoji font; emoji input uses the native Windows picker (Win+.).
