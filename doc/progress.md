@@ -23,8 +23,8 @@ Forrás-dokumentumok:
 | F2 | Lists, groups, todo CRUD, Quick Add | ✅ |
 | F3 | Fa-nézet, drag & drop, subtasks | ✅ |
 | F4 | Detail panel, activity, színek, emoji, linkek | ✅ |
-| F5 | Pinning, Pinned view, Archive, Trash, Undo | 🔄 |
-| F6 | Keresés (filter, global, palette) | 🔲 |
+| F5 | Pinning, Pinned view, Archive, Trash, Undo | ✅ |
+| F6 | Keresés (filter, global, palette) | 🔄 |
 | F7 | Split pane rendszer + layout persist | 🔲 |
 | F8 | Global shortcuts, Quick Add ablak, Summon | 🔲 |
 | F9 | Scale, theme, keyboard polish, window state | 🔲 |
@@ -138,19 +138,22 @@ Jelmagyarázat: 🔲 nincs elkezdve · 🔄 folyamatban · ✅ kész (review+pus
 - Megjegyzés: LabelManager Esc-zárása még nincs az Esc-láncban (backdrop-click
   zár) — F9 keyboard-polish tétel
 
-### F5 — Pinning, Pinned view, Archive, Trash, Undo
-- [ ] Local/global pin (Ctrl+P local), „G" tag, Pinned szekció a listák tetején
-- [ ] GlobalPinnedStrip (collapse persist, chip → navigate home)
-- [ ] PinnedView (GLOBAL elöl, majd listánként; navigate home: pane-váltás,
-      ős-expand, archived-nyitás, select + detail)
-- [ ] Archive: Archived (n) szekció listánként (default collapsed, persist),
-      státusz megmarad, countból kizárva, kereshető
-- [ ] Trash: soft delete + eredeti hely tárolás, TrashView (Restore / Delete
-      permanently / Empty Trash — ez utóbbi confirmationnal), törölt group-hely
-      esetén root-ba restore
-- [ ] Undo core: snapshot stack (cap 30) minden mutáló akcióra, Ctrl+Z + toast Undo
-      + „Undone — <action>"; tesztek a teljes undoable készletre
-- [ ] Zárás: review → refactor → push
+### F5 — Pinning, Pinned view, Archive, Trash, Undo ✅ (2026-07-24)
+- [x] Local/global pin + Ctrl+P + „G" tag + Pinned szekció (F4-ben épült)
+- [x] GlobalPinnedStrip: accent sáv, collapse, chip (színpötty + emoji + cím +
+      listanév) → navigate home
+- [x] PinnedView: GLOBAL elöl (accent), majd listánként; navigate home
+      (pane-váltás, ős-expand undo nélkül, archived-nyitás, select + detail)
+- [x] Archive szekció (rows.ts F2 óta rendereli; kereshetőség F6-ban jön)
+- [x] TrashView: Restore / Delete permanently / Empty Trash confirmationnal
+      (az app EGYETLEN confirm dialogja — 2. döntés); restore törölt group
+      esetén root-ba (core F2-ben tesztelve)
+- [x] Undo: snapshot-stack az F1 óta minden akcióra; empty trash / permanent
+      delete is visszavonható
+- [x] **CDP-verifikáció**: pin globally → strip megjelent → PinnedView szekciók
+      → navigate home vissza a detailhez → Delete → Trash → confirm → Empty →
+      Ctrl+Z visszahozta. Zöld.
+- [x] Zárás: typecheck 0, 75 teszt zöld → push
 
 ### F6 — Keresés
 - [ ] `core/search-normalize.ts`: Unicode NFD → diakritika-eltávolítás → lowercase →

@@ -8,11 +8,14 @@
   import { ui } from "$lib/state/ui.svelte";
   import ContextMenu from "./ContextMenu.svelte";
   import DetailPanel from "./DetailPanel.svelte";
+  import GlobalPinnedStrip from "./GlobalPinnedStrip.svelte";
   import ListRail from "./ListRail.svelte";
+  import PinnedView from "./PinnedView.svelte";
   import StatusBar from "./StatusBar.svelte";
   import TitleBar from "./TitleBar.svelte";
   import Toast from "./Toast.svelte";
   import TodoPane from "./TodoPane.svelte";
+  import TrashView from "./TrashView.svelte";
 
   $effect(() => {
     void store.init((data) => {
@@ -39,6 +42,7 @@
 
 <div class="shell">
   <TitleBar />
+  <GlobalPinnedStrip />
   <div class="main-row">
     {#if store.loadError !== null}
       <div class="center-message">
@@ -59,9 +63,9 @@
             <TodoPane paneIndex={0} />
           </div>
         {:else if ui.view === "pinned"}
-          <div class="center-message text-muted">Pinned todos view — F5 fázis</div>
+          <PinnedView />
         {:else}
-          <div class="center-message text-muted">Trash view — F5 fázis</div>
+          <TrashView />
         {/if}
       </div>
       {#if ui.view === "main"}

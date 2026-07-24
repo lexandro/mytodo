@@ -58,6 +58,8 @@ class UiState {
   toast = $state<ToastState | null>(null);
   /** Archived section open state per list id. */
   archOpen = $state<Record<string, boolean>>({});
+  /** Global pinned strip expanded state. */
+  pinsOpen = $state(true);
 
   /** Quick-add input elements per pane — for Ctrl+N focus. Not reactive. */
   quickAddEls: (HTMLInputElement | null)[] = [null, null, null, null];
