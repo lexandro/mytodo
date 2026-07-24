@@ -1,24 +1,24 @@
-# FUTURE — backlog, NEM a jelenlegi verzióba
+# FUTURE — backlog, NOT for the current version
 
 ## Minimal Markdown support
 
-Egy jövőbeli verzió opcionálisan minimális Markdown-renderelést kaphat a todo
-**title** és **description** mezőkben (félkövér/dőlt/inline kód, esetleg
-listák). Most szigorúan plain text. Az adatmodell ezt már nem nehezíti: a
-title/description nyers szövegként tárolódik, migráció nélkül bővíthető.
-(Az URL/Windows-path auto-link a descriptionben már most is él — az nem
-Markdown.)
+A future version may optionally render minimal Markdown (bold/italic/inline
+code, maybe lists) in todo **title** and **description** fields. For now both
+are strictly plain text. The data model already accommodates this: titles and
+descriptions are stored as raw text, so the feature needs no migration.
+(URL / Windows-path auto-linking in descriptions already exists — that is
+not Markdown.)
 
-## A design package további halasztott tételei
+## Other items deferred from the design package
 
-- **Group drag-reorder** — v1-ben a listák és todo-k drag-elhetők; a group
-  sorok húzása (parenten belüli reorder + re-nest a 3 szintes cap-pel) az
-  első follow-up.
-- **Resizable split dividerek** — v1 fix 1fr trackeket használ; húzható
-  panel-osztók perzisztált arányokkal később jöhetnek.
-- **Alt-menü accelerátorok** — a menüsáv Alt+F/E/V/G/H gyorsbillentyűi.
+- **Group drag-reorder** — v1 drags lists and todos; dragging group rows
+  themselves (reorder within a parent + re-nest with the 3-level cap enforced
+  at the drop target) is the first follow-up.
+- **Resizable split dividers** — v1 uses fixed 1fr tracks; draggable pane
+  dividers with persisted ratios can come later.
+- **Alt menu accelerators** — Alt+F/E/V/G/H shortcuts for the menu bar.
 
-## Tudatosan SOHA (termék-döntés, daprompt §37)
+## Deliberately NEVER (product decision, daprompt §37)
 
-kanban / gantt / naptár, határidők és emlékeztetők, kollaboráció / felhő /
-account, AI, integrációk, dashboardok, pluginok, priority-rendszer.
+kanban / gantt / calendar, due dates & reminders, collaboration / cloud /
+accounts, AI, integrations, dashboards, plugins, priority systems.

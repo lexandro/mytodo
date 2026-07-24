@@ -1,8 +1,11 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Fő + quickadd ablak jogosultságai — minimál készlet, bővítsd tudatosan. Window-jogok: custom titlebar (decorations:false) miatt drag + minimize/maximize/close; hide a Summon toggle-hoz és a quickadd bezárásához. Global-shortcut: Summon / Global Quick Add / opcionális Pinned+Search regisztráció. Event: a quickadd ablak eseménnyel adja át az új todo-t a main-nek.",
-  "windows": ["main", "quickadd"],
+  "description": "Main + quickadd window permissions - minimal set, extend deliberately. Window perms: custom titlebar (decorations:false) needs drag + minimize/maximize/close; hide for the Summon toggle and closing quickadd; position/size/monitors for window-state persistence. Global-shortcut: Summon / Global Quick Add / optional Pinned+Search registration. Event: the quickadd window hands new todos to main. Updater+process: signed live updates with relaunch.",
+  "windows": [
+    "main",
+    "quickadd"
+  ],
   "permissions": [
     "core:default",
     "core:window:allow-set-title",

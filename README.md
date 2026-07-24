@@ -1,131 +1,134 @@
 # myTODO
 
-Gyors, billentyűzet-központú, lokális Windows todo workspace fejlesztőknek —
-Tauri v2 (Rust) + Svelte 5 + SQLite. **Nem projektmenedzsment-rendszer**: a cél,
-hogy munka közben két másodperc alatt felírj egy tennivalót, aztán folytasd.
+A fast, keyboard-first, local Windows todo workspace for developers —
+Tauri v2 (Rust) + Svelte 5 + SQLite. **Not a project-management system**: the
+goal is to jot down a task in two seconds while working, then get back to it.
 
-- **Tabbed workspace** — több lista (Inbox fixen), max 3 szintű groupok
-- **Split pane** — 1 / 2 / 2×2 elrendezés, panelenként külön lista
-- **Zero-friction capture** — Quick Add (Enter ment), globális Quick Add ablak
-- **Summon Workspace** — `Ctrl+Alt+T` bárhonnan az aktuális virtuális
-  desktopra hozza az appot (nem téged visz oda!)
-- **Local-first, portable** — nincs account, nincs felhő; minden adat az exe
-  melletti `data/` mappában
-- **Élő frissítés** — aláírt automatikus update a GitHub Release-ekből
+- **Tabbed workspace** — multiple lists (permanent Inbox), groups up to 3 levels
+- **Split panes** — 1 / 2 / 2×2 layouts, a different list per pane
+- **Zero-friction capture** — Quick Add (Enter saves), global Quick Add window
+- **Summon Workspace** — `Ctrl+Alt+T` brings the app to your current virtual
+  desktop from anywhere (instead of taking you to it!)
+- **Local-first, portable** — no account, no cloud; all data lives in the
+  `data/` folder next to the exe
+- **Live updates** — signed automatic updates from GitHub Releases
 
-## Telepítés
+## Install
 
-A [Releases](https://github.com/lexandro/mytodo/releases/latest) oldalról:
+From the [Releases](https://github.com/lexandro/mytodo/releases/latest) page:
 
-- **Telepítő** (ajánlott): `myTODO_x.y.z_x64-setup.exe` (NSIS) vagy `.msi` —
-  a telepített app **automatikusan frissül**: háttérben ellenőrzi az új
-  verziót (6 óránként), és a status barban ajánlja fel; a letöltés/telepítés
-  mindig a te döntésed. Kézi ellenőrzés: `Help → Check for updates…`
-- **Portable**: `myTODO-vx.y.z-portable.zip` — kicsomagolod, fut, az adatok
-  a mappában maradnak. A portable változat nem frissíti magát (jelzi az új
-  verziót, de a cserét kézzel végzed).
+- **Installer** (recommended): `myTODO_x.y.z_x64-setup.exe` (NSIS) or `.msi` —
+  the installed app **updates itself**: it quietly checks for a new version
+  every 6 hours and offers it in the status bar; downloading/installing is
+  always your call. Manual check: `Help → Check for updates…`
+- **Portable**: `myTODO-vx.y.z-portable.zip` — unzip and run; your data stays
+  inside the folder. The portable build does not self-update (it notifies
+  about new versions, but you swap the exe yourself).
 
-## Fejlesztés
+## Development
 
 ```
 bun install
-bun run tauri dev     # első indításkor a Rust-fordítás percekig tart
+bun run tauri dev     # the first launch compiles Rust — takes minutes
 ```
 
-Előfeltételek: [Rust](https://rustup.rs) + VS Build Tools (C++ workload), Bun.
+Prerequisites: [Rust](https://rustup.rs) + VS Build Tools (C++ workload), Bun.
 
-## Ellenőrzés
+## Checks
 
 ```
-bun run typecheck     # svelte-check — commit előtt kötelező zöld
-bun run test          # vitest (core modulok)
-cd src-tauri && cargo test   # Rust persistence tesztek
+bun run typecheck     # svelte-check — must be green before committing
+bun run test          # vitest (core modules)
+cd src-tauri && cargo test   # Rust persistence tests
 ```
 
 ## Build / portable release
 
-- `build.bat` — teszt + release build + **portable mappa** összeállítása:
+- `build.bat` — tests + release build + **portable folder**:
 
   ```
   release\myTODO\
       myTODO.exe
-      data\        (első indításkor jön létre — todo.db, settings)
-      backup\      (napi + kézi mentések)
+      data\        (created on first launch — todo.db, settings)
+      backup\      (daily + manual backups)
   ```
 
-  A mappa bárhová átmásolható, az adatok vele mennek. Nincs telepítő, nincs
-  registry-függés.
-- `bun run tauri build` — teljes release + MSI installer (opcionális út)
+  Copy the folder anywhere — the data moves with it. No installer, no
+  registry dependency.
+- `bun run tauri build` — full release + MSI/NSIS installers (optional path)
 
-## Adattárolás és backup
+## Data storage and backups
 
-- **SQLite**: `data/todo.db` (WAL, foreign keys, verziózott migrációk)
-- **Backup**: indításkor naponta egyszer automatikusan + `File → Backup now`
-  kézzel; `backup/todo-YYYY-MM-DD.db`, az utolsó 10 marad meg
-- **Restore**: `File → Restore backup…` — a csere előtt a jelenlegi adatról
-  biztonsági mentés készül (`backup/pre-restore.db`)
-- **Export / Import JSON**: `File → Export JSON… / Import JSON…` — emberileg
-  olvasható, hordozható formátum; az import validálás után, egyetlen
-  visszavonható lépésként fut le, hibás fájl nem érinti az adatbázist
+- **SQLite**: `data/todo.db` (WAL, foreign keys, versioned migrations)
+- **Backups**: automatically once a day at startup + `File → Backup now`;
+  `backup/todo-YYYY-MM-DD.db`, the newest 10 are kept
+- **Restore**: `File → Restore backup…` — the current data is saved to
+  `backup/pre-restore.db` before the swap
+- **Export / Import JSON**: `File → Export JSON… / Import JSON…` — a
+  human-readable, portable format; imports are validated first and applied
+  as a single undoable step — a bad file never touches the database
 
-## Billentyűk (a teljes lista: F1 az appban)
+## Keyboard (full map: F1 in the app)
 
-| Művelet | Billentyű |
+| Action | Keys |
 | --- | --- |
-| Új todo / quick add fókusz | `Ctrl+N` |
-| Új lista | `Ctrl+Shift+N` |
-| Lista-váltás | `Ctrl+1…9` / `Ctrl+K` |
-| Szűrés az aktuális listában | `Ctrl+F` |
-| Globális keresés | `Ctrl+Shift+F` |
-| Kész ↔ nyitott | `Ctrl+Enter` |
-| Pin a listához | `Ctrl+P` |
-| Átnevezés | `F2` |
-| Törlés (Trash-be) | `Delete` |
-| Visszavonás | `Ctrl+Z` |
-| Todo szövegméret | `Ctrl+egérgörgő` |
+| New todo / focus quick add | `Ctrl+N` |
+| New list | `Ctrl+Shift+N` |
+| Switch list | `Ctrl+1…9` / `Ctrl+K` |
+| Filter current list | `Ctrl+F` |
+| Global search | `Ctrl+Shift+F` |
+| Toggle done ↔ open | `Ctrl+Enter` |
+| Pin to list | `Ctrl+P` |
+| Rename | `F2` |
+| Delete (to Trash) | `Delete` |
+| Undo | `Ctrl+Z` |
+| Todo text size | `Ctrl+mouse wheel` |
 
 ## Windows Global Shortcuts
 
-> **A Summon Workspace a meglévő alkalmazás-ablakot hozza át a TE aktuális
-> virtuális desktopodra — nem téged kapcsol át oda, ahol az app volt.**
+> **Summon Workspace moves the existing application window to your current
+> Windows virtual desktop instead of switching you to the desktop where the
+> application was previously located.**
 
-| Akció | Default | |
+| Action | Default | |
 | --- | --- | --- |
-| Summon Workspace | `Ctrl+Alt+T` | summon/hide toggle (Settingsben átállítható) |
-| Global Quick Add | `Ctrl+Shift+Space` | kis lebegő ablak az aktuális desktopon |
-| Pinned Todos | — | opcionális, Settingsben rendelhető |
-| Global Search | — | opcionális, Settingsben rendelhető |
+| Summon Workspace | `Ctrl+Alt+T` | summon/hide toggle (configurable in Settings) |
+| Global Quick Add | `Ctrl+Shift+Space` | tiny floating window on the current desktop |
+| Pinned Todos | — | optional, assignable in Settings |
+| Global Search | — | optional, assignable in Settings |
 
-- Testreszabás: `File → Settings…` — kattints a mezőre és üsd le az új
-  kombinációt. A csere tranzakciós: amíg az új nem regisztrálható, a régi
-  működik tovább.
-- Ütközéskor (más app fogja a kombinációt) érthető hibát kapsz, az app
-  ettől még elindul.
-- A `Ctrl+Alt` kombináció a magyar kiosztáson AltGr — a beállító figyelmeztet,
-  ha olyan kombinációt választanál, ami gépelést blokkolhat.
-- A shortcut-beállítások is a portable `data/` alatt élnek (nem registry).
+- Customization: `File → Settings…` — click the field and press the new
+  combination. Rebinds are transactional: the old shortcut keeps working
+  until the new one registers successfully.
+- On conflicts (another app owns the combination) you get a clear error and
+  the app still starts.
+- `Ctrl+Alt` equals AltGr on Hungarian/European layouts — the settings
+  dialog warns when a combination could block typing in other apps.
+- Shortcut settings live in the portable `data/` folder (not the registry).
 
-## Kiadás (maintainer)
+## Releasing (maintainer)
 
-1. Verzió-emelés HÁROM helyen együtt: `package.json`,
+1. Bump the version in all THREE places together: `package.json`,
    `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`
 2. `git tag vX.Y.Z && git push origin vX.Y.Z`
-3. A GitHub Actions (`release.yml`) megépíti az aláírt MSI + NSIS
-   telepítőket az updater-artifactokkal (`latest.json`), publikálja a
-   Release-t és mellécsatolja a portable zipet — a telepített appok innen
-   frissülnek automatikusan.
+3. GitHub Actions (`release.yml`) builds the signed MSI + NSIS installers
+   with updater artifacts (`latest.json`), publishes the release live and
+   attaches the portable zip — installed apps update from it automatically.
 
-Az updater-aláíró kulcspár a tulajdonos kulcstárában él (`E:\Mega\keys\
-mytodo-updater\`), a repón `TAURI_SIGNING_PRIVATE_KEY(_PASSWORD)` secretként.
-**A kulcs elvesztése = a meglévő telepítések nem frissíthetők tovább.**
+The updater signing keypair lives in the owner's key vault
+(`E:\Mega\keys\mytodo-updater\`) and on the repo as the
+`TAURI_SIGNING_PRIVATE_KEY(_PASSWORD)` secrets.
+**Losing the key means existing installs can no longer update.**
 
-## Dokumentáció
+## Documentation
 
-- `doc/ARCHITECTURE.md` — architektúra-áttekintés
-- `doc/WINDOWS-TESTS.md` — manuális Windows integrációs teszt-checklist
-- `doc/FUTURE.md` — jövőbeli ötletek (most tudatosan kimaradtak)
-- `doc/progress.md` — fejlesztési napló
+- `doc/ARCHITECTURE.md` — architecture overview
+- `doc/WINDOWS-TESTS.md` — manual Windows integration test checklist
+- `doc/FUTURE.md` — deferred ideas (deliberately out of scope for now)
+- `doc/progress.md` — development log
+- `doc/daprompt.md`, `doc/shortcut.md` — original (Hungarian) specification
+  prompts, kept verbatim as historical source material
 
-## Licenc
+## License
 
-MIT — lásd [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE).

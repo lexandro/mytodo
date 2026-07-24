@@ -1,70 +1,70 @@
 # mytodo
 
-Natív Windows asztali app: **Tauri v2** (Rust héj) + **Svelte 5** (SvelteKit SPA) + Bun.
+Native Windows desktop app: **Tauri v2** (Rust shell) + **Svelte 5** (SvelteKit SPA) + Bun.
 
-## Közös szabályok (minden projektemre érvényesek)
+## Shared rules (apply to all of my projects)
 
-### Kommunikáció és nyelv
-- **Magyarul kommunikálj** a felhasználóval; **angolul programozz** (kód, azonosítók, kód-kommentek angolul)
-- Projekt-dokumentáció magyarul, hacsak a projekt mást nem ír elő
+### Communication and language
+- **Communicate with the user in Hungarian**; **program in English** (code, identifiers, code comments in English)
+- This repo is public on GitHub → **all project documentation is in English** (international audience; explicit owner decision 2026-07-24)
 
-### Alapelvek
-- **Soha ne feltételezz — kérdezz!** Kétség esetén kérdés, nem találgatás (típusról, API-válasz shape-ről, fájltartalomról sem)
-- Alapelvek prioritási sorrendben (ütközéskor a feljebb álló nyer): 1. KISS/YAGNI, 2. SOLID, 3. Clean Architecture
-- A kód elsődleges olvasója az AI: olyan kód kell, amit egy LLM minimális kontextussal helyesen tud folytatni — explicit mindig, implicit soha; nincs "okos kód"; konzisztens minta > egyedi elegancia
-- Nincs shortcut, hack, duct-tape — csak professzionális megoldás
+### Principles
+- **Never assume — ask!** When in doubt, ask instead of guessing (about types, API response shapes, file contents too)
+- Principles in priority order (higher wins on conflict): 1. KISS/YAGNI, 2. SOLID, 3. Clean Architecture
+- The primary reader of the code is an AI: write code an LLM can continue correctly with minimal context — always explicit, never implicit; no "clever code"; consistent patterns beat individual elegance
+- No shortcuts, hacks or duct tape — professional solutions only
 
 ### Tooling
-- **Csomagkezelő: Bun** — SOHA npm/yarn/pnpm; a `bun.lock` commitolva van
-- CLI-k telepítve és authentikálva: `glab`, `gh`, `wrangler` — ezeket használd, ne curl/REST hívásokat
-- Git: **ez a projekt a github.com/lexandro/mytodo PUBLIC repóban él** (`origin`; explicit döntés 2026-07-24 — az auto-update a nyilvános release-ekből táplálkozik). A `gitlab` remote backup-tükör, szinkronja opcionális (`git push gitlab main`). Conventional commits angolul (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`)
+- **Package manager: Bun** — NEVER npm/yarn/pnpm; `bun.lock` is committed
+- CLIs installed and authenticated: `glab`, `gh`, `wrangler` — use them, not curl/REST calls
+- Git: **this project lives in the PUBLIC github.com/lexandro/mytodo repo** (`origin`; explicit decision 2026-07-24 — auto-update feeds from public releases). The `gitlab` remote is a backup mirror; syncing it is optional (`git push gitlab main`). Conventional commits in English (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`)
 
-### Kódminőség
-- ~150 sor/fájl felett állj meg és gondold át a bontást — ez smell, nem kemény plafon (kivétel: pure types, generált kód, tesztadat). Egy fájl = egy felelősség. Max ~20-25 sor/függvény.
-- TypeScript: `strict: true`; `any` TILOS (`unknown` + type guard helyette); explicit return type minden függvényen; TILOS a barrel export (index.ts re-export)
-- Nincs silent fail — mindig explicit hibakezelés; async/await try-catch-ben
-- Kommentek a MIÉRT-et magyarázzák, nem a MIT-et
+### Code quality
+- Above ~150 lines/file stop and consider splitting — a smell, not a hard cap (exceptions: pure types, generated code, test data). One file = one responsibility. Max ~20–25 lines/function.
+- TypeScript: `strict: true`; `any` is FORBIDDEN (`unknown` + type guard instead); explicit return type on every function; NO barrel exports (index.ts re-exports)
+- No silent failures — always explicit error handling; async/await in try-catch
+- Comments explain WHY, not WHAT
 
-### "Kész" definíciója
-- Commit előtt: typecheck + az érintett tesztek zöldek. A teszt a szerződés — mivel a kódolás delegálva van, teszt nélkül nincs visszajelzés a helyességről.
+### Definition of "done"
+- Before committing: typecheck + affected tests green. Tests are the contract — since coding is delegated, without tests there is no feedback on correctness.
 
 ### Secrets
-- Titok SOHA nem kerül repóba. Lokálisan `.env` / `.dev.vars` (gitignore-olva); minta `.env.example` / `.dev.vars.example` CSAK kulcsnevekkel; prod értékek CF env / GitLab CI masked variables-ből.
+- Secrets NEVER go into the repo. Locally `.env` / `.dev.vars` (gitignored); `.env.example` with key names only; prod values from CI secrets.
 
-### Windows környezet
-- `.bat` fájlok MINDIG CRLF sorvéggel és ASCII szöveggel (ékezet nélkül)
-- Bash-ben: ne használj `cd /d`-t és `-C` flaget Windows útvonalakkal; használj forward slash-t
+### Windows environment
+- `.bat` files ALWAYS use CRLF line endings and ASCII text (no accents)
+- In Bash: avoid `cd /d` and `-C` flags with Windows paths; use forward slashes
 
 
-## Architektúra — tiszta core, vékony héj
+## Architecture — pure core, thin shell
 
-- **Az érdemi logika tiszta `.ts` modulokba megy** a `src/lib/core/` alá: se Tauri-, se Svelte-, se DOM-import. Minden core-modul mellé kolokált `*.test.ts` (vitest).
-- **A Tauri API-t KIZÁRÓLAG az `src/lib/ipc.ts` importálhatja** — ez az egyetlen határ-modul a natív oldal felé. Új natív képességet ide vezess be, wrapper-függvényként.
-- A Svelte-komponensek vékonyak: állapot + megjelenítés, a logikát a core-ból hívják.
-- Rust-oldali (src-tauri) kód csak akkor, ha a frontendről nem megy: új `#[tauri::command]` + regisztráció a `lib.rs`-ben, és jogosultság a `capabilities/default.json`-ban. A capability-készlet minimál — tudatosan bővítsd.
+- **All real logic goes into pure `.ts` modules** under `src/lib/core/`: no Tauri, Svelte or DOM imports. Every core module has a colocated `*.test.ts` (vitest).
+- **Only `src/lib/ipc.ts` may import the Tauri API** — the single boundary module toward the native side. Introduce new native capabilities there as wrapper functions.
+- Svelte components stay thin: state + rendering; logic comes from the core.
+- Rust-side (src-tauri) code only when the frontend can't do it: new `#[tauri::command]` + registration in `lib.rs`, plus a permission in `capabilities/default.json`. Keep the capability set minimal — extend deliberately.
 
-## Parancsok
+## Commands
 
-- `bun install` — függőségek
-- `bun run tauri dev` — az app fejlesztői módban (ELSŐ indításkor a Rust-fordítás percekig tart!)
-- `bun run dev` — csak a frontend (port 1420, strict — foglalt portnál hibázik)
-- `bun run typecheck` — svelte-check (commit előtt kötelező zöld)
+- `bun install` — dependencies
+- `bun run tauri dev` — the app in dev mode (the FIRST launch compiles Rust for minutes!)
+- `bun run dev` — frontend only (port 1420, strict — fails if the port is taken)
+- `bun run typecheck` — svelte-check (must be green before committing)
 - `bun run test` — vitest
-- `cd src-tauri && cargo test` — Rust persistence tesztek
-- `build.bat` — typecheck + tesztek + release build + portable mappa (`release\myTODO\myTODO.exe`)
-- `bun run tauri build` — teljes release + MSI/NSIS installer
+- `cd src-tauri && cargo test` — Rust persistence tests
+- `build.bat` — typecheck + tests + release build + portable folder (`release\myTODO\myTODO.exe`)
+- `bun run tauri build` — full release + MSI/NSIS installers
 
-## Kiadás és live update
+## Releases and live update
 
-- **Release folyamat**: verzió-emelés HÁROM helyen → `git tag vX.Y.Z` → `git push origin vX.Y.Z` → a `.github/workflows/release.yml` (tauri-action) megépíti az aláírt MSI+NSIS telepítőket updater-artifactokkal, publikálja a GitHub Release-t és csatolja a portable zipet. Kézi publish lépés nincs.
-- **Updater**: `tauri-plugin-updater`; endpoint `releases/latest/download/latest.json`, pubkey a `tauri.conf.json`-ban. A frontend a `state/updater.svelte.ts`-en át 6 óránként csendben ellenőriz, és csak FELAJÁNLJA a frissítést (status bar chip / Help menü) — letöltés-telepítés mindig user-indított.
-- **Aláíró kulcspár**: `E:\Mega\keys\mytodo-updater\` (mytodo.key + password.txt); a repón `TAURI_SIGNING_PRIVATE_KEY` és `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` secret. A kulcs elvesztése = a kint lévő telepítések nem frissíthetők tovább. A pubkey cseréje breaking.
-- A CI (`ci.yml`) minden pushon typecheck + teszt + build — pirosat ne hagyj main-en.
+- **Release flow**: bump the version in THREE places → `git tag vX.Y.Z` → `git push origin vX.Y.Z` → `.github/workflows/release.yml` (tauri-action) builds the signed MSI+NSIS installers with updater artifacts, publishes the GitHub Release and attaches the portable zip. No manual publish step.
+- **Updater**: `tauri-plugin-updater`; endpoint `releases/latest/download/latest.json`, pubkey in `tauri.conf.json`. The frontend checks quietly every 6 hours via `state/updater.svelte.ts` and only OFFERS the update (status bar chip / Help menu) — download+install is always user-initiated.
+- **Signing keypair**: `E:\Mega\keys\mytodo-updater\` (mytodo.key + password.txt); repo secrets `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`. Losing the key = existing installs can never update again. Changing the pubkey is breaking.
+- CI (`ci.yml`) runs typecheck + tests + build on every push — never leave main red.
 
-## Sarokpontok
+## Cornerstones
 
-- **Single-instance**: második indításkor a meglévő ablak kap fókuszt (plugin a `lib.rs`-ben).
-- **CSP szigorú** (`tauri.conf.json`): új külső forrás/inline script nem mehet be a CSP lazítása nélkül — ha lazítani kell, indokold.
-- **Verzió-emelés HÁROM helyen** (mindig együtt): `package.json`, `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`.
-- A `target/` a projekt gyökerében van (`.cargo/config.toml` állítja) — gitignore-olva; a `release/` (lokális portable output) szintén.
-- Sorvégek: a `.gitattributes` LF-et kényszerít, `.bat` fájlok CRLF-ek.
+- **Single instance**: a second launch focuses the existing window (plugin in `lib.rs`).
+- **Strict CSP** (`tauri.conf.json`): no new external source/inline script without loosening the CSP — if you must loosen it, justify it.
+- **Version bump in THREE places** (always together): `package.json`, `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`.
+- `target/` sits in the project root (set by `.cargo/config.toml`) — gitignored; `release/` (local portable output) likewise.
+- Line endings: `.gitattributes` enforces LF; `.bat` files are CRLF.

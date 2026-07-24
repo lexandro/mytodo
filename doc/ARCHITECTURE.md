@@ -1,84 +1,93 @@
-# myTODO — architektúra
+# myTODO — architecture
 
-## Rétegek
+## Layers
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│ Svelte UI (src/lib/ui/*)      vékony: állapot + render   │
+│ Svelte UI (src/lib/ui/*)      thin: state + rendering    │
 ├──────────────────────────────────────────────────────────┤
-│ State réteg (src/lib/state/*) akciók, UI-state, undo     │
+│ State layer (src/lib/state/*) actions, UI state, undo    │
 ├──────────────────────────────────────────────────────────┤
-│ Pure core (src/lib/core/*)    domain-logika, se Tauri,   │
-│                               se Svelte, se DOM import   │
+│ Pure core (src/lib/core/*)    domain logic; no Tauri,    │
+│                               Svelte or DOM imports      │
 ├──────────────────────────────────────────────────────────┤
-│ ipc.ts — AZ EGYETLEN Tauri-határ                         │
+│ ipc.ts — THE single Tauri boundary                       │
 ├──────────────────────────────────────────────────────────┤
-│ Rust (src-tauri): SQLite repo, backup, Win32 integráció  │
+│ Rust (src-tauri): SQLite repo, backup, Win32 integration │
 └──────────────────────────────────────────────────────────┘
 ```
 
-- **core**: minden érdemi logika pure TS modul, kolokált vitest teszttel
-  (ops-modulok, rows-builder, search, links, shortcuts, transfer…).
-- **ipc.ts**: kizárólag ez importál `@tauri-apps/*` csomagot — egy helyen
-  auditálható a teljes natív felület.
-- **Rust**: kicsi és fókuszált — SQLite (rusqlite), backup (VACUUM INTO),
-  IVirtualDesktopManager/Win32 (summon), semmi üzleti logika.
+- **core**: all real logic is pure TS with colocated vitest tests
+  (ops modules, row builder, search, links, shortcuts, transfer…).
+- **ipc.ts**: the only module that imports `@tauri-apps/*` — the entire
+  native surface is auditable in one place.
+- **Rust**: small and focused — SQLite (rusqlite), backups (VACUUM INTO),
+  IVirtualDesktopManager/Win32 (summon); no business logic.
 
 ## Persistence
 
-- Az in-memory state az autoritás (Svelte 5 runes); az SQLite write-through.
-- Minden mutáció a `store.apply()` pipeline-on megy át:
-  `snapshot → mutate → diff → DbOp-batch → egy tranzakció`.
-- A diff (`core/diff.ts`) pontosan a változott sorokat emitálja — a DnD
-  reorder tipikusan 1 sort ír (fractional ordering, `ord REAL`).
-- FK-k a tranzakción belül halasztottak (`defer_foreign_keys`), commitkor
-  kötelezően konzisztensek; hibánál teljes rollback + látható hibaállapot
-  a status barban (retry-jal, adat nem vész el csendben).
-- Séma-verzió: `PRAGMA user_version` + append-only migrációs tömb.
+- The in-memory state is the authority (Svelte 5 runes); SQLite is
+  write-through.
+- Every mutation goes through the `store.apply()` pipeline:
+  `snapshot → mutate → diff → DbOp batch → one transaction`.
+- The diff (`core/diff.ts`) emits exactly the changed rows — a DnD reorder
+  typically writes a single row (fractional ordering, `ord REAL`).
+- FK checks are deferred inside the transaction (`defer_foreign_keys`) and
+  must be consistent at commit; failures roll back fully and surface as a
+  visible error state in the status bar (with retry) — data is never lost
+  silently.
+- Schema versioning: `PRAGMA user_version` + an append-only migration array.
 
 ## Undo
 
-- Snapshot-stack (cap 30) a `store.apply()`-ban; a visszavonás ugyanazon a
-  diff-pipeline-on íródik vissza a DB-be — a persistence-logika egyetlen
-  helyen él. View-toggle-ök (collapse) `undoable:false`-szal mennek.
+- Snapshot stack (cap 30) inside `store.apply()`; undo writes back through
+  the same diff pipeline — persistence logic exists in exactly one place.
+  View toggles (collapse) run with `undoable: false`.
 
 ## Multi-window
 
-- A Global Quick Add külön webview; NEM ír adatbázist: eseménnyel adja át a
-  main ablaknak (egyetlen in-memory writer), majd elrejtőzik.
+- The Global Quick Add is a separate webview; it does NOT write the
+  database: it hands the new todo to the main window via an event (single
+  in-memory writer), then hides itself.
 
 ## Search
 
-- `core/search.ts`: NFD → diakritika-eltávolítás → lowercase → whitespace;
-  substring (title/desc/subtask) + subsequence fuzzy (≥4 char, title).
-  Determinista, dependency-mentes.
+- `core/search.ts`: NFD → diacritic strip → lowercase → whitespace
+  normalization; substring on title/description/subtasks + subsequence fuzzy
+  (≥4 chars, titles only). Deterministic, dependency-free.
 
 ## Summon Workspace (Windows)
 
-- `src-tauri/src/winint/`: dokumentált API-k — IVirtualDesktopManager
+- `src-tauri/src/winint/`: documented APIs only — IVirtualDesktopManager
   (GetWindowDesktopId/MoveWindowToDesktop), MonitorFromWindow + work-area
-  clamp, SetForegroundWindow + FlashWindowEx fallback. A foreground HWND
-  minden saját aktiválás ELŐTT kerül lekérdezésre; desktop-váltás soha.
-- A summon mutex mögött serialized — gyors dupla hotkey nem interleave-el.
+  clamping, SetForegroundWindow with FlashWindowEx fallback. The foreground
+  HWND is captured BEFORE any self-activation; the user's desktop is never
+  switched.
+- Summon is serialized behind a mutex — rapid double hotkeys cannot
+  interleave window transitions.
 
 ## Live update
 
-- `tauri-plugin-updater` a GitHub Releases-ből (`releases/latest/download/
-  latest.json`), minisign-aláírt artifactokkal; a pubkey a `tauri.conf.json`-ban.
-- A `state/updater.svelte.ts` (mdedit-minta) 5 mp után + 6 óránként csendben
-  ellenőriz, és csak FELAJÁNLJA a frissítést (status bar chip + Help menü);
-  a letöltés-telepítés-újraindítás user-indított. A telepítős (MSI/NSIS)
-  változat frissül; a portable zip csak értesítést kap.
-- Release: tag push (`vX.Y.Z`) → `.github/workflows/release.yml` (tauri-action).
+- `tauri-plugin-updater` from GitHub Releases
+  (`releases/latest/download/latest.json`) with minisign-signed artifacts;
+  the pubkey lives in `tauri.conf.json`.
+- `state/updater.svelte.ts` (mdedit pattern) checks quietly 5 s after
+  startup and every 6 hours, and only OFFERS the update (status bar chip +
+  Help menu); download-install-relaunch is user-initiated. The installed
+  (MSI/NSIS) variant self-updates; the portable zip only gets notified.
+- Releases: tag push (`vX.Y.Z`) → `.github/workflows/release.yml`
+  (tauri-action).
 
 ## Portable storage
 
-- Minden a `myTODO/` mappán belül: `data/todo.db` + settings
-  (SQLite `settings` tábla, JSON értékek) + `backup/`. Registry nincs.
-- A shortcut-konfig, layout, theme, window-state mind a settings táblában.
+- Everything lives inside the `myTODO/` folder: `data/todo.db` + settings
+  (SQLite `settings` table, JSON values) + `backup/`. No registry.
+- Shortcut config, layout, theme and window state all live in the settings
+  table.
 
-## Fájlméret-elv
+## File-size principle
 
-~150 sor/fájl felett bontás; egy fájl = egy felelősség. A Rust oldalon a
-db/{schema,load,write,backup}, winint/{virtual_desktop,window_activation,
-summon} bontás követi ugyanezt.
+Above ~150 lines/file, split; one file = one responsibility. On the Rust
+side the db/{schema,load,write,backup} and
+winint/{virtual_desktop,window_activation,summon} split follows the same
+rule.

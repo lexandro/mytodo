@@ -1,311 +1,333 @@
-# myTODO — fejlesztési terv és haladás-követés
+# myTODO — development plan and progress tracking
 
-Forrás-dokumentumok:
-- **Funkcionális spec**: `doc/daprompt.md` (funkcióban ez győz)
-- **Design spec**: `assets/prototype/design_handoff_mytodo/` (megjelenésben + interakcióban ez győz;
-  a `prototype/myTODO App.dc.html` executable spec)
-- **Shortcut addendum**: `doc/shortcut.md` (Summon Workspace + Global Shortcut Manager)
+Source documents:
+- **Functional spec**: `doc/daprompt.md` (wins on functionality; original Hungarian prompt, kept verbatim)
+- **Design spec**: `assets/prototype/design_handoff_mytodo/` (wins on visuals + interactions;
+  `prototype/myTODO App.dc.html` is the executable spec)
+- **Shortcut addendum**: `doc/shortcut.md` (Summon Workspace + Global Shortcut Manager; original Hungarian prompt)
 
-## Fázis-workflow (minden fázisra kötelező)
+## Phase workflow (mandatory for every phase)
 
-1. Implementáció (előbb pure core + kolokált vitest, aztán UI)
-2. `bun run typecheck && bun run test` zöld
-3. Code review (self-review a diffre)
-4. Refactor / simplification a review findings alapján
-5. Újra zöld → conventional commit → **push** → jelen fájl frissítése
-6. Csak ezután indul a következő fázis
+1. Implementation (pure core + colocated vitest first, then UI)
+2. `bun run typecheck && bun run test` green
+3. Code review (self-review of the diff)
+4. Refactor / simplification based on review findings
+5. Green again → conventional commit → **push** → update this file
+6. Only then does the next phase start
 
-## Státusz-áttekintés
+## Status overview
 
-| Fázis | Tartalom | Állapot |
+| Phase | Scope | Status |
 |---|---|---|
-| F1 | Alapozás: tokenek, DB, domain model, app-váz | ✅ |
+| F1 | Foundation: tokens, DB, domain model, app shell | ✅ |
 | F2 | Lists, groups, todo CRUD, Quick Add | ✅ |
-| F3 | Fa-nézet, drag & drop, subtasks | ✅ |
-| F4 | Detail panel, activity, színek, emoji, linkek | ✅ |
+| F3 | Tree view, drag & drop, subtasks | ✅ |
+| F4 | Detail panel, activity, colors, emoji, links | ✅ |
 | F5 | Pinning, Pinned view, Archive, Trash, Undo | ✅ |
-| F6 | Keresés (filter, global, palette) | ✅ |
-| F7 | Split pane rendszer + layout persist | ✅ |
-| F8 | Global shortcuts, Quick Add ablak, Summon | ✅ |
+| F6 | Search (filter, global, palette) | ✅ |
+| F7 | Split pane system + layout persistence | ✅ |
+| F8 | Global shortcuts, Quick Add window, Summon | ✅ |
 | F9 | Scale, theme, keyboard polish, window state | ✅ |
 | F10 | Backup, import/export, hardening, portable release | ✅ |
 
-Jelmagyarázat: 🔲 nincs elkezdve · 🔄 folyamatban · ✅ kész (review+push megvolt)
+Legend: 🔲 not started · 🔄 in progress · ✅ done (review + push completed)
 
-## Rögzített döntések (2026-07-24)
+## Recorded decisions (2026-07-24)
 
-1. **DB réteg**: rusqlite a Rust oldalon, typed `#[tauri::command]`-ok; a SQL nem
-   szivárog TS-be. Domain state teljesen memóriában (Svelte 5 runes), SQLite
-   write-through persistence. Undo = in-memory snapshot stack (cap 30) + DB-írás.
-2. **Confirmation**: sehol nincs dialog (undo + toast), EGY kivétel: Empty Trash
-   confirmationt kér.
-3. **Design-gap feloldás**: File menü bővül (Import JSON / Export JSON / Backup Now /
-   Restore… / Settings); a Global Shortcuts beállító külön Settings modalban él
-   (Nocturne tokenekkel, shortcut.md §11 wireframe szerint).
-4. **Group törlés**: gyerekek re-parent a nagyszülőhöz, todo-k megmaradnak, undo-val
-   (design szerint, dialog nélkül) — ez a daprompt „move-content workflow" ága.
-5. **Ctrl+K command palette**: designban van, daprompt nem kéri → beépítjük.
-6. **Font**: Inter bundlelve (@fontsource, lokális) — a tokenek Google Fonts
-   `@import`-ja CSP + offline miatt nem mehet be.
-7. **Hide vs minimize (Summon toggle)**: hide, DE csak ha a Summon shortcut
-   regisztrálva van — különben minimize (ne tűnhessen el elérhetetlenül az ablak).
-   Single-instance plugin másodindításkor amúgy is előhozza.
-8. **AltGr-védelem**: HU layouton Ctrl+Alt = AltGr; a validátor figyelmeztet, ha a
-   választott global shortcut AltGr-karaktert ütne (pl. Ctrl+Alt+F → `[`).
-   Default `Ctrl+Alt+T` marad (T-nek nincs AltGr-párja).
-9. **Könyvtár**: `doc/` (nem `docs/`); FUTURE.md és ARCHITECTURE.md ide kerül.
-10. **Portable adat**: `data/` és `backup/` az exe mellett; dev módban a
-    `target/debug/` mellé kerül (gitignore-olt).
+1. **DB layer**: rusqlite on the Rust side with typed `#[tauri::command]`s; SQL
+   never leaks into TS. Domain state lives fully in memory (Svelte 5 runes)
+   with SQLite write-through persistence. Undo = in-memory snapshot stack
+   (cap 30) + DB writes.
+2. **Confirmations**: no dialogs anywhere (undo + toast), with ONE exception:
+   Empty Trash asks for confirmation.
+3. **Design-gap resolution**: the File menu grows (Import JSON / Export JSON /
+   Backup Now / Restore… / Settings); the Global Shortcuts editor lives in a
+   separate Settings modal (Nocturne tokens, per the shortcut.md §11 wireframe).
+4. **Group deletion**: children re-parent to the grandparent, todos are kept,
+   undoable (per design, no dialog) — the daprompt's "move-content workflow"
+   branch.
+5. **Ctrl+K command palette**: present in the design, not requested by the
+   functional prompt → built in.
+6. **Fonts**: Inter bundled (@fontsource, local) — the tokens' Google Fonts
+   `@import` cannot ship due to strict CSP + offline-first.
+7. **Hide vs minimize (Summon toggle)**: hide, BUT only while the Summon
+   shortcut is registered — otherwise minimize (the window must never become
+   unreachable). The single-instance plugin also raises it on relaunch.
+8. **AltGr protection**: on Hungarian layouts Ctrl+Alt = AltGr; the validator
+   warns when a chosen global shortcut would collide with an AltGr character
+   (e.g. Ctrl+Alt+F → `[`). The default stays `Ctrl+Alt+T` (T has no AltGr
+   pairing).
+9. **Directory**: `doc/` (not `docs/`); FUTURE.md and ARCHITECTURE.md live there.
+10. **Portable data**: `data/` and `backup/` next to the exe; in dev mode they
+    land next to `target/debug/` (gitignored).
 
-## Fázisok részletesen
+## Phases in detail
 
-### F1 — Alapozás: design tokenek, DB, domain model, app-váz ✅ (2026-07-24)
-- [x] Függőségek: rusqlite (bundled); @fontsource/inter, phosphor-svelte
-      (opener/global-shortcut plugin az F4/F8-ban jön, amikor tényleg kell)
-- [x] Nocturne tokenek portolása (`src/lib/styles/tokens.css` + `components.css`,
-      light theme a prototípus LIGHT mapjéből, Inter lokálisan bundlelve)
-- [x] Ablak-konfig: decorations:false, custom titlebar (drag region + működő
-      caption gombok), window-jogok a capabilities-ben indoklással
-- [x] Rust: `paths.rs` (exe melletti data/), `db/{schema,model,load,write,mod}.rs`
-      — WAL, FK, user_version-migráció, DbOp-batch egy tranzakcióban
-      (defer_foreign_keys), 6 Rust unit teszt (roundtrip, upsert, FK, rollback)
+### F1 — Foundation: design tokens, DB, domain model, app shell ✅ (2026-07-24)
+- [x] Dependencies: rusqlite (bundled); @fontsource/inter, phosphor-svelte
+      (opener/global-shortcut plugins arrive in F4/F8 when actually needed)
+- [x] Nocturne tokens ported (`src/lib/styles/tokens.css` + `components.css`,
+      light theme from the prototype's LIGHT map, Inter bundled locally)
+- [x] Window config: decorations:false, custom title bar (drag region +
+      working caption buttons), window permissions justified in capabilities
+- [x] Rust: `paths.rs` (data/ next to the exe), `db/{schema,model,load,write,mod}.rs`
+      — WAL, FK, user_version migrations, DbOp batches in one transaction
+      (defer_foreign_keys), 6 Rust unit tests (roundtrip, upsert, FK, rollback)
 - [x] `core/types.ts`, `core/ids.ts`, `core/ordering.ts` (fractional ordering),
-      `core/dbops.ts`, `core/diff.ts` (snapshot-diff → DbOps) — tesztekkel
-- [x] `ipc.ts`: db/settings/window wrapperek
-- [x] Store: apply-pipeline (snapshot → mutate → diff → persist), undo-stack
-      (cap 30, bootstrap nem undo-olható), serialized persist-queue retry-jal
-- [x] AppShell + TitleBar + StatusBar (saved/error indikátor)
-- [x] Inbox auto-create (fixed) — end-to-end igazolva: app futtatva, SQLite-ban
-      megjelent a séma v1 + Inbox sor
-- [x] `example.ts` placeholder törölve
-- [x] Zárás: typecheck + 16 TS teszt + 6 Rust teszt zöld → review (bootstrap-undo
-      bug javítva, YAGNI-cleanup) → push
+      `core/dbops.ts`, `core/diff.ts` (snapshot diff → DbOps) — with tests
+- [x] `ipc.ts`: db/settings/window wrappers
+- [x] Store: apply pipeline (snapshot → mutate → diff → persist), undo stack
+      (cap 30, bootstrap not undoable), serialized persist queue with retry
+- [x] AppShell + TitleBar + StatusBar (saved/error indicator)
+- [x] Inbox auto-create (fixed) — verified end-to-end: app ran, schema v1 +
+      Inbox row appeared in SQLite
+- [x] `example.ts` placeholder removed
+- [x] Close-out: typecheck + 16 TS + 6 Rust tests green → review
+      (bootstrap-undo bug fixed, YAGNI cleanup) → push
 
 ### F2 — Lists, groups, todo CRUD, Quick Add ✅ (2026-07-24)
 - [x] Core: `lists-ops` / `groups-ops` / `todos-ops` / `rows` / `labels` /
-      `emoji` / `scope` — 3-szintű depth-cap + ciklus-guard a moveGroup-ban,
-      lista-törlés = todo-k Trash-be (prototípus-viselkedés), fractional
-      ordering; 38 új teszt (össz. 54)
-- [x] ListRail: LISTS/VIEWS, +, aktív/drop állapotok, countok, Ctrl-digit
-      hintek, inline rename leading-emoji szerkesztéssel, lista drag-reorder,
-      todo-drop listára
-- [x] TabBar (single-pane), lista-váltás; Pinned/Trash view placeholder (F5)
-- [x] Fa-nézet: GroupRow (caret, collapse persist a DB-ben, drop-into
-      highlight + auto-expand), TodoRow (státusz-kör cycle, stripe, G-tag,
-      subtask-count, before/after drop-vonalak), SectionRow, EmptyState-ek
-- [x] QuickAdd: Enter → kijelölt todo groupjába vagy list rootba, Shift+Enter
-      details-nyitással, fókusz marad, Ctrl+N fókusz
-- [x] Context menük: todo (státuszok, Move to… morph, delete), group (New
-      todo/subgroup + 3-level limit hint), list (Inbox delete-restriction)
-- [x] Keyboard alapok: Esc-lánc, Ctrl+N/Ctrl+Shift+N/Ctrl+1..9/Ctrl+Enter/
-      Ctrl+Z/Delete/nyilak; Toast + Undo
-- [x] Vizuális smoke-teszt: ablak-capture ellenőrizve (rail, tabs, quick add,
-      Inbox zero empty state, status bar — design szerint)
-- [x] Zárás: typecheck 0 hiba, 54 teszt zöld → review (menus.ts placeholder
-      kód kijavítva, a11y warningok rendezve) → push
+      `emoji` / `scope` — 3-level depth cap + cycle guard in moveGroup,
+      list deletion moves todos to Trash (prototype behavior), fractional
+      ordering; 38 new tests (54 total)
+- [x] ListRail: LISTS/VIEWS, +, active/drop states, counts, Ctrl-digit hints,
+      inline rename with leading-emoji editing, list drag-reorder, todo drop
+      onto lists
+- [x] TabBar (single-pane), list switching; Pinned/Trash view placeholders (F5)
+- [x] Tree view: GroupRow (caret, collapse persisted in DB, drop-into
+      highlight + auto-expand), TodoRow (status circle cycling, stripe,
+      G tag, subtask count, before/after drop lines), SectionRow, EmptyStates
+- [x] QuickAdd: Enter → into the selected todo's group or list root,
+      Shift+Enter opens details, focus stays, Ctrl+N focuses
+- [x] Context menus: todo (statuses, Move to… morph, delete), group (New
+      todo/subgroup + 3-level-limit hint), list (Inbox delete restriction)
+- [x] Keyboard basics: Esc chain, Ctrl+N/Ctrl+Shift+N/Ctrl+1..9/Ctrl+Enter/
+      Ctrl+Z/Delete/arrows; Toast + Undo
+- [x] Visual smoke test: window captured and checked (rail, tabs, quick add,
+      Inbox-zero empty state, status bar — per design)
+- [x] Close-out: typecheck 0 errors, 54 tests green → review (menus.ts
+      placeholder code fixed, a11y warnings resolved) → push
 
-### F3 — Fa-nézet mélyítés, drag & drop, subtasks ✅ (2026-07-24)
-- [x] DnD (az F2-ben épült): todo reorder before/after vonallal, group-ba
-      ejtés highlight + auto-expand, rail-listára ejtés root-ba, rail
-      lista-reorder; minden drop 1 undo-olható akció + toast + activity
-      (cross-scope movenál)
-- [x] Subtasks core: add/edit/toggle/remove/reorder (flat, todo-n belüli
-      reorder-guard) + activity-írás — 6 új teszt (össz. 60)
-- [x] Pane-közti DnD az F7-ben jön (multi-pane); group drag-reorder a design
-      FUTURE.md szerint v1.1 — kimarad
-- [x] Zárás: typecheck 0, 60 teszt zöld → push
+### F3 — Tree deepening, drag & drop, subtasks ✅ (2026-07-24)
+- [x] DnD (built in F2): todo reorder with before/after lines, drop-into
+      groups with highlight + auto-expand, drop onto rail lists (to root),
+      rail list reorder; every drop is one undoable action + toast + activity
+      (on cross-scope moves)
+- [x] Subtask core: add/edit/toggle/remove/reorder (flat, reorder guarded to
+      the owning todo) + activity entries — 6 new tests (60 total)
+- [x] Pane-to-pane DnD arrives with F7 (multi-pane); group drag-reorder is
+      v1.1 per the design's FUTURE.md — skipped
+- [x] Close-out: typecheck 0, 60 tests green → push
 
-### F4 — Detail panel, activity, színek, emoji, linkek ✅ (2026-07-24)
-- [x] DetailPanel (320px): Details/Activity fülek, breadcrumb, ✕/Esc zárás
-- [x] DetailForm: title (blur-commit, üres edit visszaáll), Status pillek,
-      Emoji input (Win+. hint), Pin List/Global toggle-pár, Location dropdown
-      (list root + indentált group-fa) + move-up gomb; F2 → title fókusz+select,
-      Alt+← keyboard
-- [x] `core/links.ts`: URL + Windows path detektálás, safe-path check (ADS/
-      illegális karakter tiltás) + tesztek; opener plugin (capability indokolva),
-      chip: URL → böngésző, path → Explorer/társított app
-- [x] Color labels: 8 preset konstans + max 12 custom (`core/labels.ts`),
-      ColorPicker swatch-ok ring-gel, LabelManager modal (counter, add/edit/
-      remove; törölt label → todo-k fallback null-ra)
-- [x] `core/time.ts` (Today/Yesterday/Mar 4 formátum) + ActivityList
-      (newest-first, 2px rule); pin/archive/subtask/move activity-írások
-- [x] Duplicate a spec szerint (§27) — eredeti után szúrva, order-bug javítva
-- [x] SubtaskList UI: progress bar, checkbox-ok, add-input, remove
-- [x] **CDP-verifikáció a futó appon**: tab-váltás → dblclick detail →
-      subtask-pipa → SQLite-ban `checked=1` + activity sor → Ctrl+Z undo →
-      DB visszaállt. Screenshot design-hű.
-- [x] Zárás: typecheck 0, 75 teszt zöld → review → push
-- Megjegyzés: LabelManager Esc-zárása még nincs az Esc-láncban (backdrop-click
-  zár) — F9 keyboard-polish tétel
+### F4 — Detail panel, activity, colors, emoji, links ✅ (2026-07-24)
+- [x] DetailPanel (320px): Details/Activity tabs, breadcrumb, ✕/Esc close
+- [x] DetailForm: title (blur commit, blank edits revert), status pills,
+      emoji input (Win+. hint), List/Global pin pair, Location dropdown
+      (list root + indented group tree) + move-up button; F2 focuses+selects
+      the title, Alt+← keyboard
+- [x] `core/links.ts`: URL + Windows path detection, safe-path check (ADS/
+      illegal characters rejected) + tests; opener plugin (capability
+      justified), chips: URL → browser, path → Explorer/associated app
+- [x] Color labels: 8 preset constants + max 12 custom (`core/labels.ts`),
+      ColorPicker swatches with ring, LabelManager modal (counter,
+      add/edit/remove; deleted label → todos fall back to none)
+- [x] `core/time.ts` (Today/Yesterday/Mar 4 format) + ActivityList
+      (newest-first, 2px rule); pin/archive/subtask/move activity entries
+- [x] Duplicate per spec (§27) — inserted right after the original;
+      order bug fixed in review
+- [x] SubtaskList UI: progress bar, checkboxes, add input, remove
+- [x] **CDP verification on the running app**: tab switch → dblclick detail →
+      subtask check → `checked=1` + activity row in SQLite → Ctrl+Z undo →
+      DB rolled back. Screenshot matches the design.
+- [x] Close-out: typecheck 0, 75 tests green → review → push
+- Note: LabelManager's Esc close is not in the Esc chain yet (backdrop click
+  closes) — F9 keyboard-polish item
 
 ### F5 — Pinning, Pinned view, Archive, Trash, Undo ✅ (2026-07-24)
-- [x] Local/global pin + Ctrl+P + „G" tag + Pinned szekció (F4-ben épült)
-- [x] GlobalPinnedStrip: accent sáv, collapse, chip (színpötty + emoji + cím +
-      listanév) → navigate home
-- [x] PinnedView: GLOBAL elöl (accent), majd listánként; navigate home
-      (pane-váltás, ős-expand undo nélkül, archived-nyitás, select + detail)
-- [x] Archive szekció (rows.ts F2 óta rendereli; kereshetőség F6-ban jön)
-- [x] TrashView: Restore / Delete permanently / Empty Trash confirmationnal
-      (az app EGYETLEN confirm dialogja — 2. döntés); restore törölt group
-      esetén root-ba (core F2-ben tesztelve)
-- [x] Undo: snapshot-stack az F1 óta minden akcióra; empty trash / permanent
-      delete is visszavonható
-- [x] **CDP-verifikáció**: pin globally → strip megjelent → PinnedView szekciók
-      → navigate home vissza a detailhez → Delete → Trash → confirm → Empty →
-      Ctrl+Z visszahozta. Zöld.
-- [x] Zárás: typecheck 0, 75 teszt zöld → push
+- [x] Local/global pin + Ctrl+P + "G" tag + Pinned section (built in F4)
+- [x] GlobalPinnedStrip: accent band, collapse, chips (color dot + emoji +
+      title + list name) → navigate home
+- [x] PinnedView: GLOBAL first (accent), then per list; navigate home
+      (pane switch, ancestor expand without undo, archived open, select +
+      detail)
+- [x] Archive section (rendered by rows.ts since F2; searchability lands in F6)
+- [x] TrashView: Restore / Delete permanently / Empty Trash with
+      confirmation (the app's ONLY confirm dialog — decision #2); restore
+      falls back to root when the group is gone (core-tested in F2)
+- [x] Undo: snapshot stack since F1 for every action; empty trash /
+      permanent delete are also undoable
+- [x] **CDP verification**: pin globally → strip appeared → PinnedView
+      sections → navigate home back to the detail → Delete → Trash →
+      confirm → Empty → Ctrl+Z brought it back. Green.
+- [x] Close-out: typecheck 0, 75 tests green → push
 
-### F6 — Keresés ✅ (2026-07-24)
-- [x] `core/search.ts`: NFD → diakritika → lowercase → whitespace pipeline;
-      magyar tesztek („ÁRVÍZTŰRŐ TÜKÖRFÚRÓGÉP" ↔ „arvizturo tukorfurogep")
-- [x] Fuzzy: substring (title/desc/subtask) + subsequence ≥4 char csak title-re
-      (rövid query nem ad zajos találatot) — 10 új teszt (össz. 85)
-- [x] FilterBar (Ctrl+F): live match-count, groupok force-expand mentés nélkül,
-      Pinned/Archived is szűrődik, „No matches" empty state
-- [x] GlobalSearch (Ctrl+Shift+F): 540px dialog, ≤20 determinisztikus találat,
-      breadcrumb, ↑↓+Enter → navigate home; archived benne, trash kizárva
-- [x] CommandPalette (Ctrl+K): listák Ctrl+n hinttel + layout/view/theme
-      parancsok (a layout-váltás az F7-tel válik láthatóvá)
-- [x] Esc-lánc bővítve: ctx → palette → gsearch → rename → picker → filter →
-      detail; téma-attribútum (`data-theme`) bekötve
-- [x] **CDP-verifikáció**: ékezet-független global search + Enter-navigáció,
-      Ctrl+F fuzzy filter match-counttal, palette → Trash view váltás. Zöld.
-- [x] Zárás: typecheck 0, 85 teszt zöld → push
+### F6 — Search ✅ (2026-07-24)
+- [x] `core/search.ts`: NFD → diacritics → lowercase → whitespace pipeline;
+      Hungarian tests ("ÁRVÍZTŰRŐ TÜKÖRFÚRÓGÉP" ↔ "arvizturo tukorfurogep")
+- [x] Fuzzy: substring (title/desc/subtask) + subsequence ≥4 chars on titles
+      only (short queries stay noise-free) — 10 new tests (85 total)
+- [x] FilterBar (Ctrl+F): live match count, groups force-expanded without
+      saving state, Pinned/Archived filtered too, "No matches" empty state
+- [x] GlobalSearch (Ctrl+Shift+F): 540px dialog, ≤20 deterministic results,
+      breadcrumbs, ↑↓+Enter → navigate home; archived included, trash
+      excluded
+- [x] CommandPalette (Ctrl+K): lists with Ctrl+n hints + layout/view/theme
+      commands (layout switching becomes visible with F7)
+- [x] Esc chain extended: ctx → palette → gsearch → rename → picker →
+      filter → detail; theme attribute (`data-theme`) wired
+- [x] **CDP verification**: accent-insensitive global search + Enter
+      navigation, Ctrl+F fuzzy filter with match count, palette → Trash
+      view switch. Green.
+- [x] Close-out: typecheck 0, 85 tests green → push
 
-### F7 — Split pane rendszer ✅ (2026-07-24)
-- [x] Layout: 1 / 2v / 2h / 4 CSS grid (fix 1fr trackek), LayoutSwitcher
-      segmented gomb a titlebarban
-- [x] Pane-állapot slotonként él (lista, quick-draft, filter, picker) —
-      1→4→1 váltásnál a slot-tartalom megmarad
-- [x] Aktív pane accent-border (csak multi-pane), keyboard oda megy
-- [x] Multi-pane: ListSelector dropdown popoverrel a TabBar helyett
-- [x] Pane-közti todo-DnD (pane háttér = list root — F2 óta kész)
-- [x] Settings-sync: layout + pane→lista + activePane + view a settings
-      táblába, restore induláskor validációval (törölt lista → null fallback)
-- [x] **CDP-verifikáció**: 2v váltás → 2 pane selectorral, pane 2 lista-váltás,
-      aktív-pane border követi a kattintást, 2×2 → 4 pane, roundtrip megőrzi
-      a slotokat; **restart után visszaállt** a layout és a mapping. Zöld.
-- [x] Zárás: typecheck 0, 85 teszt zöld → push
+### F7 — Split pane system ✅ (2026-07-24)
+- [x] Layouts: 1 / 2v / 2h / 4 CSS grid (fixed 1fr tracks), segmented
+      LayoutSwitcher in the title bar
+- [x] Pane state lives per slot (list, quick draft, filter, picker) —
+      1→4→1 switches preserve slot contents
+- [x] Active pane accent border (multi-pane only), keyboard goes there
+- [x] Multi-pane: ListSelector dropdown popover replaces the TabBar
+- [x] Pane-to-pane todo DnD (pane background = list root — since F2)
+- [x] Settings sync: layout + pane→list + activePane + view into the
+      settings table, restored at startup with validation (deleted list →
+      null fallback)
+- [x] **CDP verification**: 2v switch → 2 panes with selectors, pane-2 list
+      switch, active-pane border follows clicks, 2×2 → 4 panes, roundtrip
+      preserves slots; **layout + mapping restored after an app restart**.
+      Green.
+- [x] Close-out: typecheck 0, 85 tests green → push
 
-### F8 — Global shortcuts, Quick Add ablak, Summon Workspace ✅ (2026-07-24)
+### F8 — Global shortcuts, Quick Add window, Summon Workspace ✅ (2026-07-24)
 - [x] Rust `src-tauri/src/winint/{virtual_desktop,window_activation,summon}.rs`
-      — IVirtualDesktopManager COM wrapper (per-hívás CoInitializeEx),
-      foreground HWND capture AKTIVÁLÁS ELŐTT, monitor work-area clamp,
-      SetForegroundWindow + FlashWindowEx fallback, maximized megőrzés,
-      SUMMON_LOCK mutex (serialized transitions), desktop-váltás fallbackként
-      is TILOS; main-close → app exit (a rejtett quickadd ne tartsa életben)
+      — IVirtualDesktopManager COM wrapper (CoInitializeEx per call),
+      foreground HWND captured BEFORE self-activation, monitor work-area
+      clamp, SetForegroundWindow + FlashWindowEx fallback, maximized
+      preservation, SUMMON_LOCK mutex (serialized transitions), desktop
+      switching forbidden even as a fallback; main-close → app exit (the
+      hidden quickadd must not keep it alive)
 - [x] `core/shortcuts.ts` (pure): defaults (Ctrl+Alt+T / Ctrl+Shift+Space /
-      2 opcionális), validáció (modifier-kötelező, system-blacklist),
-      AltGr-figyelmeztetés, conflict-detektálás, recorder-parser, Tauri
-      accelerator konverzió — 10 új teszt (össz. 95)
-- [x] `state/shortcut-manager.svelte.ts`: startup-regisztráció hibagyűjtéssel
-      (app ettől indul, egyszeri toast), tranzakciós rebind (új sikeres
-      regisztráció UTÁN oldódik a régi; hibánál a régi marad), enable/disable,
-      Summon/Hide toggle vs Always mód, reset defaults, persist a settings-be
-- [x] Quick Add ablak: külön mindig-legfelül webview (`/quickadd` route,
-      singleton), aktuális desktopon+monitoron jelenik meg, target-selector
-      default Inbox; Enter → EVENT a main ablaknak (egyetlen in-memory
-      authority ír DB-t) + hide + „Added to X" toast; Esc → hide
-- [x] Pinned Todos / Global Search opcionális global actionök (summon + view/
-      search fókusz); ⚡ + ⚙ toolbar-gombok, Settings a palette-ből is
-- [x] Settings dialog a §11 wireframe szerint (recorder „Press shortcut…",
-      Enabled toggle, Reset Defaults, hiba + AltGr-warning inline)
-- [x] Capabilities: quickadd ablak + global-shortcut + hide/show, indoklással
-- [x] **CDP-verifikáció**: ⚡ → quickadd ablak listákkal (Inbox default) →
-      Enter → main írta a DB-t (SQLite sor + rail count); summon parancs
-      mindhárom ága fut; recorder-rebind Ctrl+Alt+P + AltGr-warning + OS-
-      regisztráció igazolva (`is_registered`=true mindháromra); reset OK
-- [x] Manuális teszt-checklist: `doc/WINDOWS-TESTS.md` (A–M) — a virtual
-      desktop viselkedést kézzel kell igazolni
-- [x] Zárás: typecheck 0, 95 teszt, cargo check tiszta → push
+      2 optional), validation (modifier required, system blacklist), AltGr
+      warning, conflict detection, recorder parser, Tauri accelerator
+      conversion — 10 new tests (95 total)
+- [x] `state/shortcut-manager.svelte.ts`: startup registration with failure
+      collection (app always starts, single toast), transactional rebind
+      (old released only AFTER the new registers; on failure the old stays),
+      enable/disable, Summon/Hide toggle vs Always mode, reset defaults,
+      persisted in settings
+- [x] Quick Add window: separate always-on-top webview (`/quickadd` route,
+      singleton), appears on the current desktop+monitor, target selector
+      defaulting to Inbox; Enter → EVENT to the main window (single
+      in-memory authority writes the DB) + hide + "Added to X" toast;
+      Esc → hide
+- [x] Pinned Todos / Global Search optional global actions (summon +
+      view/search focus); ⚡ + ⚙ toolbar buttons, Settings from the palette
+      too
+- [x] Settings dialog per the §11 wireframe (recorder "Press shortcut…",
+      Enabled toggle, Reset Defaults, inline error + AltGr warning)
+- [x] Capabilities: quickadd window + global-shortcut + hide/show, justified
+- [x] **CDP verification**: ⚡ → quickadd window with lists (Inbox default) →
+      Enter → main wrote the DB (SQLite row + rail count); all three summon
+      command branches ran; recorder rebind Ctrl+Alt+P + AltGr warning +
+      OS registration proven (`is_registered`=true for all three); reset OK
+- [x] Manual test checklist: `doc/WINDOWS-TESTS.md` (A–M) — virtual desktop
+      behavior needs live verification
+- [x] Close-out: typecheck 0, 95 tests, cargo check clean → push
 
 ### F9 — Scale, theme, keyboard polish, window state ✅ (2026-07-24)
-- [x] UI scale (80–150% zoom, vh-kompenzációval — review-ban talált overflow
-      javítva) + Todo font size (10–20px) külön; ScaleControls popover
-      (chipek, A−/A+, hint), Ctrl+wheel non-passive listenerrel
-- [x] System / Light / Dark theme: matchMedia-követés élőben, toolbar toggle
-      + View menü (Follow system ✓ jelöléssel), persist az appearance kulcsban
-- [x] MenuBar (File/Edit/View/Go/Help): design szerinti tartalom, roaming
-      hover, shortcut-hintek, Edit menü selection-függő disabled állapotok;
-      Alt-accelerátorok kimaradtak (jegyzet: nice-to-have)
-- [x] F1 ShortcutsDialog (SHORTCUTS.md két oszlopban); Esc-lánc véglegesítve:
+- [x] UI scale (80–150% zoom with vh compensation — an overflow found in
+      review was fixed) + todo font size (10–20px) separately; ScaleControls
+      popover (chips, A−/A+, hint), Ctrl+wheel with a non-passive listener
+- [x] System / Light / Dark theme: live matchMedia tracking, toolbar toggle
+      + View menu (with a "Follow system ✓" mark), persisted under the
+      appearance key
+- [x] MenuBar (File/Edit/View/Go/Help): design contents, roaming hover,
+      shortcut hints, selection-aware disabled states in Edit; Alt
+      accelerators skipped (noted as nice-to-have)
+- [x] F1 ShortcutsDialog (SHORTCUTS.md in two columns); Esc chain finalized:
       menu → shortcuts → ctx → scalePop → settings → palette → gsearch →
       rename → picker → filter → detail
-- [x] Window state: pozíció/méret/maximized persist (debounced onMoved/
-      onResized), restore induláskor monitor-metszet ellenőrzéssel (100px
-      látható minimum — lecsatolt monitor esetén default marad)
-- [x] **CDP-verifikáció**: menük tartalma + layout-státusz pöttyök, light
-      téma váltás (bg #eceef5), 125% zoom + scrollbar-fix, A+/Ctrl+wheel
-      fontméret, F1 nyit/Esc zár; **restart után visszaállt** a light+125%+
-      12px, majd vissza defaultra. Zöld.
-- [x] Zárás: typecheck 0, 95 teszt zöld → push
+- [x] Window state: position/size/maximized persisted (debounced
+      onMoved/onResized), restored at startup with a monitor-intersection
+      check (min 100px visible — defaults kept after a monitor disconnect)
+- [x] **CDP verification**: menu contents + layout state dots, light theme
+      switch (bg #eceef5), 125% zoom + scrollbar fix, A+/Ctrl+wheel font
+      size, F1 opens/Esc closes; **light+125%+12px restored after restart**,
+      then reset to defaults. Green.
+- [x] Close-out: typecheck 0, 95 tests green → push
 
 ### F10 — Backup, import/export, hardening, portable release ✅ (2026-07-24)
-- [x] Backup (Rust `db/backup.rs`): VACUUM INTO (WAL-konzisztens), napi
-      automata háttérszálon + File → Backup now, `backup/todo-YYYY-MM-DD.db`,
-      utolsó 10 megtartva
-- [x] Restore: `File → Restore backup…` picker; csere előtt automatikus
-      `pre-restore.db` safety-mentés, conn close → swap → reopen → teljes
-      state-reload (undo-stack ürül); fájlnév-validáció (nincs path traversal)
-- [x] Export/Import JSON (`core/transfer.ts`): teljes user-adat, format-mező;
-      import TELJES validáció ELŐBB (típusok, ref-integritás, depth ≤3,
-      duplikált id-k, 12-es label-cap, Inbox-garancia) — hibás fájl nem érinti
-      a DB-t; az import egyetlen undo-olható apply; 7 új teszt (össz. 102)
-- [x] Hibakezelés: minden adat-akció látható toast-hibával; persist-hiba
-      retry-jal a status barban; silent catch sehol
-- [x] README (teljes: purpose, setup, build, portable layout, DB, backup,
-      shortcuts, Windows Global Shortcuts kiemeléssel) + `doc/ARCHITECTURE.md`
-      + `doc/FUTURE.md` (Minimal Markdown + design-halasztások)
-- [x] `build.bat`: typecheck + teszt + release build + portable mappa
-      (`release\myTODO\myTODO.exe` + data/ + backup/); CRLF
-      byte-szinten ellenőrizve
-- [x] Verzió: 1.0.0 mindhárom helyen (package.json, tauri.conf.json, Cargo.toml)
-- [x] **CDP-verifikáció**: File menü teljes; backup_now → fájl a backup/-ban;
-      restore e2e (marker-todo eltűnt, toast, safety-fájl a lemezen)
-- [x] Zárás: typecheck 0, 102 TS + 6 Rust teszt zöld → release build → push
+- [x] Backup (Rust `db/backup.rs`): VACUUM INTO (WAL-consistent), daily
+      automatic on a background thread + File → Backup now,
+      `backup/todo-YYYY-MM-DD.db`, newest 10 kept
+- [x] Restore: `File → Restore backup…` picker; automatic `pre-restore.db`
+      safety copy before the swap, connection close → swap → reopen → full
+      state reload (undo stack cleared); file-name validation (no path
+      traversal)
+- [x] Export/Import JSON (`core/transfer.ts`): full user data, format field;
+      import FULLY validates FIRST (types, referential integrity, depth ≤3,
+      duplicate ids, 12-label cap, Inbox guarantee) — a bad file never
+      touches the DB; the import is one undoable apply; 7 new tests (102
+      total)
+- [x] Error handling: every data action surfaces a visible toast error;
+      persist errors offer retry in the status bar; no silent catch anywhere
+- [x] README (full: purpose, setup, build, portable layout, DB, backups,
+      shortcuts, Windows Global Shortcuts highlighted) +
+      `doc/ARCHITECTURE.md` + `doc/FUTURE.md` (minimal Markdown + design
+      deferrals)
+- [x] `build.bat`: typecheck + tests + release build + portable folder
+      (`release\myTODO\myTODO.exe` + data/ + backup/); CRLF verified at
+      byte level
+- [x] Version: 1.0.0 in all three places (package.json, tauri.conf.json,
+      Cargo.toml)
+- [x] **CDP verification**: full File menu; backup_now → file in backup/;
+      restore e2e (marker todo disappeared, toast, safety file on disk)
+- [x] Close-out: typecheck 0, 102 TS + 6 Rust tests green → release build →
+      push
 
-## Definition of Done — állapot (daprompt §50 + shortcut.md §32)
+## Definition of Done — status (daprompt §50 + shortcut.md §32)
 
-| Követelmény | Állapot |
+| Requirement | Status |
 |---|---|
-| Portable Windows build (installer nélkül indul) | ✅ `release\myTODO\` — futtatva, saját `data/`-t hozott létre |
-| Adat a portable data könyvtárban | ✅ SQLite az exe mellett, igazolva |
-| Inbox működik (fix, nem törölhető) | ✅ |
-| Több tab/lista, max 3 szintű groupok | ✅ (depth-cap tesztelve UI+import szinten) |
-| Quick Add Enterrel; Global Quick Add | ✅ CDP e2e |
-| Todo CRUD + 4 státusz | ✅ |
-| Subtasks, emoji, preset+12 custom color label | ✅ |
-| Local + global pin, Pinned Todos nézet | ✅ |
-| DnD listák/groupok/pane-ek között; 1/2/4 pane; layout restart után | ✅ |
-| Accent-független fuzzy search (current+global) | ✅ magyar tesztekkel |
+| Portable Windows build (starts without an installer) | ✅ `release\myTODO\` — ran, created its own `data/` |
+| Data in the portable data folder | ✅ SQLite next to the exe, verified |
+| Inbox works (fixed, undeletable) | ✅ |
+| Multiple tabs/lists, groups up to 3 levels | ✅ (depth cap tested at UI + import level) |
+| Quick Add with Enter; Global Quick Add | ✅ CDP e2e |
+| Todo CRUD + 4 statuses | ✅ |
+| Subtasks, emoji, presets + 12 custom color labels | ✅ |
+| Local + global pins, Pinned Todos view | ✅ |
+| DnD across lists/groups/panes; 1/2/4 panes; layout restored after restart | ✅ |
+| Accent-insensitive fuzzy search (current + global) | ✅ with Hungarian tests |
 | Details + Activity, Archive, Trash/Restore, Undo, Duplicate | ✅ |
-| URL/file/folder linkek | ✅ (biztonságos path-guard) |
-| UI scale + todo font size + light/dark/system | ✅ persist + restore igazolva |
-| Keyboard shortcuts + F1 térkép | ✅ |
-| SQLite stabil (WAL, FK, migrációk, tranzakciók) | ✅ 6 Rust teszt |
-| Backup (napi + kézi, 10 megtartva) + Restore | ✅ e2e |
-| JSON export/import validációval | ✅ roundtrip tesztek |
+| URL/file/folder links | ✅ (safe-path guard) |
+| UI scale + todo font size + light/dark/system | ✅ persist + restore verified |
+| Keyboard shortcuts + F1 map | ✅ |
+| SQLite stable (WAL, FK, migrations, transactions) | ✅ 6 Rust tests |
+| Backups (daily + manual, keep 10) + Restore | ✅ e2e |
+| JSON export/import with validation | ✅ roundtrip tests |
 | README + ARCHITECTURE + FUTURE.md | ✅ |
-| Summon: „megnyomom és idejön" | ✅ parancs-szint igazolva; virtual desktop viselkedés → `doc/WINDOWS-TESTS.md` kézi checklist |
+| Summon: "press the key and it comes here" | ✅ command level verified; virtual desktop behavior → `doc/WINDOWS-TESTS.md` |
 
-**Hátralévő manuális munka (user):** a `doc/WINDOWS-TESTS.md` A–M tesztjei
-(virtual desktop mozgatás, több monitor, fókusz-viselkedés) — ezek élő
-felhasználói munkamenetet igényelnek, automatán nem futtathatók.
+**Remaining manual work (owner):** the G / H / J-live / M items of
+`doc/WINDOWS-TESTS.md` (monitor disconnect, live hotkey conflict, AltGr on a
+Hungarian layout) — these need a live user session.
 
-## Napló
+## Log
 
-- **2026-07-24** — Elemzés kész: a három forrás koherens; eltérések feloldva
-  (lásd Rögzített döntések).
-- **2026-07-24** — F1–F10 elkészült egy menetben: minden fázis végén
-  typecheck+tesztek zölden, CDP-alapú end-to-end verifikáció a futó appon,
-  self-review + javítások, commit + push. Végállapot: 102 TS + 6 Rust teszt,
-  v1.0.0 portable release lefordítva és élesben ellenőrizve.
-- **2026-07-24 (délután)** — Windows integrációs tesztek levezényelve élő
-  munkameneten (A–F, I, K, L ✅ — lásd WINDOWS-TESTS.md); app-ikon beépítve
-  (valódi-alfás tisztítással) + Inbox-vízjel; portable átnevezve myTODO-ra.
-- **2026-07-24 (este)** — **Átköltözés GitHubra**: github.com/lexandro/mytodo
-  (public, explicit döntés — az updaternek nyilvános release kell), gitlab
-  remote backupként megtartva. Live update beépítve (tauri-plugin-updater,
-  mdedit-minta): aláírt artifactok, kulcspár az E:\Mega\keys\mytodo-updater
-  alatt, repo-secrets beállítva. release.yml (tag → aláírt MSI/NSIS +
-  latest.json + portable zip) + ci.yml. v1.0.0 tag kiadva.
+- **2026-07-24** — Analysis done: the three sources are coherent;
+  discrepancies resolved (see Recorded decisions).
+- **2026-07-24** — F1–F10 completed in one run: each phase closed with green
+  typecheck+tests, CDP-based end-to-end verification against the running
+  app, self-review + fixes, commit + push. Final state: 102 TS + 6 Rust
+  tests, v1.0.0 portable release built and verified live.
+- **2026-07-24 (afternoon)** — Windows integration tests executed in a live
+  session (A–F, I, K, L ✅ — see WINDOWS-TESTS.md); app icon integrated
+  (true-alpha cleanup) + Inbox watermark; portable renamed to myTODO.
+- **2026-07-24 (evening)** — **Moved to GitHub**: github.com/lexandro/mytodo
+  (public — explicit decision; the updater needs public releases), the
+  gitlab remote kept as a backup. Live update added (tauri-plugin-updater,
+  mdedit pattern): signed artifacts, keypair under E:\Mega\keys\
+  mytodo-updater, repo secrets set. release.yml (tag → signed MSI/NSIS +
+  latest.json + portable zip) + ci.yml. v1.0.0 released. All documentation
+  translated to English (GitHub = international audience; daprompt.md and
+  shortcut.md stay Hungarian as verbatim historical inputs).
