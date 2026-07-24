@@ -10,6 +10,7 @@ import {
   openDetails, trashTodoAction,
 } from "./actions";
 import { duplicateAction, setArchivedAction, togglePinAction } from "./actions-detail";
+import { aiConfig } from "./ai-config.svelte";
 import { store } from "./store.svelte";
 import { ui, type CtxItem } from "./ui.svelte";
 
@@ -118,9 +119,18 @@ function newTodoInGroup(group: Group): void {
 }
 
 export function listMenuItems(list: List): CtxItem[] {
+  const linked = aiConfig.linkFor(list.id) !== undefined;
   return [
     { label: "Rename", hint: "F2", action: () => armRename("list", list.id) },
     { label: "New group", action: () => newGroup(list.id, null) },
+    { separator: true },
+    {
+      label: linked ? "Workspace settings…" : "Link Workspace…",
+      action: closeAnd(() => {
+        ui.workspaceSettings = list.id;
+        if (linked) void aiConfig.refreshMissing(list.id);
+      }),
+    },
     { separator: true },
     list.fixed
       ? { label: "Delete list", hint: "Inbox is permanent", disabled: true, action: () => {} }

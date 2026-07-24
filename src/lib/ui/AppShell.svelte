@@ -5,6 +5,7 @@
   import { ensureInbox } from "$lib/core/bootstrap";
   import { createTodo } from "$lib/core/todos-ops";
   import { onQuickAdd } from "$lib/ipc";
+  import { aiConfig } from "$lib/state/ai-config.svelte";
   import { handleKeydown } from "$lib/state/keyboard";
   import {
     TODO_FS_MAX, TODO_FS_MIN, persistAppearance, persistUiSettings, restoreUiSettings,
@@ -31,6 +32,7 @@
   import Toast from "./Toast.svelte";
   import TodoPane from "./TodoPane.svelte";
   import TrashView from "./TrashView.svelte";
+  import WorkspaceSettingsDialog from "./WorkspaceSettingsDialog.svelte";
 
   $effect(() => {
     void store
@@ -45,6 +47,7 @@
         void restoreWindowState(all[WINDOW_STATE_KEY]).then(() => startWindowStateSaving());
         updater.startAutoCheck();
         void shortcutOffer.init(all[SHORTCUT_OFFER_KEY]);
+        aiConfig.restore(all, store.data.lists.map((l) => l.id));
       });
   });
 
@@ -175,6 +178,7 @@
 <GlobalSearch />
 <CommandPalette />
 <SettingsDialog />
+<WorkspaceSettingsDialog />
 <ShortcutsDialog />
 <RestoreDialog />
 <ShortcutOfferDialog />

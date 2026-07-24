@@ -11,6 +11,7 @@ import { openPath, openUrl } from "@tauri-apps/plugin-opener";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { check, type Update } from "@tauri-apps/plugin-updater";
 import type { AIRunRow } from "$lib/core/ai-runs";
+import type { WorkspaceStatus } from "$lib/core/ai-workspace";
 import type { DbOp } from "$lib/core/dbops";
 import type { ShortcutStatus } from "$lib/core/shortcut-offer";
 import type { DomainData } from "$lib/core/types";
@@ -42,6 +43,19 @@ export function aiRunsLoad(): Promise<AIRunRow[]> {
 /** Upsert one run row; the backend prunes old terminal runs per list. */
 export function aiRunPut(run: AIRunRow): Promise<void> {
   return invoke<void>("ai_run_put", { run });
+}
+
+// ── linked workspaces (AI Workspace Integration V1) ─────────────────────────
+
+/** Native directory picker; null = cancelled. */
+export async function pickDirectory(): Promise<string | null> {
+  const result = await open({ directory: true, multiple: false });
+  return typeof result === "string" ? result : null;
+}
+
+/** Existence / readability / Git probe for a workspace path. */
+export function workspaceCheck(path: string): Promise<WorkspaceStatus> {
+  return invoke<WorkspaceStatus>("workspace_check", { path });
 }
 
 // ── backup / restore ────────────────────────────────────────────────────────

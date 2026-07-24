@@ -40,6 +40,10 @@ function handleEscape(): void {
     ui.settingsOpen = false;
     return;
   }
+  if (ui.workspaceSettings !== null) {
+    ui.workspaceSettings = null;
+    return;
+  }
   if (ui.palette !== null) {
     ui.palette = null;
     return;

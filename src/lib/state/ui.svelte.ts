@@ -74,6 +74,8 @@ class UiState {
   todoFs = $state(13);
   /** Settings dialog (global shortcuts, …). */
   settingsOpen = $state(false);
+  /** Workspace settings dialog for a list id; null = closed. */
+  workspaceSettings = $state<string | null>(null);
   /** Backup restore picker dialog. */
   restoreOpen = $state(false);
   /** Open menu-bar menu (File/Edit/…); null = closed. */

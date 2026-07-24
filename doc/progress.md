@@ -369,7 +369,7 @@ handoff (existing design semantics untouched, token stylesheet byte-identical).
 | Phase | Scope | Status |
 |---|---|---|
 | AI1 | Domain + persistence: types, migrations, settings keys, FUTURE.md | ✅ |
-| AI2 | Workspace linking: picker, validation, Git detect, chip, settings dialog, missing state | 🔲 |
+| AI2 | Workspace linking: picker, validation, Git detect, chip, settings dialog, missing state | ✅ |
 | AI3 | Provider infra: detection, validation, version, Test, AI Clients dialog, default client | 🔲 |
 | AI4 | Run engine: Rust process exec + streaming + cancel, provider adapters, result normalization | 🔲 |
 | AI5 | Context builder + proposals: AIContextBuilder, parse/validate, batch apply, activity log | 🔲 |
@@ -405,19 +405,27 @@ explicit owner request; version stays until then.
       (transfer.ts deduplicated)
 - [x] Close-out: typecheck 0, 137 TS (+29) + 12 Rust tests green → push
 
-#### AI2 — Workspace linking 🔲
-- [ ] `core/workspace.ts`: link/unlink/relocate ops, missing-state logic;
-      Rust command: directory validation (exists, readable) + Git detection
-      (`.git` presence — no VCS features beyond detection)
-- [ ] Link Workspace flow: directory picker (existing dialog plugin), list
-      context menu + AI menu entries; WorkspaceSettings dialog (440px per
-      COMPONENTS.md): directory + Change…, type meta, AI Brief textarea,
-      preferred client select, Unlink
-- [ ] WorkspaceLink chip in QuickAdd row (basename + git mini-tag, ⚠ amber
-      when missing, tooltip, click → settings)
-- [ ] Missing directory: todos unaffected; AI surfaces show "Workspace not
-      found" + mono path + Locate… / Unlink (§4); portable move = same path
-- [ ] Tests: linking, unlink, missing state, Git detection, relocate
+#### AI2 — Workspace linking ✅ (2026-07-24)
+- [x] Rust `workspace.rs`: check(path) → exists/readable/git (`.git` dir OR
+      file — worktrees), Unicode+space paths tested — 5 new Rust tests (17)
+- [x] `core/ai-workspace.ts`: basename, status→type mapping, new/relocated
+      link builders (brief + provider survive relocation) — 6 tests
+- [x] `state/ai-config.svelte.ts`: workspaces + clients + runtime `missing`
+      map; pickAndLink (picker → validation → link/relocate), unlink,
+      setBrief/setPreferredProvider, refreshMissing (explicit checks only,
+      §40); links of deleted lists dropped on restore AND on list delete
+- [x] WorkspaceChip in the quick-add row (basename, git mini-tag, ⚠ amber
+      missing, tooltip path·type·provider, click → settings)
+- [x] WorkspaceSettingsDialog (440px): Directory+Change…, meta line,
+      ⚠ Directory not found + Locate…, AI Brief, preferred client select
+      (Default (global)), Unlink/Done; unlinked variant with Link CTA
+- [x] List context menu: Link Workspace… / Workspace settings…; Esc chain
+      slot; ipc pickDirectory + workspaceCheck
+- [x] **CDP verification**: workspace_check git/generic/missing over IPC;
+      seeded link → chip (basename+git+tooltip) → dialog (path/meta/brief)
+      → Esc; missing path → amber chip + Directory not found + Locate…;
+      Unlink → chip gone + toast + empty persisted settings. ALL GREEN.
+- [x] Close-out: typecheck 0, 143 TS (+6) + 17 Rust (+5) tests green → push
 
 #### AI3 — Provider infrastructure 🔲
 - [ ] Rust `ai/` module: `detect_provider` (PATH resolution incl. shim

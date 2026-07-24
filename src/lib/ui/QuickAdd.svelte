@@ -1,10 +1,14 @@
 <script lang="ts">
   // Always-visible quick add: Enter creates, Shift+Enter creates + opens
   // details, focus stays, input clears (the primary capture workflow).
+  // Linked lists also show the workspace chip left of the filter toggle.
   import { quickAdd } from "$lib/state/actions";
   import { ui } from "$lib/state/ui.svelte";
+  import WorkspaceChip from "./WorkspaceChip.svelte";
 
   let { paneIndex, listName }: { paneIndex: number; listName: string } = $props();
+
+  const listId = $derived(ui.panes[paneIndex].listId);
 
   function register(el: HTMLInputElement): { destroy: () => void } {
     ui.quickAddEls[paneIndex] = el;
@@ -30,6 +34,9 @@
     onkeydown={onKeydown}
     onfocus={() => (ui.activePane = paneIndex)}
   />
+  {#if listId !== null}
+    <WorkspaceChip {listId} />
+  {/if}
   <button
     class="filter-toggle"
     class:active={ui.panes[paneIndex].filterOpen}

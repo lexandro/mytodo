@@ -2,6 +2,7 @@ mod commands;
 mod db;
 mod paths;
 mod winint;
+mod workspace;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -40,6 +41,7 @@ pub fn run() {
             commands::settings_set,
             commands::ai_runs_load,
             commands::ai_run_put,
+            commands::workspace_check,
             commands::backup_now,
             commands::list_backups,
             commands::restore_backup,

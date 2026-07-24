@@ -5,6 +5,7 @@ import { formatEmojiName, parseEmojiName } from "$lib/core/emoji";
 import { createGroup, deleteGroup, renameGroup, toggleGroupCollapsed } from "$lib/core/groups-ops";
 import { createList, deleteList, renameList, reorderList } from "$lib/core/lists-ops";
 import { createTodo, cycleStatus, findTodo, moveTodo, reorderTodo, setStatus, trashTodo } from "$lib/core/todos-ops";
+import { aiConfig } from "./ai-config.svelte";
 import { store } from "./store.svelte";
 import { ui } from "./ui.svelte";
 
@@ -118,6 +119,7 @@ export function newList(): void {
 
 export function deleteListAction(id: string): void {
   store.apply("delete list", (data) => deleteList(data, id, Date.now()));
+  aiConfig.removeForList(id); // workspace link is config, not undoable data
   // panes showing the deleted list fall back to Inbox
   const inbox = store.data.lists.find((l) => l.fixed);
   ui.panes.forEach((pane, i) => {

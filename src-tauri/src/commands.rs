@@ -84,6 +84,11 @@ pub fn ai_run_put(state: State<'_, DbState>, run: db::ai_runs::AiRun) -> Result<
     with_conn(&state, |conn| db::ai_runs::put(conn, &run))
 }
 
+#[tauri::command]
+pub fn workspace_check(path: String) -> crate::workspace::WorkspaceStatus {
+    crate::workspace::check(&path)
+}
+
 // ── backup / restore ────────────────────────────────────────────────────────
 
 #[tauri::command]
