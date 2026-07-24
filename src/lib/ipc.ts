@@ -11,6 +11,7 @@ import { openPath, openUrl } from "@tauri-apps/plugin-opener";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { check, type Update } from "@tauri-apps/plugin-updater";
 import type { DbOp } from "$lib/core/dbops";
+import type { ShortcutStatus } from "$lib/core/shortcut-offer";
 import type { DomainData } from "$lib/core/types";
 
 // ── database ────────────────────────────────────────────────────────────────
@@ -166,6 +167,16 @@ export function summonWorkspace(toggle: boolean): Promise<SummonResult> {
 
 export function showQuickAddWindow(): Promise<void> {
   return invoke<void>("show_quick_add");
+}
+
+// ── desktop / start-menu shortcuts (portable offer, v1.1) ───────────────────
+
+export function appShortcutStatus(): Promise<ShortcutStatus> {
+  return invoke<ShortcutStatus>("app_shortcut_status");
+}
+
+export function createAppShortcuts(desktop: boolean, startMenu: boolean): Promise<void> {
+  return invoke<void>("create_app_shortcuts", { desktop, startMenu });
 }
 
 // ── live update (GitHub Releases, signed) ───────────────────────────────────

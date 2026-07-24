@@ -10,6 +10,7 @@
     TODO_FS_MAX, TODO_FS_MIN, persistAppearance, persistUiSettings, restoreUiSettings,
   } from "$lib/state/settings-sync.svelte";
   import { SHORTCUT_SETTINGS_KEY, shortcutManager } from "$lib/state/shortcut-manager.svelte";
+  import { SHORTCUT_OFFER_KEY, shortcutOffer } from "$lib/state/shortcut-offer.svelte";
   import { store } from "$lib/state/store.svelte";
   import { ui } from "$lib/state/ui.svelte";
   import { updater } from "$lib/state/updater.svelte";
@@ -21,6 +22,7 @@
   import GlobalSearch from "./GlobalSearch.svelte";
   import RestoreDialog from "./RestoreDialog.svelte";
   import SettingsDialog from "./SettingsDialog.svelte";
+  import ShortcutOfferDialog from "./ShortcutOfferDialog.svelte";
   import ShortcutsDialog from "./ShortcutsDialog.svelte";
   import ListRail from "./ListRail.svelte";
   import PinnedView from "./PinnedView.svelte";
@@ -42,6 +44,7 @@
         void shortcutManager.init(all[SHORTCUT_SETTINGS_KEY]);
         void restoreWindowState(all[WINDOW_STATE_KEY]).then(() => startWindowStateSaving());
         updater.startAutoCheck();
+        void shortcutOffer.init(all[SHORTCUT_OFFER_KEY]);
       });
   });
 
@@ -174,6 +177,7 @@
 <SettingsDialog />
 <ShortcutsDialog />
 <RestoreDialog />
+<ShortcutOfferDialog />
 <Toast />
 
 <style>

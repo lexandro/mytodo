@@ -3,6 +3,8 @@
 //! into clear errors elsewhere.
 
 #[cfg(windows)]
+pub mod app_shortcut;
+#[cfg(windows)]
 pub mod summon;
 #[cfg(windows)]
 pub mod virtual_desktop;

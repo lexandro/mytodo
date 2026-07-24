@@ -43,6 +43,8 @@ pub fn run() {
             commands::restore_backup,
             commands::summon_workspace,
             commands::show_quick_add,
+            commands::app_shortcut_status,
+            commands::create_app_shortcuts,
         ])
         .on_window_event(|window, event| {
             use tauri::Manager;

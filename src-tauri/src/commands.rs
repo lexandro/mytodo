@@ -104,6 +104,32 @@ pub fn restore_backup(state: State<'_, DbState>, file_name: String) -> Result<()
     result
 }
 
+// ── app shortcuts (Desktop / Start Menu .lnk, v1.1) ─────────────────────────
+
+#[cfg(windows)]
+#[tauri::command]
+pub fn app_shortcut_status() -> Result<crate::winint::app_shortcut::ShortcutStatus, String> {
+    crate::winint::app_shortcut::shortcut_status()
+}
+
+#[cfg(not(windows))]
+#[tauri::command]
+pub fn app_shortcut_status() -> Result<(), String> {
+    Err("shortcut detection is Windows-only".into())
+}
+
+#[cfg(windows)]
+#[tauri::command]
+pub fn create_app_shortcuts(desktop: bool, start_menu: bool) -> Result<(), String> {
+    crate::winint::app_shortcut::create_app_shortcuts(desktop, start_menu)
+}
+
+#[cfg(not(windows))]
+#[tauri::command]
+pub fn create_app_shortcuts(_desktop: bool, _start_menu: bool) -> Result<(), String> {
+    Err("shortcut creation is Windows-only".into())
+}
+
 // ── Windows integration (Summon Workspace, Quick Add window) ────────────────
 
 #[cfg(windows)]

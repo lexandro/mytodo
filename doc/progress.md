@@ -312,6 +312,26 @@ Legend: 🔲 not started · 🔄 in progress · ✅ done (review + push complete
 `doc/WINDOWS-TESTS.md` (monitor disconnect, live hotkey conflict, AltGr on a
 Hungarian layout) — these need a live user session.
 
+## v1.1 — in progress
+
+Features accumulate on main; release only on the owner's explicit request.
+
+### Shortcut offer (portable) ✅ (2026-07-24)
+- [x] Rust `winint/app_shortcut.rs`: detects `myTODO.lnk` on the user's
+      Desktop and in the Start Menu (Programs), resolves targets via
+      IShellLinkW; creates/repairs shortcuts pointing at the running exe.
+      Headless COM roundtrip test (write → resolve → points-here →
+      dead-target) — 8 Rust tests total
+- [x] Pure decision core (`core/shortcut-offer.ts`, 6 tests — 108 total):
+      no shortcut → offer to create both; dead target (folder moved) →
+      offer to repair the stale spots; ANY healthy shortcut (this copy or
+      an installed one — "mytodo.lnk" matches case-insensitively) or
+      "don't ask again" → stay quiet
+- [x] Startup dialog: create/repair copy, Desktop + Start Menu checkboxes,
+      Not now, Don't ask again (persisted); dev builds never prompt
+      (import.meta.env.DEV guard)
+- [x] Close-out: typecheck 0, 108 TS + 8 Rust tests green → push (no release)
+
 ## Log
 
 - **2026-07-24** — Analysis done: the three sources are coherent;
