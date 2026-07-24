@@ -370,7 +370,7 @@ handoff (existing design semantics untouched, token stylesheet byte-identical).
 |---|---|---|
 | AI1 | Domain + persistence: types, migrations, settings keys, FUTURE.md | ✅ |
 | AI2 | Workspace linking: picker, validation, Git detect, chip, settings dialog, missing state | ✅ |
-| AI3 | Provider infra: detection, validation, version, Test, AI Clients dialog, default client | 🔲 |
+| AI3 | Provider infra: detection, validation, version, Test, AI Clients dialog, default client | ✅ |
 | AI4 | Run engine: Rust process exec + streaming + cancel, provider adapters, result normalization | 🔲 |
 | AI5 | Context builder + proposals: AIContextBuilder, parse/validate, batch apply, activity log | 🔲 |
 | AI6 | AI UI: detail AI tab, ✦ AI menu, run panel, results, proposal review, history, keyboard | 🔲 |
@@ -427,23 +427,34 @@ explicit owner request; version stays until then.
       Unlink → chip gone + toast + empty persisted settings. ALL GREEN.
 - [x] Close-out: typecheck 0, 143 TS (+6) + 17 Rust (+5) tests green → push
 
-#### AI3 — Provider infrastructure 🔲
-- [ ] Rust `ai/` module: `detect_provider` (PATH resolution incl. shim
-      targets — decision #15; no drive scanning §9), `validate_executable`
-      (exists, regular file, identity check, version with timeout §12),
-      `test_provider` (executable → version → readiness/auth distinction
-      §11/§37; never a real workspace modification)
-- [ ] TS `core/ai/providers.ts`: AgentProvider abstraction (id, displayName,
-      capabilities, mode→flags mapping), provider selection + preferred/
-      default fallback logic (no silent fallback §10 — unavailable →
-      explicit user prompt)
-- [ ] AIClientSettings dialog + ProviderCard per COMPONENTS.md (Enabled,
-      status ●◌○, path mono + Browse…, Version, Auto Detect, Test, amber
-      human messages; Default AI client select + workspace-override note)
-- [ ] No detection on routine UI actions (§40) — only on dialog open /
-      explicit Auto Detect / first run attempt
-- [ ] Tests: provider selection, preferred fallback, executable validation,
-      capability mapping (process exec behind a mockable adapter §43)
+#### AI3 — Provider infrastructure ✅ (2026-07-24)
+- [x] Rust `ai/proc.rs`: structured-argv process runner (never assembled
+      strings §14) — .exe direct, .cmd/.bat shims via cmd.exe /C with
+      metacharacter-rejected paths (decision #15); CREATE_NO_WINDOW; hard
+      timeout with **process-TREE kill** (taskkill /T — killing only the
+      shim would leave the real CLI holding our pipes); OEM-codepage-safe
+      lossy output decoding — 4 tests
+- [x] Rust `ai/providers.rs`: backend-owned exe-name lists (frontend can
+      only name claude/codex), PATH detection (no drive scan §9), probe
+      chain exists→file→extension→starts→identity→version (§12), Test with
+      codex `login status` readiness (claude readiness = None, capability-
+      honest) — 5 tests (26 Rust total)
+- [x] `core/ai-providers.ts`: probe/test → design status set + human
+      messages; parseVersion; selectProvider (preferred ?? default,
+      disabled/missing → explicit error, NEVER silent fallback §10) —
+      12 tests (155 TS total)
+- [x] `state/ai-clients.svelte.ts`: openDialog (first-open detect only,
+      §40), autoDetect (stored path revalidated; broken portable path
+      falls back to PATH once), browse (validated — arbitrary file never
+      becomes "detected"), test; failed probe CLEARS the stored path
+- [x] AIClientsDialog (480px) + ProviderCard per design; File menu entry
+      (✦ AI menu footer arrives with AI6); Esc chain slot
+- [x] **CDP verification against the REAL CLIs**: detect found
+      claude.exe (2.1.201) + codex.cmd (0.128.0); probes ok; claude probed
+      with codex exe → identityMismatch; unknown provider rejected at the
+      boundary; dialog auto-detect → both cards ● Detected with versions;
+      aiClients persisted; codex Test → ready:true (logged in); Esc closes.
+- [x] Close-out: typecheck 0, 155 TS + 26 Rust tests green → push
 
 #### AI4 — Run engine 🔲
 - [ ] Rust process execution: spawn with structured argv (no cmd.exe /c

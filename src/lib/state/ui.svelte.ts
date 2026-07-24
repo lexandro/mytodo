@@ -76,6 +76,8 @@ class UiState {
   settingsOpen = $state(false);
   /** Workspace settings dialog for a list id; null = closed. */
   workspaceSettings = $state<string | null>(null);
+  /** AI Clients settings dialog. */
+  aiClientsOpen = $state(false);
   /** Backup restore picker dialog. */
   restoreOpen = $state(false);
   /** Open menu-bar menu (File/Edit/…); null = closed. */

@@ -1,3 +1,4 @@
+mod ai;
 mod commands;
 mod db;
 mod paths;
@@ -42,6 +43,9 @@ pub fn run() {
             commands::ai_runs_load,
             commands::ai_run_put,
             commands::workspace_check,
+            commands::ai_detect_provider,
+            commands::ai_probe_provider,
+            commands::ai_test_provider,
             commands::backup_now,
             commands::list_backups,
             commands::restore_backup,

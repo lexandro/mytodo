@@ -44,6 +44,10 @@ function handleEscape(): void {
     ui.workspaceSettings = null;
     return;
   }
+  if (ui.aiClientsOpen) {
+    ui.aiClientsOpen = false;
+    return;
+  }
   if (ui.palette !== null) {
     ui.palette = null;
     return;

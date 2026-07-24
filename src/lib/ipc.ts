@@ -10,7 +10,9 @@ import { register, unregister } from "@tauri-apps/plugin-global-shortcut";
 import { openPath, openUrl } from "@tauri-apps/plugin-opener";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { check, type Update } from "@tauri-apps/plugin-updater";
+import type { ProbeOutcome, TestOutcome } from "$lib/core/ai-providers";
 import type { AIRunRow } from "$lib/core/ai-runs";
+import type { AIProviderId } from "$lib/core/ai-types";
 import type { WorkspaceStatus } from "$lib/core/ai-workspace";
 import type { DbOp } from "$lib/core/dbops";
 import type { ShortcutStatus } from "$lib/core/shortcut-offer";
@@ -56,6 +58,23 @@ export async function pickDirectory(): Promise<string | null> {
 /** Existence / readability / Git probe for a workspace path. */
 export function workspaceCheck(path: string): Promise<WorkspaceStatus> {
   return invoke<WorkspaceStatus>("workspace_check", { path });
+}
+
+// ── AI providers (detection / validation / test) ────────────────────────────
+
+/** PATH-based auto detection; null = not found. */
+export function aiDetectProvider(provider: AIProviderId): Promise<string | null> {
+  return invoke<string | null>("ai_detect_provider", { provider });
+}
+
+/** Validates an executable: exists → type → starts → identity → version. */
+export function aiProbeProvider(provider: AIProviderId, path: string): Promise<ProbeOutcome> {
+  return invoke<ProbeOutcome>("ai_probe_provider", { provider, path });
+}
+
+/** Probe + best-effort authentication readiness (never modifies anything). */
+export function aiTestProvider(provider: AIProviderId, path: string): Promise<TestOutcome> {
+  return invoke<TestOutcome>("ai_test_provider", { provider, path });
 }
 
 // ── backup / restore ────────────────────────────────────────────────────────

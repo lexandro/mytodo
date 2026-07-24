@@ -89,6 +89,37 @@ pub fn workspace_check(path: String) -> crate::workspace::WorkspaceStatus {
     crate::workspace::check(&path)
 }
 
+// ── AI providers (detection / validation / test — aiprompt §8–12, §37) ──────
+// async + spawn_blocking: these run child processes with multi-second
+// timeouts and must never stall the IPC thread.
+
+#[tauri::command]
+pub async fn ai_detect_provider(provider: String) -> Result<Option<String>, String> {
+    tauri::async_runtime::spawn_blocking(move || crate::ai::providers::detect(&provider))
+        .await
+        .map_err(|e| format!("detect task failed: {e}"))?
+}
+
+#[tauri::command]
+pub async fn ai_probe_provider(
+    provider: String,
+    path: String,
+) -> Result<crate::ai::providers::ProbeOutcome, String> {
+    tauri::async_runtime::spawn_blocking(move || crate::ai::providers::probe(&provider, &path))
+        .await
+        .map_err(|e| format!("probe task failed: {e}"))?
+}
+
+#[tauri::command]
+pub async fn ai_test_provider(
+    provider: String,
+    path: String,
+) -> Result<crate::ai::providers::TestOutcome, String> {
+    tauri::async_runtime::spawn_blocking(move || crate::ai::providers::test(&provider, &path))
+        .await
+        .map_err(|e| format!("test task failed: {e}"))?
+}
+
 // ── backup / restore ────────────────────────────────────────────────────────
 
 #[tauri::command]

@@ -6,6 +6,7 @@ import { byOrder } from "$lib/core/ordering";
 import { findTodo } from "$lib/core/todos-ops";
 import { newList, switchList, trashTodoAction, undoAction } from "./actions";
 import { backupNowAction, exportJsonAction, importJsonAction } from "./actions-data";
+import { aiClients } from "./ai-clients.svelte";
 import { duplicateAction } from "./actions-detail";
 import { moveUpOneLevel } from "./menus";
 import { showQuickAddWindow, windowClose } from "$lib/ipc";
@@ -51,6 +52,7 @@ function fileMenu(): MenuItem[] {
     item("Restore backup…", () => (ui.restoreOpen = true)),
     SEP,
     item("Settings…", () => (ui.settingsOpen = true)),
+    item("AI Clients…", () => aiClients.openDialog()),
     SEP,
     item("Exit", () => void windowClose()),
   ];
