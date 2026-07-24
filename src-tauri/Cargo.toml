@@ -1,6 +1,6 @@
 [package]
 name = "mytodo"
-version = "0.1.0"
+version = "1.0.0"
 description = "mytodo — Tauri desktop app"
 authors = ["lexandro"]
 edition = "2021"
@@ -23,6 +23,8 @@ tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 log = "0.4"
+# date-stamped backup filenames (todo-YYYY-MM-DD.db)
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
 # bundled: nincs rendszer-SQLite függőség — a portable exe önálló marad
 rusqlite = { version = "0.32", features = ["bundled"] }
 

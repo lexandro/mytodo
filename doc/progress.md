@@ -28,7 +28,7 @@ Forrás-dokumentumok:
 | F7 | Split pane rendszer + layout persist | ✅ |
 | F8 | Global shortcuts, Quick Add ablak, Summon | ✅ |
 | F9 | Scale, theme, keyboard polish, window state | ✅ |
-| F10 | Backup, import/export, hardening, portable release | 🔄 |
+| F10 | Backup, import/export, hardening, portable release | ✅ |
 
 Jelmagyarázat: 🔲 nincs elkezdve · 🔄 folyamatban · ✅ kész (review+push megvolt)
 
@@ -240,26 +240,63 @@ Jelmagyarázat: 🔲 nincs elkezdve · 🔄 folyamatban · ✅ kész (review+pus
       12px, majd vissza defaultra. Zöld.
 - [x] Zárás: typecheck 0, 95 teszt zöld → push
 
-### F10 — Backup, import/export, hardening, portable release
-- [ ] Backup: indításkor naponta egyszer + Backup Now (File menü), `backup/todo-YYYY-MM-DD.db`,
-      utolsó 10 megtartása, háttérszálon (nem blokkol)
-- [ ] Export JSON (minden user-adat) / Import JSON (validáció, hibás import nem
-      rontja a DB-t — tranzakció + rollback) / Restore backupból (atomi swap);
-      serialization roundtrip tesztek
-- [ ] Hibakezelés-audit: DB unavailable, migration failure, backup/restore failure,
-      link-megnyitási hiba, shortcut-regisztrációs hiba — mind látható, nem agresszív,
-      retry ahol értelmes; silent catch tilos
-- [ ] Teljesítmény-ellenőrzés több ezer todo-val (lista-váltás, keresés, DnD)
-- [ ] README.md (setup, run, test, build, portable layout, DB, backup, shortcuts,
-      Windows Global Shortcuts szekció) + `doc/ARCHITECTURE.md` + `doc/FUTURE.md`
-      (Minimal Markdown + design-FUTURE tételek)
-- [ ] `build.bat`: teszt + release build + portable mappa összeállítás
-      (`TodoWorkspace/TodoWorkspace.exe`, `data/`, `backup/`); CRLF!
-- [ ] Verzió-emelés HÁROM helyen; DoD checklist végigvezetése (daprompt §50 +
-      shortcut.md §32)
-- [ ] Zárás: review → refactor → push
+### F10 — Backup, import/export, hardening, portable release ✅ (2026-07-24)
+- [x] Backup (Rust `db/backup.rs`): VACUUM INTO (WAL-konzisztens), napi
+      automata háttérszálon + File → Backup now, `backup/todo-YYYY-MM-DD.db`,
+      utolsó 10 megtartva
+- [x] Restore: `File → Restore backup…` picker; csere előtt automatikus
+      `pre-restore.db` safety-mentés, conn close → swap → reopen → teljes
+      state-reload (undo-stack ürül); fájlnév-validáció (nincs path traversal)
+- [x] Export/Import JSON (`core/transfer.ts`): teljes user-adat, format-mező;
+      import TELJES validáció ELŐBB (típusok, ref-integritás, depth ≤3,
+      duplikált id-k, 12-es label-cap, Inbox-garancia) — hibás fájl nem érinti
+      a DB-t; az import egyetlen undo-olható apply; 7 új teszt (össz. 102)
+- [x] Hibakezelés: minden adat-akció látható toast-hibával; persist-hiba
+      retry-jal a status barban; silent catch sehol
+- [x] README (teljes: purpose, setup, build, portable layout, DB, backup,
+      shortcuts, Windows Global Shortcuts kiemeléssel) + `doc/ARCHITECTURE.md`
+      + `doc/FUTURE.md` (Minimal Markdown + design-halasztások)
+- [x] `build.bat`: typecheck + teszt + release build + portable mappa
+      (`release\TodoWorkspace\TodoWorkspace.exe` + data/ + backup/); CRLF
+      byte-szinten ellenőrizve
+- [x] Verzió: 1.0.0 mindhárom helyen (package.json, tauri.conf.json, Cargo.toml)
+- [x] **CDP-verifikáció**: File menü teljes; backup_now → fájl a backup/-ban;
+      restore e2e (marker-todo eltűnt, toast, safety-fájl a lemezen)
+- [x] Zárás: typecheck 0, 102 TS + 6 Rust teszt zöld → release build → push
+
+## Definition of Done — állapot (daprompt §50 + shortcut.md §32)
+
+| Követelmény | Állapot |
+|---|---|
+| Portable Windows build (installer nélkül indul) | ✅ `release\TodoWorkspace\` — futtatva, saját `data/`-t hozott létre |
+| Adat a portable data könyvtárban | ✅ SQLite az exe mellett, igazolva |
+| Inbox működik (fix, nem törölhető) | ✅ |
+| Több tab/lista, max 3 szintű groupok | ✅ (depth-cap tesztelve UI+import szinten) |
+| Quick Add Enterrel; Global Quick Add | ✅ CDP e2e |
+| Todo CRUD + 4 státusz | ✅ |
+| Subtasks, emoji, preset+12 custom color label | ✅ |
+| Local + global pin, Pinned Todos nézet | ✅ |
+| DnD listák/groupok/pane-ek között; 1/2/4 pane; layout restart után | ✅ |
+| Accent-független fuzzy search (current+global) | ✅ magyar tesztekkel |
+| Details + Activity, Archive, Trash/Restore, Undo, Duplicate | ✅ |
+| URL/file/folder linkek | ✅ (biztonságos path-guard) |
+| UI scale + todo font size + light/dark/system | ✅ persist + restore igazolva |
+| Keyboard shortcuts + F1 térkép | ✅ |
+| SQLite stabil (WAL, FK, migrációk, tranzakciók) | ✅ 6 Rust teszt |
+| Backup (napi + kézi, 10 megtartva) + Restore | ✅ e2e |
+| JSON export/import validációval | ✅ roundtrip tesztek |
+| README + ARCHITECTURE + FUTURE.md | ✅ |
+| Summon: „megnyomom és idejön" | ✅ parancs-szint igazolva; virtual desktop viselkedés → `doc/WINDOWS-TESTS.md` kézi checklist |
+
+**Hátralévő manuális munka (user):** a `doc/WINDOWS-TESTS.md` A–M tesztjei
+(virtual desktop mozgatás, több monitor, fókusz-viselkedés) — ezek élő
+felhasználói munkamenetet igényelnek, automatán nem futtathatók.
 
 ## Napló
 
-- **2026-07-24** — Elemzés kész: a három forrás koherens; eltérések feloldva (lásd
-  Rögzített döntések). Fázisterv elfogadásra vár, munka még nem indult.
+- **2026-07-24** — Elemzés kész: a három forrás koherens; eltérések feloldva
+  (lásd Rögzített döntések).
+- **2026-07-24** — F1–F10 elkészült egy menetben: minden fázis végén
+  typecheck+tesztek zölden, CDP-alapú end-to-end verifikáció a futó appon,
+  self-review + javítások, commit + push. Végállapot: 102 TS + 6 Rust teszt,
+  v1.0.0 portable release lefordítva és élesben ellenőrizve.

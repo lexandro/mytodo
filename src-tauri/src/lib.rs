@@ -26,11 +26,19 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_opener::init())
         .manage(commands::DbState::init())
+        .setup(|_app| {
+            // once-a-day background backup; failures only log (daprompt §5)
+            db::backup::daily_backup_if_needed();
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             commands::db_load_all,
             commands::db_apply,
             commands::settings_all,
             commands::settings_set,
+            commands::backup_now,
+            commands::list_backups,
+            commands::restore_backup,
             commands::summon_workspace,
             commands::show_quick_add,
         ])

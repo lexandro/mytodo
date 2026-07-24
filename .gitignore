@@ -6,3 +6,4 @@ build/
 .svelte-kit/
 node_modules/
 src-tauri/gen/
+release/

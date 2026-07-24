@@ -68,6 +68,16 @@ class DomainStore {
   get canUndo(): boolean {
     return this.undoStack.length > 0;
   }
+
+  /**
+   * Replaces the in-memory state with freshly loaded DB content (backup
+   * restore). No diff/persist — the database IS the new source; the undo
+   * stack is cleared because its snapshots describe the old world.
+   */
+  replaceLoaded(data: DomainData): void {
+    this.data = data;
+    this.undoStack = [];
+  }
 }
 
 export const store = new DomainStore();

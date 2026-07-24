@@ -29,6 +29,20 @@ export function settingsSet(key: string, value: unknown): Promise<void> {
   return invoke<void>("settings_set", { key, value });
 }
 
+// ── backup / restore ────────────────────────────────────────────────────────
+
+export function backupNow(): Promise<string> {
+  return invoke<string>("backup_now");
+}
+
+export function listBackups(): Promise<string[]> {
+  return invoke<string[]>("list_backups");
+}
+
+export function restoreBackup(fileName: string): Promise<void> {
+  return invoke<void>("restore_backup", { fileName });
+}
+
 // ── dialogs (JSON import/export flows) ──────────────────────────────────────
 
 export async function pickFile(filters?: { name: string; extensions: string[] }[]): Promise<string | null> {

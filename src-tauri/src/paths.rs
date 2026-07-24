@@ -23,3 +23,7 @@ pub fn data_dir() -> Result<PathBuf, String> {
 pub fn db_path() -> Result<PathBuf, String> {
     Ok(data_dir()?.join("todo.db"))
 }
+
+pub fn backup_dir() -> Result<PathBuf, String> {
+    exe_sibling_dir("backup")
+}

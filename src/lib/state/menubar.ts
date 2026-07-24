@@ -5,6 +5,7 @@
 import { byOrder } from "$lib/core/ordering";
 import { findTodo } from "$lib/core/todos-ops";
 import { newList, switchList, trashTodoAction, undoAction } from "./actions";
+import { backupNowAction, exportJsonAction, importJsonAction } from "./actions-data";
 import { duplicateAction } from "./actions-detail";
 import { moveUpOneLevel } from "./menus";
 import { showQuickAddWindow, windowClose } from "$lib/ipc";
@@ -42,6 +43,11 @@ function fileMenu(): MenuItem[] {
     item("New todo", () => ui.quickAddEls[ui.activePane]?.focus(), "Ctrl+N"),
     item("New list", () => newList(), "Ctrl+Shift+N"),
     item("Global quick add", () => void showQuickAddWindow(), "Ctrl+Shift+Space"),
+    SEP,
+    item("Import JSON…", () => void importJsonAction()),
+    item("Export JSON…", () => void exportJsonAction()),
+    item("Backup now", () => void backupNowAction()),
+    item("Restore backup…", () => (ui.restoreOpen = true)),
     SEP,
     item("Settings…", () => (ui.settingsOpen = true)),
     SEP,

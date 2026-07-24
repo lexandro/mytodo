@@ -72,6 +72,38 @@ pub fn settings_set(
     with_conn(&state, |conn| db::settings_set(conn, &key, &value))
 }
 
+// ── backup / restore ────────────────────────────────────────────────────────
+
+#[tauri::command]
+pub fn backup_now() -> Result<String, String> {
+    db::backup::backup_now()
+}
+
+#[tauri::command]
+pub fn list_backups() -> Result<Vec<String>, String> {
+    db::backup::list_backups()
+}
+
+/// Restore: close the live connection, swap the file, reopen. The frontend
+/// reloads its full state afterwards.
+#[tauri::command]
+pub fn restore_backup(state: State<'_, DbState>, file_name: String) -> Result<(), String> {
+    let mut guard = state
+        .conn
+        .lock()
+        .map_err(|_| "database lock poisoned".to_string())?;
+    // drop the open connection so the file can be replaced
+    *guard = None;
+    let result = db::backup::restore_backup(&file_name);
+    // reopen regardless of the restore outcome — never leave the app dead
+    let reopened = crate::paths::db_path().and_then(|p| db::open(&p));
+    match reopened {
+        Ok(conn) => *guard = Some(conn),
+        Err(e) => return Err(format!("database reopen failed after restore: {e}")),
+    }
+    result
+}
+
 // ── Windows integration (Summon Workspace, Quick Add window) ────────────────
 
 #[cfg(windows)]

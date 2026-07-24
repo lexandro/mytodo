@@ -18,6 +18,7 @@
   import DetailPanel from "./DetailPanel.svelte";
   import GlobalPinnedStrip from "./GlobalPinnedStrip.svelte";
   import GlobalSearch from "./GlobalSearch.svelte";
+  import RestoreDialog from "./RestoreDialog.svelte";
   import SettingsDialog from "./SettingsDialog.svelte";
   import ShortcutsDialog from "./ShortcutsDialog.svelte";
   import ListRail from "./ListRail.svelte";
@@ -170,6 +171,7 @@
 <CommandPalette />
 <SettingsDialog />
 <ShortcutsDialog />
+<RestoreDialog />
 <Toast />
 
 <style>
