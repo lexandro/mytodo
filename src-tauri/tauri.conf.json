@@ -12,11 +12,12 @@
   "app": {
     "windows": [
       {
-        "title": "mytodo",
+        "title": "myTODO",
         "width": 1100,
         "height": 750,
         "minWidth": 600,
-        "minHeight": 400
+        "minHeight": 400,
+        "decorations": false
       }
     ],
     "security": {
