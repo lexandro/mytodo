@@ -38,7 +38,12 @@ pub fn apply_ops(conn: &mut Connection, ops: &[DbOp]) -> Result<(), String> {
                      ON CONFLICT(id) DO UPDATE SET
                        list_id=?2, parent_id=?3, name=?4, emoji=?5, ord=?6, collapsed=?7",
                     params![
-                        row.id, row.list_id, row.parent_id, row.name, row.emoji, row.order,
+                        row.id,
+                        row.list_id,
+                        row.parent_id,
+                        row.name,
+                        row.emoji,
+                        row.order,
                         row.collapsed
                     ],
                 )
@@ -60,10 +65,22 @@ pub fn apply_ops(conn: &mut Connection, ops: &[DbOp]) -> Result<(), String> {
                        archived=?11, trashed=?12, trashed_at=?13, ord=?14,
                        created_at=?15, updated_at=?16",
                     params![
-                        row.id, row.list_id, row.group_id, row.title, row.description,
-                        row.status, row.emoji, row.color_label_id, row.pin_local,
-                        row.pin_global, row.archived, row.trashed, row.trashed_at,
-                        row.order, row.created_at, row.updated_at
+                        row.id,
+                        row.list_id,
+                        row.group_id,
+                        row.title,
+                        row.description,
+                        row.status,
+                        row.emoji,
+                        row.color_label_id,
+                        row.pin_local,
+                        row.pin_global,
+                        row.archived,
+                        row.trashed,
+                        row.trashed_at,
+                        row.order,
+                        row.created_at,
+                        row.updated_at
                     ],
                 )
                 .map(|_| ())

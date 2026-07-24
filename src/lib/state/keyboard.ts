@@ -4,10 +4,13 @@
 // ignored when an input/textarea/select has focus.
 
 import { buildPaneRows } from "$lib/core/rows";
+import { findTodo } from "$lib/core/todos-ops";
 import {
   cancelRename, newList, switchList, toggleSelectedDone, trashTodoAction,
   undoAction,
 } from "./actions";
+import { togglePinAction } from "./actions-detail";
+import { moveUpOneLevel } from "./menus";
 import { store } from "./store.svelte";
 import { ui } from "./ui.svelte";
 
@@ -87,8 +90,25 @@ export function handleKeydown(e: KeyboardEvent): void {
     toggleSelectedDone();
     return;
   }
+  if (e.ctrlKey && !e.shiftKey && key === "p") {
+    e.preventDefault();
+    if (ui.selectedId !== null) togglePinAction(ui.selectedId, "local");
+    return;
+  }
   // plain keys below never fire while typing
   if (editing) return;
+  if (e.altKey && e.key === "ArrowLeft" && ui.selectedId !== null) {
+    e.preventDefault();
+    const todo = findTodo(store.data, ui.selectedId);
+    if (todo !== undefined && todo.groupId !== null) moveUpOneLevel(todo);
+    return;
+  }
+  if (e.key === "F2" && ui.selectedId !== null) {
+    ui.detailOpen = true;
+    ui.detailTab = "details";
+    ui.focusTitleTick += 1;
+    return;
+  }
   if (e.key === "Delete" && ui.selectedId !== null) {
     trashTodoAction(ui.selectedId);
     return;

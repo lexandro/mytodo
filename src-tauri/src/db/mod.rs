@@ -40,11 +40,7 @@ pub fn settings_all(conn: &Connection) -> Result<HashMap<String, serde_json::Val
     Ok(map)
 }
 
-pub fn settings_set(
-    conn: &Connection,
-    key: &str,
-    value: &serde_json::Value,
-) -> Result<(), String> {
+pub fn settings_set(conn: &Connection, key: &str, value: &serde_json::Value) -> Result<(), String> {
     let raw = serde_json::to_string(value).map_err(|e| format!("settings encode: {e}"))?;
     conn.execute(
         "INSERT INTO settings (key, value) VALUES (?1, ?2)
@@ -91,12 +87,43 @@ mod tests {
     #[test]
     fn roundtrip_all_tables() {
         let mut conn = mem_db();
-        let list = List { id: "l1".into(), name: "Inbox".into(), emoji: "📥".into(), fixed: true, order: 1000.0 };
-        let group = Group { id: "g1".into(), list_id: "l1".into(), parent_id: None, name: "Backend".into(), emoji: "".into(), order: 1000.0, collapsed: false };
+        let list = List {
+            id: "l1".into(),
+            name: "Inbox".into(),
+            emoji: "📥".into(),
+            fixed: true,
+            order: 1000.0,
+        };
+        let group = Group {
+            id: "g1".into(),
+            list_id: "l1".into(),
+            parent_id: None,
+            name: "Backend".into(),
+            emoji: "".into(),
+            order: 1000.0,
+            collapsed: false,
+        };
         let todo = sample_todo("t1", "l1");
-        let sub = Subtask { id: "s1".into(), todo_id: "t1".into(), text: "check".into(), checked: true, order: 1000.0 };
-        let act = ActivityEvent { id: "a1".into(), todo_id: "t1".into(), kind: "created".into(), summary: "Created".into(), created_at: 1 };
-        let label = ColorLabel { id: "c1".into(), name: Some("Fontos".into()), color: "#e0567a".into(), order: 1000.0 };
+        let sub = Subtask {
+            id: "s1".into(),
+            todo_id: "t1".into(),
+            text: "check".into(),
+            checked: true,
+            order: 1000.0,
+        };
+        let act = ActivityEvent {
+            id: "a1".into(),
+            todo_id: "t1".into(),
+            kind: "created".into(),
+            summary: "Created".into(),
+            created_at: 1,
+        };
+        let label = ColorLabel {
+            id: "c1".into(),
+            name: Some("Fontos".into()),
+            color: "#e0567a".into(),
+            order: 1000.0,
+        };
 
         write::apply_ops(
             &mut conn,
@@ -123,10 +150,25 @@ mod tests {
     #[test]
     fn upsert_updates_existing_row() {
         let mut conn = mem_db();
-        let list = List { id: "l1".into(), name: "Inbox".into(), emoji: "".into(), fixed: true, order: 1.0 };
+        let list = List {
+            id: "l1".into(),
+            name: "Inbox".into(),
+            emoji: "".into(),
+            fixed: true,
+            order: 1.0,
+        };
         write::apply_ops(&mut conn, &[DbOp::PutList { row: list.clone() }]).expect("insert");
-        let renamed = List { name: "Munka".into(), ..list };
-        write::apply_ops(&mut conn, &[DbOp::PutList { row: renamed.clone() }]).expect("update");
+        let renamed = List {
+            name: "Munka".into(),
+            ..list
+        };
+        write::apply_ops(
+            &mut conn,
+            &[DbOp::PutList {
+                row: renamed.clone(),
+            }],
+        )
+        .expect("update");
         let data = load::load_all(&conn).expect("load");
         assert_eq!(data.lists, vec![renamed]);
     }
@@ -138,8 +180,18 @@ mod tests {
         write::apply_ops(
             &mut conn,
             &[
-                DbOp::PutTodo { row: sample_todo("t1", "l1") },
-                DbOp::PutList { row: List { id: "l1".into(), name: "L".into(), emoji: "".into(), fixed: false, order: 1.0 } },
+                DbOp::PutTodo {
+                    row: sample_todo("t1", "l1"),
+                },
+                DbOp::PutList {
+                    row: List {
+                        id: "l1".into(),
+                        name: "L".into(),
+                        emoji: "".into(),
+                        fixed: false,
+                        order: 1.0,
+                    },
+                },
             ],
         )
         .expect("apply out of order");
@@ -148,24 +200,40 @@ mod tests {
     #[test]
     fn fk_violation_rejected_at_commit() {
         let mut conn = mem_db();
-        let result = write::apply_ops(&mut conn, &[DbOp::PutTodo { row: sample_todo("t1", "missing") }]);
+        let result = write::apply_ops(
+            &mut conn,
+            &[DbOp::PutTodo {
+                row: sample_todo("t1", "missing"),
+            }],
+        );
         assert!(result.is_err(), "orphan todo must be rejected");
     }
 
     #[test]
     fn transaction_rolls_back_on_error() {
         let mut conn = mem_db();
-        let list = List { id: "l1".into(), name: "L".into(), emoji: "".into(), fixed: false, order: 1.0 };
+        let list = List {
+            id: "l1".into(),
+            name: "L".into(),
+            emoji: "".into(),
+            fixed: false,
+            order: 1.0,
+        };
         let result = write::apply_ops(
             &mut conn,
             &[
                 DbOp::PutList { row: list },
-                DbOp::PutTodo { row: sample_todo("t1", "nonexistent") },
+                DbOp::PutTodo {
+                    row: sample_todo("t1", "nonexistent"),
+                },
             ],
         );
         assert!(result.is_err());
         let data = load::load_all(&conn).expect("load");
-        assert!(data.lists.is_empty(), "failed batch must not persist partially");
+        assert!(
+            data.lists.is_empty(),
+            "failed batch must not persist partially"
+        );
     }
 
     #[test]

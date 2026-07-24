@@ -22,8 +22,8 @@ Forrás-dokumentumok:
 | F1 | Alapozás: tokenek, DB, domain model, app-váz | ✅ |
 | F2 | Lists, groups, todo CRUD, Quick Add | ✅ |
 | F3 | Fa-nézet, drag & drop, subtasks | ✅ |
-| F4 | Detail panel, activity, színek, emoji, linkek | 🔄 |
-| F5 | Pinning, Pinned view, Archive, Trash, Undo | 🔲 |
+| F4 | Detail panel, activity, színek, emoji, linkek | ✅ |
+| F5 | Pinning, Pinned view, Archive, Trash, Undo | 🔄 |
 | F6 | Keresés (filter, global, palette) | 🔲 |
 | F7 | Split pane rendszer + layout persist | 🔲 |
 | F8 | Global shortcuts, Quick Add ablak, Summon | 🔲 |
@@ -115,18 +115,28 @@ Jelmagyarázat: 🔲 nincs elkezdve · 🔄 folyamatban · ✅ kész (review+pus
       FUTURE.md szerint v1.1 — kimarad
 - [x] Zárás: typecheck 0, 60 teszt zöld → push
 
-### F4 — Detail panel, activity, színek, emoji, linkek
-- [ ] DetailPanel (320px): Details/Activity fülek, breadcrumb, Esc-zárás
-- [ ] Title (undo-olható rename bluron), Status pillek, Emoji input (Win+. hint),
-      Location dropdown + „move up one level" (Alt+←), Description textarea
-- [ ] Auto-link felismerés core modul (http/https, Windows file/dir path) + tesztek;
-      chip-ek: URL → böngésző, path → Explorer/asszociált app (opener, biztonságos
-      path-kezelés)
-- [ ] Color labels: 8 preset + max 12 custom, picker + LabelManager modal + tesztek
-- [ ] Activity log: értelmes eseménytípusok, human-readable, `Today 09:21` formázás
-- [ ] Duplicate (title/desc/subtasks/emoji/color; új id, Open, pin nélkül, friss log)
-- [ ] SubtaskList UI a detailben (progress bar, activity-írás)
-- [ ] Zárás: review → refactor → push
+### F4 — Detail panel, activity, színek, emoji, linkek ✅ (2026-07-24)
+- [x] DetailPanel (320px): Details/Activity fülek, breadcrumb, ✕/Esc zárás
+- [x] DetailForm: title (blur-commit, üres edit visszaáll), Status pillek,
+      Emoji input (Win+. hint), Pin List/Global toggle-pár, Location dropdown
+      (list root + indentált group-fa) + move-up gomb; F2 → title fókusz+select,
+      Alt+← keyboard
+- [x] `core/links.ts`: URL + Windows path detektálás, safe-path check (ADS/
+      illegális karakter tiltás) + tesztek; opener plugin (capability indokolva),
+      chip: URL → böngésző, path → Explorer/társított app
+- [x] Color labels: 8 preset konstans + max 12 custom (`core/labels.ts`),
+      ColorPicker swatch-ok ring-gel, LabelManager modal (counter, add/edit/
+      remove; törölt label → todo-k fallback null-ra)
+- [x] `core/time.ts` (Today/Yesterday/Mar 4 formátum) + ActivityList
+      (newest-first, 2px rule); pin/archive/subtask/move activity-írások
+- [x] Duplicate a spec szerint (§27) — eredeti után szúrva, order-bug javítva
+- [x] SubtaskList UI: progress bar, checkbox-ok, add-input, remove
+- [x] **CDP-verifikáció a futó appon**: tab-váltás → dblclick detail →
+      subtask-pipa → SQLite-ban `checked=1` + activity sor → Ctrl+Z undo →
+      DB visszaállt. Screenshot design-hű.
+- [x] Zárás: typecheck 0, 75 teszt zöld → review → push
+- Megjegyzés: LabelManager Esc-zárása még nincs az Esc-láncban (backdrop-click
+  zár) — F9 keyboard-polish tétel
 
 ### F5 — Pinning, Pinned view, Archive, Trash, Undo
 - [ ] Local/global pin (Ctrl+P local), „G" tag, Pinned szekció a listák tetején

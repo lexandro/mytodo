@@ -6,14 +6,13 @@ use std::path::PathBuf;
 
 /// Sibling directory of the exe with the given name (created if missing).
 fn exe_sibling_dir(name: &str) -> Result<PathBuf, String> {
-    let exe = std::env::current_exe()
-        .map_err(|e| format!("cannot resolve executable path: {e}"))?;
+    let exe =
+        std::env::current_exe().map_err(|e| format!("cannot resolve executable path: {e}"))?;
     let parent = exe
         .parent()
         .ok_or_else(|| "executable has no parent directory".to_string())?;
     let dir = parent.join(name);
-    std::fs::create_dir_all(&dir)
-        .map_err(|e| format!("cannot create {}: {e}", dir.display()))?;
+    std::fs::create_dir_all(&dir).map_err(|e| format!("cannot create {}: {e}", dir.display()))?;
     Ok(dir)
 }
 

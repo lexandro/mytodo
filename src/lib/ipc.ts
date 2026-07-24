@@ -5,6 +5,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
+import { openPath, openUrl } from "@tauri-apps/plugin-opener";
 import type { DbOp } from "$lib/core/dbops";
 import type { DomainData } from "$lib/core/types";
 
@@ -43,6 +44,18 @@ export function readFile(path: string): Promise<string> {
 
 export function writeFile(path: string, content: string): Promise<void> {
   return writeTextFile(path, content);
+}
+
+// ── links (auto-detected in descriptions) ───────────────────────────────────
+
+/** Opens a web URL in the default browser. */
+export function openWebUrl(url: string): Promise<void> {
+  return openUrl(url);
+}
+
+/** Opens a file/directory with its associated app / Explorer. */
+export function openFsPath(path: string): Promise<void> {
+  return openPath(path);
 }
 
 // ── window controls (custom title bar) ──────────────────────────────────────

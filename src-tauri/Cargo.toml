@@ -18,6 +18,8 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = [] }
 tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"
+# description links: URL -> default browser, path -> Explorer/associated app
+tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 # bundled: nincs rendszer-SQLite függőség — a portable exe önálló marad

@@ -17,8 +17,14 @@ pub struct DbState {
 impl DbState {
     pub fn init() -> Self {
         match crate::paths::db_path().and_then(|p| db::open(&p)) {
-            Ok(conn) => Self { conn: Mutex::new(Some(conn)), init_error: None },
-            Err(e) => Self { conn: Mutex::new(None), init_error: Some(e) },
+            Ok(conn) => Self {
+                conn: Mutex::new(Some(conn)),
+                init_error: None,
+            },
+            Err(e) => Self {
+                conn: Mutex::new(None),
+                init_error: Some(e),
+            },
         }
     }
 }

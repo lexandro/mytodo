@@ -9,6 +9,7 @@ import {
   armRename, deleteGroupAction, deleteListAction, moveTodoAction, newGroup,
   openDetails, trashTodoAction,
 } from "./actions";
+import { duplicateAction, setArchivedAction, togglePinAction } from "./actions-detail";
 import { store } from "./store.svelte";
 import { ui, type CtxItem } from "./ui.svelte";
 
@@ -47,26 +48,27 @@ export function todoMenuItems(todo: Todo): CtxItem[] {
     {
       label: todo.pinLocal ? "Unpin from list" : "Pin to list",
       hint: "Ctrl+P",
-      action: closeAnd(() => togglePinPlaceholder(todo.id)),
+      action: () => togglePinAction(todo.id, "local"),
+    },
+    {
+      label: todo.pinGlobal ? "Unpin globally" : "Pin globally",
+      action: () => togglePinAction(todo.id, "global"),
     },
     todo.groupId !== null
       ? { label: "Move up one level", hint: "Alt+←", action: closeAnd(() => moveUpOneLevel(todo)) }
       : { label: "Move up one level", hint: "at root", disabled: true, action: () => {} },
     { label: "Move to…", action: () => (ui.ctxMenu = ui.ctxMenu === null ? null : { ...ui.ctxMenu, items: moveTargetItems(todo) }) },
+    { label: "Duplicate", action: () => duplicateAction(todo.id) },
     { separator: true },
+    {
+      label: todo.archived ? "Restore from archive" : "Archive",
+      action: () => setArchivedAction(todo.id, !todo.archived),
+    },
     { label: "Delete", hint: "Del", danger: true, action: () => trashTodoAction(todo.id) },
   ];
 }
 
-/** Pin arrives in F5 — the menu slot exists so the layout is stable. */
-function togglePinPlaceholder(id: string): void {
-  store.apply("pin change", (data) => {
-    const todo = data.todos.find((t) => t.id === id);
-    if (todo !== undefined) todo.pinLocal = !todo.pinLocal;
-  });
-}
-
-function moveUpOneLevel(todo: Todo): void {
+export function moveUpOneLevel(todo: Todo): void {
   const group = store.data.groups.find((g) => g.id === todo.groupId);
   moveTodoAction(todo.id, todo.listId, group?.parentId ?? null, "Moved up one level");
 }

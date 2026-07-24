@@ -7,6 +7,7 @@
   import { store } from "$lib/state/store.svelte";
   import { ui } from "$lib/state/ui.svelte";
   import ContextMenu from "./ContextMenu.svelte";
+  import DetailPanel from "./DetailPanel.svelte";
   import ListRail from "./ListRail.svelte";
   import StatusBar from "./StatusBar.svelte";
   import TitleBar from "./TitleBar.svelte";
@@ -63,6 +64,9 @@
           <div class="center-message text-muted">Trash view — F5 fázis</div>
         {/if}
       </div>
+      {#if ui.view === "main"}
+        <DetailPanel />
+      {/if}
     {/if}
   </div>
   <StatusBar />

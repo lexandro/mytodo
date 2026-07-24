@@ -97,17 +97,13 @@ pub fn load_all(conn: &Connection) -> Result<DomainData, String> {
                 })
             },
         )?,
-        color_labels: collect(
-            conn,
-            "SELECT id, name, color, ord FROM color_labels",
-            |r| {
-                Ok(ColorLabel {
-                    id: r.get(0)?,
-                    name: r.get(1)?,
-                    color: r.get(2)?,
-                    order: r.get(3)?,
-                })
-            },
-        )?,
+        color_labels: collect(conn, "SELECT id, name, color, ord FROM color_labels", |r| {
+            Ok(ColorLabel {
+                id: r.get(0)?,
+                name: r.get(1)?,
+                color: r.get(2)?,
+                order: r.get(3)?,
+            })
+        })?,
     })
 }
