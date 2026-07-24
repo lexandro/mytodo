@@ -372,7 +372,7 @@ handoff (existing design semantics untouched, token stylesheet byte-identical).
 | AI2 | Workspace linking: picker, validation, Git detect, chip, settings dialog, missing state | ✅ |
 | AI3 | Provider infra: detection, validation, version, Test, AI Clients dialog, default client | ✅ |
 | AI4 | Run engine: Rust process exec + streaming + cancel, provider adapters, result normalization | ✅ |
-| AI5 | Context builder + proposals: AIContextBuilder, parse/validate, batch apply, activity log | 🔲 |
+| AI5 | Context builder + proposals: AIContextBuilder, parse/validate, batch apply, activity log | ✅ |
 | AI6 | AI UI: detail AI tab, ✦ AI menu, run panel, results, proposal review, history, keyboard | 🔲 |
 | AI7 | Hardening + docs + manual test doc + Definition-of-Done walkthrough | 🔲 |
 
@@ -487,22 +487,26 @@ explicit owner request; version stays until then.
       detail; ai_runs history persisted completed+cancelled+failed.
 - [x] Close-out: typecheck 0, 176 TS (+21) + 31 Rust (+5) tests green → push
 
-#### AI5 — Context builder + proposals 🔲
-- [ ] `core/ai/context.ts` (AIContextBuilder): action definition + mode +
-      workspace metadata + AI Brief + selected todo/desc/subtasks/activity
-      summary + list/group context; never the whole DB (§18); native
-      provider instructions untouched (§19)
-- [ ] `core/ai/proposals.ts`: parse provider proposals → strongly-typed
-      Proposal[]; validation with the SAME domain rules as manual edits
-      (status values, group depth ≤ 3, valid ids/targets, archive
-      semantics §27); invalid → visible per-row error, never applied
-- [ ] Batch apply: selected proposals → ONE `store.apply()` (one undo
-      snapshot, §29) via normal domain ops; per-item activity entries +
-      high-level AI events referencing the run id (§30); toast "Applied n
-      changes — one batch, Ctrl+Z undoes it"
-- [ ] Tests: context generation per action, proposal parsing, invalid
-      rejection, each proposal kind, depth validation, batch apply, undo
-      after batch apply
+#### AI5 — Context builder + proposals ✅ (2026-07-24)
+- [x] `core/ai-context.ts` (AIContextBuilder): mode statement (EXECUTE only
+      for implement), workspace type + AI Brief, selected todo (title/
+      status/location/description/subtasks with ids/recent activity),
+      group catalog with ids, id-tagged list snapshot ONLY for suggest/
+      reconcile (capped at 150, trashed excluded — §18); per-action
+      instructions + output contract (envelope schema + allowed proposal
+      kinds + id-reference rules); CLAUDE.md etc. untouched (§19) — 6 tests
+- [x] `core/ai-apply.ts`: validateProposal with manual-edit rules (§27) —
+      existing/untrashed todo, run-list-only targets (create/move
+      restricted to the run's list), group existence+ownership, archive
+      semantics, subtask ownership; applyProposals through the NORMAL
+      domain ops + "AI applied — <label>" activity entries; invalid rows
+      skip with per-row errors, valid siblings still apply — 7 tests
+- [x] `state/ai-runs.svelte.ts`: startAction (buildRunPrompt from live
+      data), applySelected (ONE store.apply = one Ctrl+Z batch, applied
+      flags persisted on the run, toast "Applied n changes — one batch"),
+      run started/completed/failed/cancelled activity entries on the todo
+      (non-undoable — Ctrl+Z never eats run notes)
+- [x] Close-out: typecheck 0, 189 TS (+13) tests green → push
 
 #### AI6 — AI UI 🔲
 - [ ] DetailPanel: Details | Activity | **AI** tab (5 todo actions with

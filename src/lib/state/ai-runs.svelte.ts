@@ -4,6 +4,9 @@
 // A run is bound to its list/todo context and survives panel close and
 // pane/tab switches (aiprompt §39); the panel (AI6) merely renders `runs`.
 
+import { logActivity } from "$lib/core/activity";
+import { applyProposals } from "$lib/core/ai-apply";
+import { buildRunPrompt } from "$lib/core/ai-context";
 import { selectProvider } from "$lib/core/ai-providers";
 import { resultFromText } from "$lib/core/ai-result";
 import {
@@ -11,13 +14,14 @@ import {
 } from "$lib/core/ai-runs";
 import { parseStreamLine } from "$lib/core/ai-stream";
 import {
-  ACTION_LABELS, ACTION_MODES, type AIAction, type AIRun,
+  ACTION_LABELS, ACTION_MODES, PROVIDER_LABELS, type AIAction, type AIRun,
 } from "$lib/core/ai-types";
 import { newId } from "$lib/core/ids";
 import {
   aiRunCancel, aiRunPut, aiRunStart, aiRunsLoad, onAiRunEvent, type UnlistenFn,
 } from "$lib/ipc";
 import { aiConfig } from "./ai-config.svelte";
+import { store } from "./store.svelte";
 import { ui } from "./ui.svelte";
 
 export type StartRunError = { message: string; openAiClients?: boolean };
@@ -53,6 +57,28 @@ class AiRunsState {
 
   runById(runId: string): AIRun | undefined {
     return this.runs.find((run) => run.id === runId);
+  }
+
+  /**
+   * The normal entry point: builds the run context from the live domain
+   * data (AIContextBuilder) and starts the run.
+   */
+  async startAction(params: {
+    listId: string;
+    todoId: string | null;
+    action: AIAction;
+    question?: string;
+  }): Promise<StartRunError | null> {
+    const link = aiConfig.linkFor(params.listId);
+    if (link === undefined) return { message: "Link a workspace to use AI." };
+    const question = params.question?.trim() ?? "";
+    const prompt = buildRunPrompt(store.data, link, {
+      action: params.action,
+      listId: params.listId,
+      todoId: params.todoId,
+      question: question === "" ? null : question,
+    });
+    return this.startRun({ ...params, prompt });
   }
 
   /**
@@ -120,6 +146,7 @@ class AiRunsState {
         mode: run.mode,
         prompt: params.prompt,
       });
+      this.logRunActivity(run, "started");
       return null;
     } catch (e) {
       this.cleanupLive(run.id);
@@ -190,10 +217,56 @@ class AiRunsState {
     const finished = this.runById(runId);
     if (finished !== undefined) {
       this.persist(finished);
+      this.logRunActivity(finished, finished.status);
       const label = ACTION_LABELS[finished.action];
       if (finished.status === "completed") ui.showToast(`AI ${label} completed`);
       else if (finished.status === "failed") ui.showToast(`AI ${label} failed`);
     }
+  }
+
+  /**
+   * Apply Selected (aiprompt §29): validates + applies the chosen proposals
+   * in ONE store.apply — a single Ctrl+Z reverts the whole batch. Invalid
+   * proposals surface per-row errors and are never half-applied.
+   */
+  applySelected(runId: string, proposalIds: readonly string[]): Record<string, string> {
+    const run = this.runById(runId);
+    if (run === undefined || run.result === null) return {};
+    const chosen = run.result.proposals.filter(
+      (p) => proposalIds.includes(p.id) && !p.applied,
+    );
+    if (chosen.length === 0) return {};
+    let outcome: ReturnType<typeof applyProposals> = { appliedIds: [], errors: {} };
+    store.apply("apply AI proposals", (data) => {
+      outcome = applyProposals(data, chosen, run.listId, Date.now());
+    });
+    if (outcome.appliedIds.length > 0) {
+      const result = {
+        ...run.result,
+        proposals: run.result.proposals.map((p) =>
+          outcome.appliedIds.includes(p.id) ? { ...p, applied: true } : p,
+        ),
+      };
+      this.updateRun(runId, { result });
+      const updated = this.runById(runId);
+      if (updated !== undefined) this.persist(updated);
+      const n = outcome.appliedIds.length;
+      ui.showToast(`Applied ${n} ${n === 1 ? "change" : "changes"} — one batch, Ctrl+Z undoes it`, true);
+    }
+    return outcome.errors;
+  }
+
+  /** High-level activity entries on the todo the run belongs to (§30). */
+  private logRunActivity(run: AIRun, phase: "started" | AIRun["status"]): void {
+    const todoId = run.todoId;
+    if (todoId === null) return;
+    const wording = phase === "running" ? "started" : phase;
+    const summary = `AI ${ACTION_LABELS[run.action]} ${wording} (${PROVIDER_LABELS[run.provider]})`;
+    // activity notes about runs are not undoable edits — Ctrl+Z must not
+    // eat them together with real data changes
+    store.apply("ai activity", (data) => {
+      logActivity(data, todoId, "ai", summary, Date.now());
+    }, { undoable: false });
   }
 
   /** Marks proposals applied + persists (used by the apply flow in AI5). */
