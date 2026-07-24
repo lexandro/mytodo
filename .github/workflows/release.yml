@@ -1,0 +1,62 @@
+name: Release
+
+# Push a version tag (e.g. v1.0.0) → build the signed Windows installers
+# (MSI + NSIS) with updater artifacts + latest.json, publish them as a live
+# GitHub Release. The in-app updater feeds from
+# releases/latest/download/latest.json. Also attaches a portable zip.
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install frontend dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Unit tests
+        run: bun run test
+
+      - name: Build app + publish release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Signed auto-updates. Keypair lives in the owner's key vault;
+          # secrets: Settings → Secrets → Actions.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: "myTODO ${{ github.ref_name }}"
+          releaseDraft: false
+          prerelease: false
+
+      - name: Assemble portable zip
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force release\myTODO\data, release\myTODO\backup | Out-Null
+          Copy-Item target\release\mytodo.exe release\myTODO\myTODO.exe
+          Compress-Archive -Path release\myTODO -DestinationPath "myTODO-${{ github.ref_name }}-portable.zip"
+
+      - name: Attach portable zip to the release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${{ github.ref_name }}" "myTODO-${{ github.ref_name }}-portable.zip" --clobber

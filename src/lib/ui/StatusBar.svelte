@@ -1,8 +1,9 @@
 <script lang="ts">
-  // StatusBar (23px): saved indicator left, shortcut hints right.
-  // On persist error the same slot turns into a red retry affordance —
-  // data is never lost silently (daprompt §32).
+  // StatusBar (23px): saved indicator left, update offer + shortcut hints
+  // right. On persist error the saved slot turns into a red retry
+  // affordance — data is never lost silently (daprompt §32).
   import { persistQueue } from "$lib/state/persist.svelte";
+  import { updater } from "$lib/state/updater.svelte";
 </script>
 
 <footer class="statusbar">
@@ -18,6 +19,16 @@
     </span>
   {/if}
   <span class="spacer"></span>
+  {#if updater.status === "downloading"}
+    <span class="update-chip">Downloading update…</span>
+  {:else if updater.availableVersion !== null && !updater.dismissed}
+    <span class="update-chip">
+      <button class="update-install" onclick={() => void updater.install()}>
+        Update {updater.availableVersion} available — install & restart
+      </button>
+      <button class="update-dismiss" title="Later" onclick={() => updater.dismiss()}>✕</button>
+    </span>
+  {/if}
   <span class="hints">Ctrl+Z undo</span>
 </footer>
 
@@ -66,6 +77,35 @@
   }
   .spacer {
     flex: 1;
+  }
+  .update-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--color-accent);
+  }
+  .update-install {
+    border: none;
+    background: transparent;
+    color: var(--color-accent);
+    font: inherit;
+    cursor: pointer;
+    padding: 0;
+  }
+  .update-install:hover {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .update-dismiss {
+    border: none;
+    background: transparent;
+    color: var(--color-neutral-600);
+    font-size: 9px;
+    cursor: pointer;
+    padding: 0 2px;
+  }
+  .update-dismiss:hover {
+    color: inherit;
   }
   .hints {
     color: var(--color-neutral-600);

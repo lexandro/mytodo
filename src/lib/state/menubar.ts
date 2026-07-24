@@ -11,6 +11,7 @@ import { moveUpOneLevel } from "./menus";
 import { showQuickAddWindow, windowClose } from "$lib/ipc";
 import { store } from "./store.svelte";
 import { ui, type LayoutName } from "./ui.svelte";
+import { updater } from "./updater.svelte";
 
 export interface MenuItem {
   separator?: boolean;
@@ -120,6 +121,7 @@ function goMenu(): MenuItem[] {
 function helpMenu(): MenuItem[] {
   return [
     item("Keyboard shortcuts", () => (ui.shortcutsOpen = true), "F1"),
+    item("Check for updates…", () => void updater.check(true)),
     item("About myTODO", () => ui.showToast("myTODO — fast local todo workspace")),
   ];
 }

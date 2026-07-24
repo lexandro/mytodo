@@ -57,7 +57,8 @@ pub fn summon_workspace(app: &AppHandle, toggle: bool) -> Result<SummonResult, S
     let mut moved_desktop = false;
     let on_current = vd::is_on_current_desktop(hwnd).unwrap_or(true);
     if !on_current {
-        match foreground.ok_or_else(|| "no foreground window to locate the user".to_string())
+        match foreground
+            .ok_or_else(|| "no foreground window to locate the user".to_string())
             .and_then(vd::desktop_of)
         {
             Ok(target) => {
@@ -91,11 +92,13 @@ pub fn summon_workspace(app: &AppHandle, toggle: bool) -> Result<SummonResult, S
     window.show().map_err(|e| format!("show failed: {e}"))?;
     act::show(hwnd);
     let foreground_granted = act::activate(hwnd);
-    log::debug!(
-        "summon: moved_desktop={moved_desktop} foreground_granted={foreground_granted}"
-    );
+    log::debug!("summon: moved_desktop={moved_desktop} foreground_granted={foreground_granted}");
     Ok(SummonResult {
-        action: if is_foreground { "focused".into() } else { "summoned".into() },
+        action: if is_foreground {
+            "focused".into()
+        } else {
+            "summoned".into()
+        },
         moved_desktop,
         foreground_granted,
     })
@@ -126,6 +129,8 @@ pub fn show_quick_add(app: &AppHandle) -> Result<(), String> {
         }
     }
     window.show().map_err(|e| format!("show failed: {e}"))?;
-    window.set_focus().map_err(|e| format!("focus failed: {e}"))?;
+    window
+        .set_focus()
+        .map_err(|e| format!("focus failed: {e}"))?;
     Ok(())
 }

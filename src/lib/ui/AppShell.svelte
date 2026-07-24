@@ -12,6 +12,7 @@
   import { SHORTCUT_SETTINGS_KEY, shortcutManager } from "$lib/state/shortcut-manager.svelte";
   import { store } from "$lib/state/store.svelte";
   import { ui } from "$lib/state/ui.svelte";
+  import { updater } from "$lib/state/updater.svelte";
   import { WINDOW_STATE_KEY, restoreWindowState, startWindowStateSaving } from "$lib/state/window-state";
   import CommandPalette from "./CommandPalette.svelte";
   import ContextMenu from "./ContextMenu.svelte";
@@ -40,6 +41,7 @@
         // startup registration never blocks the app (shortcut.md §16)
         void shortcutManager.init(all[SHORTCUT_SETTINGS_KEY]);
         void restoreWindowState(all[WINDOW_STATE_KEY]).then(() => startWindowStateSaving());
+        updater.startAutoCheck();
       });
   });
 

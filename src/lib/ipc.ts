@@ -8,6 +8,8 @@ import { open, save } from "@tauri-apps/plugin-dialog";
 import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { register, unregister } from "@tauri-apps/plugin-global-shortcut";
 import { openPath, openUrl } from "@tauri-apps/plugin-opener";
+import { relaunch } from "@tauri-apps/plugin-process";
+import { check, type Update } from "@tauri-apps/plugin-updater";
 import type { DbOp } from "$lib/core/dbops";
 import type { DomainData } from "$lib/core/types";
 
@@ -164,6 +166,28 @@ export function summonWorkspace(toggle: boolean): Promise<SummonResult> {
 
 export function showQuickAddWindow(): Promise<void> {
   return invoke<void>("show_quick_add");
+}
+
+// ── live update (GitHub Releases, signed) ───────────────────────────────────
+
+export interface AvailableUpdate {
+  version: string;
+  /** Downloads + installs, then the caller relaunches. */
+  install: () => Promise<void>;
+}
+
+/** null = already up to date. */
+export async function checkForUpdate(): Promise<AvailableUpdate | null> {
+  const update: Update | null = await check();
+  if (update === null) return null;
+  return {
+    version: update.version,
+    install: () => update.downloadAndInstall(),
+  };
+}
+
+export function relaunchApp(): Promise<void> {
+  return relaunch();
 }
 
 // ── cross-window events (quickadd → main) ───────────────────────────────────

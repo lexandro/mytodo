@@ -15,8 +15,8 @@ fn backup_file_for_today() -> Result<PathBuf, String> {
 
 fn vacuum_into(target: &Path) -> Result<(), String> {
     let source = paths::db_path()?;
-    let conn = Connection::open(&source)
-        .map_err(|e| format!("backup: cannot open database: {e}"))?;
+    let conn =
+        Connection::open(&source).map_err(|e| format!("backup: cannot open database: {e}"))?;
     if target.exists() {
         std::fs::remove_file(target)
             .map_err(|e| format!("backup: cannot replace {}: {e}", target.display()))?;
@@ -101,7 +101,9 @@ pub fn list_backups() -> Result<Vec<String>, String> {
 /// The caller must have closed the live connection before calling this.
 pub fn restore_backup(file_name: &str) -> Result<(), String> {
     // the name must be one of our own backup files — no path traversal
-    if !file_name.starts_with("todo-") || !file_name.ends_with(".db") || file_name.contains(['/', '\\'])
+    if !file_name.starts_with("todo-")
+        || !file_name.ends_with(".db")
+        || file_name.contains(['/', '\\'])
     {
         return Err("invalid backup file name".into());
     }

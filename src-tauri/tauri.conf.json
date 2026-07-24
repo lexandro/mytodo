@@ -40,13 +40,25 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["msi"],
+    "targets": [
+      "msi",
+      "nsis"
+    ],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/lexandro/mytodo/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDYzMjAzQkQxQjQ4NEY5QTQKUldTaytZUzAwVHNnWTlJa2o0aTFZT1dnWDRDK1dSbndWNUlxNUFZdGg3aHFqSVJSYS8ramt0TUkK"
+    }
   }
 }

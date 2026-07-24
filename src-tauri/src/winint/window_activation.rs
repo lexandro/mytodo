@@ -14,7 +14,11 @@ use windows::Win32::UI::WindowsAndMessaging::{
 
 pub fn foreground_window() -> Option<HWND> {
     let hwnd = unsafe { GetForegroundWindow() };
-    if hwnd.0.is_null() { None } else { Some(hwnd) }
+    if hwnd.0.is_null() {
+        None
+    } else {
+        Some(hwnd)
+    }
 }
 
 pub fn is_minimized(hwnd: HWND) -> bool {
