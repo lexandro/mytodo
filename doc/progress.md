@@ -20,8 +20,8 @@ Forrás-dokumentumok:
 | Fázis | Tartalom | Állapot |
 |---|---|---|
 | F1 | Alapozás: tokenek, DB, domain model, app-váz | ✅ |
-| F2 | Lists, groups, todo CRUD, Quick Add | 🔄 |
-| F3 | Fa-nézet, drag & drop, subtasks | 🔲 |
+| F2 | Lists, groups, todo CRUD, Quick Add | ✅ |
+| F3 | Fa-nézet, drag & drop, subtasks | 🔄 |
 | F4 | Detail panel, activity, színek, emoji, linkek | 🔲 |
 | F5 | Pinning, Pinned view, Archive, Trash, Undo | 🔲 |
 | F6 | Keresés (filter, global, palette) | 🔲 |
@@ -81,18 +81,28 @@ Jelmagyarázat: 🔲 nincs elkezdve · 🔄 folyamatban · ✅ kész (review+pus
 - [x] Zárás: typecheck + 16 TS teszt + 6 Rust teszt zöld → review (bootstrap-undo
       bug javítva, YAGNI-cleanup) → push
 
-### F2 — Lists, groups, todo CRUD, Quick Add
-- [ ] Core: list/group/todo műveletek (create/rename/delete/reorder/move),
-      3-szintű group-limit kikényszerítés, ordering-stratégia — kolokált tesztekkel
-- [ ] ListRail (210px): LISTS/VIEWS szekciók, +, aktív/hover állapotok, countok,
-      Ctrl-digit hintek, inline rename (leading emoji szerkesztés)
-- [ ] TabBar (single-pane mód), lista-váltás
-- [ ] Todo-fa renderelés: GroupRow (caret, collapse persist), TodoRow (státusz-kör,
-      cycle click, emoji, stripe-hely), EmptyState-ek (Inbox zero / új lista)
-- [ ] QuickAdd: Enter létrehoz (kijelölt todo groupjába vagy list rootba),
-      Shift+Enter + details-nyitás előkészítés, fókusz marad
-- [ ] Context menük alapjai (todo/group/list; Inbox delete-restriction)
-- [ ] Zárás: review → refactor → push
+### F2 — Lists, groups, todo CRUD, Quick Add ✅ (2026-07-24)
+- [x] Core: `lists-ops` / `groups-ops` / `todos-ops` / `rows` / `labels` /
+      `emoji` / `scope` — 3-szintű depth-cap + ciklus-guard a moveGroup-ban,
+      lista-törlés = todo-k Trash-be (prototípus-viselkedés), fractional
+      ordering; 38 új teszt (össz. 54)
+- [x] ListRail: LISTS/VIEWS, +, aktív/drop állapotok, countok, Ctrl-digit
+      hintek, inline rename leading-emoji szerkesztéssel, lista drag-reorder,
+      todo-drop listára
+- [x] TabBar (single-pane), lista-váltás; Pinned/Trash view placeholder (F5)
+- [x] Fa-nézet: GroupRow (caret, collapse persist a DB-ben, drop-into
+      highlight + auto-expand), TodoRow (státusz-kör cycle, stripe, G-tag,
+      subtask-count, before/after drop-vonalak), SectionRow, EmptyState-ek
+- [x] QuickAdd: Enter → kijelölt todo groupjába vagy list rootba, Shift+Enter
+      details-nyitással, fókusz marad, Ctrl+N fókusz
+- [x] Context menük: todo (státuszok, Move to… morph, delete), group (New
+      todo/subgroup + 3-level limit hint), list (Inbox delete-restriction)
+- [x] Keyboard alapok: Esc-lánc, Ctrl+N/Ctrl+Shift+N/Ctrl+1..9/Ctrl+Enter/
+      Ctrl+Z/Delete/nyilak; Toast + Undo
+- [x] Vizuális smoke-teszt: ablak-capture ellenőrizve (rail, tabs, quick add,
+      Inbox zero empty state, status bar — design szerint)
+- [x] Zárás: typecheck 0 hiba, 54 teszt zöld → review (menus.ts placeholder
+      kód kijavítva, a11y warningok rendezve) → push
 
 ### F3 — Fa-nézet mélyítés, drag & drop, subtasks
 - [ ] DnD: todo reorder (before/after 2px vonal), group-ba ejtés (row highlight,

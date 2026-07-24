@@ -39,15 +39,19 @@ class DomainStore {
   /**
    * Runs a mutation: snapshots the current state (undo), applies the mutator
    * to the live state and persists exactly the changed rows.
+   * `undoable: false` persists without an undo entry (e.g. collapse state —
+   * per INTERACTIONS.md undo covers data mutations, not view toggles).
    */
-  apply(label: string, mutate: (data: DomainData) => void): void {
+  apply(label: string, mutate: (data: DomainData) => void, opts?: { undoable?: boolean }): void {
     const prev = $state.snapshot(this.data) as DomainData;
     mutate(this.data);
     const next = $state.snapshot(this.data) as DomainData;
     const ops = diffDomain(prev, next);
     if (ops.length === 0) return; // no-op mutation: nothing to undo or save
-    this.undoStack.push({ label, snapshot: prev });
-    if (this.undoStack.length > UNDO_DEPTH) this.undoStack.shift();
+    if (opts?.undoable !== false) {
+      this.undoStack.push({ label, snapshot: prev });
+      if (this.undoStack.length > UNDO_DEPTH) this.undoStack.shift();
+    }
     persistQueue.enqueue(ops);
   }
 
