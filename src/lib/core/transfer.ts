@@ -2,7 +2,7 @@
 // format. Import validates BEFORE anything touches the store — a bad file
 // can never corrupt the database. The apply itself is one undo-able step.
 
-import { MAX_GROUP_DEPTH, emptyDomainData, type DomainData, type TodoStatus } from "./types";
+import { MAX_GROUP_DEPTH, TODO_STATUSES, emptyDomainData, type DomainData, type TodoStatus } from "./types";
 import { ensureInbox } from "./bootstrap";
 
 export const EXPORT_FORMAT = 1;
@@ -23,7 +23,7 @@ export type ImportResult =
   | { ok: true; data: DomainData }
   | { ok: false; error: string };
 
-const STATUSES: TodoStatus[] = ["open", "progress", "done", "cancelled"];
+const STATUSES: readonly TodoStatus[] = TODO_STATUSES;
 
 function str(v: unknown): v is string {
   return typeof v === "string";

@@ -10,6 +10,7 @@ import { register, unregister } from "@tauri-apps/plugin-global-shortcut";
 import { openPath, openUrl } from "@tauri-apps/plugin-opener";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { check, type Update } from "@tauri-apps/plugin-updater";
+import type { AIRunRow } from "$lib/core/ai-runs";
 import type { DbOp } from "$lib/core/dbops";
 import type { ShortcutStatus } from "$lib/core/shortcut-offer";
 import type { DomainData } from "$lib/core/types";
@@ -30,6 +31,17 @@ export function settingsAll(): Promise<Record<string, unknown>> {
 
 export function settingsSet(key: string, value: unknown): Promise<void> {
   return invoke<void>("settings_set", { key, value });
+}
+
+// ── AI run history (AI Workspace Integration V1) ────────────────────────────
+
+export function aiRunsLoad(): Promise<AIRunRow[]> {
+  return invoke<AIRunRow[]>("ai_runs_load");
+}
+
+/** Upsert one run row; the backend prunes old terminal runs per list. */
+export function aiRunPut(run: AIRunRow): Promise<void> {
+  return invoke<void>("ai_run_put", { run });
 }
 
 // ── backup / restore ────────────────────────────────────────────────────────

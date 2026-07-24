@@ -71,6 +71,26 @@ const MIGRATIONS: &[&str] = &[
         value TEXT NOT NULL
     );
     ",
+    // v2 — AI run history (AI Workspace Integration V1). log/result hold
+    // opaque JSON; parsing and validation live in src/lib/core/ai-runs.ts.
+    "
+    CREATE TABLE ai_runs (
+        id          TEXT PRIMARY KEY,
+        list_id     TEXT NOT NULL REFERENCES lists(id) ON DELETE CASCADE,
+        todo_id     TEXT REFERENCES todos(id) ON DELETE SET NULL,
+        provider    TEXT NOT NULL,
+        action      TEXT NOT NULL,
+        mode        TEXT NOT NULL,
+        status      TEXT NOT NULL,
+        started_at  INTEGER NOT NULL,
+        finished_at INTEGER,
+        session_id  TEXT,
+        log         TEXT NOT NULL DEFAULT '[]',
+        result      TEXT,
+        error       TEXT
+    );
+    CREATE INDEX idx_ai_runs_list ON ai_runs(list_id);
+    ",
 ];
 
 pub fn migrate(conn: &mut Connection) -> Result<(), String> {

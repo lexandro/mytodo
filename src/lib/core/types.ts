@@ -4,6 +4,12 @@
 
 export type TodoStatus = "open" | "progress" | "done" | "cancelled";
 
+export const TODO_STATUSES: readonly TodoStatus[] = ["open", "progress", "done", "cancelled"];
+
+export function isTodoStatus(value: unknown): value is TodoStatus {
+  return TODO_STATUSES.includes(value as TodoStatus);
+}
+
 export interface List {
   id: string;
   name: string;

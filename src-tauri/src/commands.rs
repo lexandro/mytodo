@@ -72,6 +72,18 @@ pub fn settings_set(
     with_conn(&state, |conn| db::settings_set(conn, &key, &value))
 }
 
+// ── AI run history (AI Workspace Integration V1) ────────────────────────────
+
+#[tauri::command]
+pub fn ai_runs_load(state: State<'_, DbState>) -> Result<Vec<db::ai_runs::AiRun>, String> {
+    with_conn(&state, |conn| db::ai_runs::load_all(conn))
+}
+
+#[tauri::command]
+pub fn ai_run_put(state: State<'_, DbState>, run: db::ai_runs::AiRun) -> Result<(), String> {
+    with_conn(&state, |conn| db::ai_runs::put(conn, &run))
+}
+
 // ── backup / restore ────────────────────────────────────────────────────────
 
 #[tauri::command]

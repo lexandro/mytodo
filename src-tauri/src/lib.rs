@@ -38,6 +38,8 @@ pub fn run() {
             commands::db_apply,
             commands::settings_all,
             commands::settings_set,
+            commands::ai_runs_load,
+            commands::ai_run_put,
             commands::backup_now,
             commands::list_backups,
             commands::restore_backup,

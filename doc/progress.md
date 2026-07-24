@@ -356,12 +356,19 @@ handoff (existing design semantics untouched, token stylesheet byte-identical).
     `dangerously-skip-permissions`. If a provider/version cannot guarantee
     read-only, surface it as a capability and refuse the run with a human
     message rather than silently degrading.
+17. **Workspace links + AI client config live in the settings table**
+    (keys `workspaces`, `aiClients`), NOT as lists columns — aiprompt §41
+    says "portable settings" explicitly, it keeps linking out of the undo
+    snapshot/diff pipeline (linking is config, not undoable domain data),
+    and the DomainData/diff/DbOp pipeline stays untouched. Only `ai_runs`
+    needed a real table (migration v2). Values from disk are untrusted:
+    core normalizers repair/drop invalid entries field by field.
 
 #### Phase overview
 
 | Phase | Scope | Status |
 |---|---|---|
-| AI1 | Domain + persistence: types, migrations, settings keys, FUTURE.md | 🔲 |
+| AI1 | Domain + persistence: types, migrations, settings keys, FUTURE.md | ✅ |
 | AI2 | Workspace linking: picker, validation, Git detect, chip, settings dialog, missing state | 🔲 |
 | AI3 | Provider infra: detection, validation, version, Test, AI Clients dialog, default client | 🔲 |
 | AI4 | Run engine: Rust process exec + streaming + cancel, provider adapters, result normalization | 🔲 |
@@ -373,24 +380,30 @@ Phase workflow unchanged (implement pure-core-first → typecheck+tests green �
 self-review → commit → push → update this file). No release without an
 explicit owner request; version stays until then.
 
-#### AI1 — Domain + persistence foundation 🔲
-- [ ] `core/types.ts` (or colocated `core/ai/types.ts` if size demands):
-      `WorkspaceLink {path, type: git|generic, brief, preferredProvider|null}`
-      on List (nullable), `AIRun` (id, listId, todoId|null, provider, action,
-      mode, status running|completed|failed|cancelled, startedAt/finishedAt,
-      sessionId|null, log[] capped, result blocks, error|null, proposals),
-      `Proposal` strongly-typed kinds (CreateTodo, UpdateTodo,
-      ChangeTodoStatus, AddSubtask, UpdateSubtask, MoveTodoToGroup,
-      ArchiveTodo) — per design DESIGN.md §Data model + aiprompt §20/§25
-- [ ] SQLite migration (append-only, user_version bump): workspace columns
-      on lists (or `list_workspace` table), `ai_runs` table with capped
-      JSON payload columns; Rust model + load/write + tests
-- [ ] Settings keys: `aiClients` (per-provider enabled/path/version/status),
-      `defaultClient` — portable settings table, credentials never (§41)
-- [ ] `doc/FUTURE.md`: add the 8 deferred AI features from the design
-      FUTURE.md; reword the NEVER list (preserve Markdown/group-drag/divider
-      items — §54)
-- [ ] Tests: types + migration roundtrip + run status transitions
+#### AI1 — Domain + persistence foundation ✅ (2026-07-24)
+- [x] `core/ai-types.ts`: WorkspaceLink, AIAction/AIMode + ACTION_MODES
+      (Implement is the ONLY execute action — test-asserted), AIRun,
+      AIRunResult blocks (verdict/checks/mapping/recommendation…),
+      strongly-typed ProposalAction (7 kinds) + AIProposal; caps
+      (MAX_RUN_LOG_LINES 200, MAX_RUNS_PER_LIST 50)
+- [x] `core/ai-config.ts`: aiClients + workspaces settings models with
+      unknown-tolerant normalizers (field-by-field repair, invalid entries
+      dropped) + effectiveProvider (preferred ?? default, NO availability
+      fallback); decision #17 — settings table, no lists migration
+- [x] `core/ai-proposals.ts`: strict per-entry / lenient per-collection
+      proposal parsing; unknown kinds (raw SQL attempts etc.) rejected
+- [x] `core/ai-runs.ts`: AIRunRow ↔ AIRun conversion (Rust stores opaque
+      JSON), corrupted rows degrade instead of crash, interrupted running
+      rows surface as failed, mode re-derived from action
+- [x] SQLite migration v2: `ai_runs` table (list FK CASCADE, todo FK SET
+      NULL); `db/ai_runs.rs` load/put with per-list prune (running rows
+      never pruned) — 4 new Rust tests (12 total)
+- [x] Commands `ai_runs_load` / `ai_run_put` + ipc.ts wrappers
+- [x] `doc/FUTURE.md`: 8 deferred AI features added; NEVER list reworded
+      (AI-as-owner forbidden, not AI wholesale); prior items preserved
+- [x] Shared `TODO_STATUSES`/`isTodoStatus` extracted to core/types.ts
+      (transfer.ts deduplicated)
+- [x] Close-out: typecheck 0, 137 TS (+29) + 12 Rust tests green → push
 
 #### AI2 — Workspace linking 🔲
 - [ ] `core/workspace.ts`: link/unlink/relocate ops, missing-state logic;

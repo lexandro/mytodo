@@ -1,6 +1,7 @@
 //! SQLite persistence layer. The connection lives behind a Mutex managed as
 //! Tauri state; every command accesses it through that.
 
+pub mod ai_runs;
 pub mod backup;
 pub mod load;
 pub mod model;
