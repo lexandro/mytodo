@@ -1,0 +1,4 @@
+# Egységes target-könyvtár a projekt gyökerében — a build.bat és a
+# .gitignore (target/) erre számít.
+[build]
+target-dir = "../target"

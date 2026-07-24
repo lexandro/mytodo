@@ -1,0 +1,33 @@
+[package]
+name = "mytodo"
+version = "0.1.0"
+description = "mytodo — Tauri desktop app"
+authors = ["lexandro"]
+edition = "2021"
+
+[lib]
+# A `_lib` utótag kell: Windowson a lib- és bin-név nem ütközhet
+# (https://github.com/rust-lang/cargo/issues/8519)
+name = "mytodo_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-single-instance = "2"
+
+# kis és gyors release exe (méret-optimalizált)
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true

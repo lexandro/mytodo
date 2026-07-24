@@ -1,0 +1,16 @@
+# Frontend-CI: typecheck + test minden pushra. A Rust/Tauri release build
+# szándékosan NEM fut CI-ben (lassú, Windows-runnert igényelne) — az lokális
+# (build.bat / bun run tauri build).
+image: oven/bun:1
+
+stages:
+  - check
+
+frontend:
+  stage: check
+  script:
+    - bun install --frozen-lockfile
+    - bun run typecheck
+    - bun run test
+  rules:
+    - if: $CI_COMMIT_BRANCH

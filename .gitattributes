@@ -1,0 +1,14 @@
+# Sorvég-normalizálás: LF a repóban és a munkakönyvtárban is (szövegfájlok).
+* text=auto eol=lf
+
+# Windows batch fájlok KÖTELEZŐEN CRLF-fel.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Bináris assetek — soha ne normalizáld, ne diffeld.
+*.png binary
+*.ico binary
+*.icns binary
+*.woff binary
+*.woff2 binary
+*.ttf binary

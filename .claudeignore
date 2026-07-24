@@ -1,0 +1,24 @@
+# Generalt / nagy tartalom — ne foglalja a Claude kontextust
+node_modules/
+dist/
+build/
+.git/
+.wrangler/
+.astro/
+.next/
+bun.lock
+bun.lockb
+*.log
+coverage/
+playwright-report/
+test-results/
+*.min.js
+*.min.css
+*.map
+# nagy media es archivumok
+*.mp4
+*.mkv
+*.zip
+*.pbf
+*.exe
+*.dll
