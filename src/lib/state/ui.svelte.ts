@@ -60,6 +60,12 @@ class UiState {
   archOpen = $state<Record<string, boolean>>({});
   /** Global pinned strip expanded state. */
   pinsOpen = $state(true);
+  /** Global search dialog (Ctrl+Shift+F); null = closed. */
+  globalSearch = $state<{ query: string; index: number } | null>(null);
+  /** Command palette (Ctrl+K); null = closed. */
+  palette = $state<{ query: string; index: number } | null>(null);
+  /** Visual theme — full System/Light/Dark handling lands in F9. */
+  theme = $state<"dark" | "light">("dark");
 
   /** Quick-add input elements per pane — for Ctrl+N focus. Not reactive. */
   quickAddEls: (HTMLInputElement | null)[] = [null, null, null, null];

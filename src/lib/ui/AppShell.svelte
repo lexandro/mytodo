@@ -6,9 +6,11 @@
   import { handleKeydown } from "$lib/state/keyboard";
   import { store } from "$lib/state/store.svelte";
   import { ui } from "$lib/state/ui.svelte";
+  import CommandPalette from "./CommandPalette.svelte";
   import ContextMenu from "./ContextMenu.svelte";
   import DetailPanel from "./DetailPanel.svelte";
   import GlobalPinnedStrip from "./GlobalPinnedStrip.svelte";
+  import GlobalSearch from "./GlobalSearch.svelte";
   import ListRail from "./ListRail.svelte";
   import PinnedView from "./PinnedView.svelte";
   import StatusBar from "./StatusBar.svelte";
@@ -29,6 +31,11 @@
       const first = [...store.data.lists].sort((a, b) => a.order - b.order)[0];
       ui.updatePane(0, { listId: first.id });
     }
+  });
+
+  // theme attribute drives the token overrides in tokens.css
+  $effect(() => {
+    document.documentElement.dataset.theme = ui.theme;
   });
 
   // custom menus replace the native context menu app-wide (INTERACTIONS.md)
@@ -76,6 +83,8 @@
   <StatusBar />
 </div>
 <ContextMenu />
+<GlobalSearch />
+<CommandPalette />
 <Toast />
 
 <style>

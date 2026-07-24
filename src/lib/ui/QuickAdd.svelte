@@ -30,6 +30,20 @@
     onkeydown={onKeydown}
     onfocus={() => (ui.activePane = paneIndex)}
   />
+  <button
+    class="filter-toggle"
+    class:active={ui.panes[paneIndex].filterOpen}
+    title="Filter this list — Ctrl+F"
+    onclick={() => {
+      const open = !ui.panes[paneIndex].filterOpen;
+      ui.updatePane(paneIndex, { filterOpen: open, filterText: "" });
+    }}
+  >
+    <svg width="13" height="13" viewBox="0 0 14 14">
+      <circle cx="6" cy="6" r="4.2" fill="none" stroke="currentColor" stroke-width="1.4" />
+      <line x1="9.2" y1="9.2" x2="12.8" y2="12.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+    </svg>
+  </button>
 </div>
 
 <style>
@@ -43,5 +57,23 @@
   .qa-input {
     min-height: 30px;
     font-size: 12.5px;
+  }
+  .filter-toggle {
+    background: transparent;
+    border: 1px solid var(--color-divider);
+    color: var(--color-neutral-400);
+    width: 30px;
+    height: 30px;
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 7px;
+  }
+  .filter-toggle:hover,
+  .filter-toggle.active {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
   }
 </style>

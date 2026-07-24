@@ -24,8 +24,8 @@ Forrás-dokumentumok:
 | F3 | Fa-nézet, drag & drop, subtasks | ✅ |
 | F4 | Detail panel, activity, színek, emoji, linkek | ✅ |
 | F5 | Pinning, Pinned view, Archive, Trash, Undo | ✅ |
-| F6 | Keresés (filter, global, palette) | 🔄 |
-| F7 | Split pane rendszer + layout persist | 🔲 |
+| F6 | Keresés (filter, global, palette) | ✅ |
+| F7 | Split pane rendszer + layout persist | 🔄 |
 | F8 | Global shortcuts, Quick Add ablak, Summon | 🔲 |
 | F9 | Scale, theme, keyboard polish, window state | 🔲 |
 | F10 | Backup, import/export, hardening, portable release | 🔲 |
@@ -155,17 +155,22 @@ Jelmagyarázat: 🔲 nincs elkezdve · 🔄 folyamatban · ✅ kész (review+pus
       Ctrl+Z visszahozta. Zöld.
 - [x] Zárás: typecheck 0, 75 teszt zöld → push
 
-### F6 — Keresés
-- [ ] `core/search-normalize.ts`: Unicode NFD → diakritika-eltávolítás → lowercase →
-      whitespace-normalizálás; magyar tesztek („árvíztűrő" ↔ „ARVIZTURO")
-- [ ] Fuzzy: substring (title/desc/subtask) + subsequence (≥4 char, csak title);
-      determinisztikus, irreleváns találatok kerülése — tesztekkel
-- [ ] FilterBar (Ctrl+F): live, match-count, groupok force-expand (állapot-mentés
-      nélkül), Pinned/Archived is szűrődik
-- [ ] GlobalSearch (Ctrl+Shift+F): dialog, ≤20 találat, breadcrumb, ↑↓+Enter,
-      navigate home
-- [ ] CommandPalette (Ctrl+K): listák + parancsok (layout, view, theme)
-- [ ] Zárás: review → refactor → push
+### F6 — Keresés ✅ (2026-07-24)
+- [x] `core/search.ts`: NFD → diakritika → lowercase → whitespace pipeline;
+      magyar tesztek („ÁRVÍZTŰRŐ TÜKÖRFÚRÓGÉP" ↔ „arvizturo tukorfurogep")
+- [x] Fuzzy: substring (title/desc/subtask) + subsequence ≥4 char csak title-re
+      (rövid query nem ad zajos találatot) — 10 új teszt (össz. 85)
+- [x] FilterBar (Ctrl+F): live match-count, groupok force-expand mentés nélkül,
+      Pinned/Archived is szűrődik, „No matches" empty state
+- [x] GlobalSearch (Ctrl+Shift+F): 540px dialog, ≤20 determinisztikus találat,
+      breadcrumb, ↑↓+Enter → navigate home; archived benne, trash kizárva
+- [x] CommandPalette (Ctrl+K): listák Ctrl+n hinttel + layout/view/theme
+      parancsok (a layout-váltás az F7-tel válik láthatóvá)
+- [x] Esc-lánc bővítve: ctx → palette → gsearch → rename → picker → filter →
+      detail; téma-attribútum (`data-theme`) bekötve
+- [x] **CDP-verifikáció**: ékezet-független global search + Enter-navigáció,
+      Ctrl+F fuzzy filter match-counttal, palette → Trash view váltás. Zöld.
+- [x] Zárás: typecheck 0, 85 teszt zöld → push
 
 ### F7 — Split pane rendszer
 - [ ] Layout: 1 / 2v / 2h / 4 (CSS grid, fix 1fr), LayoutSwitcher a toolbarban

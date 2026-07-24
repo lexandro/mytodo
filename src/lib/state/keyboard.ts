@@ -24,6 +24,14 @@ function handleEscape(): void {
     ui.ctxMenu = null;
     return;
   }
+  if (ui.palette !== null) {
+    ui.palette = null;
+    return;
+  }
+  if (ui.globalSearch !== null) {
+    ui.globalSearch = null;
+    return;
+  }
   if (ui.renaming !== null) {
     cancelRename();
     return;
@@ -67,6 +75,22 @@ export function handleKeydown(e: KeyboardEvent): void {
   if (e.ctrlKey && e.shiftKey && key === "n") {
     e.preventDefault();
     newList();
+    return;
+  }
+  if (e.ctrlKey && e.shiftKey && key === "f") {
+    e.preventDefault();
+    ui.globalSearch = { query: "", index: 0 };
+    return;
+  }
+  if (e.ctrlKey && !e.shiftKey && key === "k") {
+    e.preventDefault();
+    ui.palette = { query: "", index: 0 };
+    return;
+  }
+  if (e.ctrlKey && !e.shiftKey && key === "f") {
+    e.preventDefault();
+    const pane = ui.activePaneState;
+    ui.updatePane(ui.activePane, { filterOpen: !pane.filterOpen, filterText: "" });
     return;
   }
   if (e.ctrlKey && !e.shiftKey && key === "n") {

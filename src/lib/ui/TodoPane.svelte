@@ -3,10 +3,12 @@
   // empty state. The pane background is a drop target: dropping a todo from
   // another list moves it to this list's root.
   import { buildPaneRows } from "$lib/core/rows";
+  import { todoMatches } from "$lib/core/search";
   import { moveTodoAction } from "$lib/state/actions";
   import { store } from "$lib/state/store.svelte";
   import { ui } from "$lib/state/ui.svelte";
   import EmptyState from "./EmptyState.svelte";
+  import FilterBar from "./FilterBar.svelte";
   import GroupRow from "./GroupRow.svelte";
   import QuickAdd from "./QuickAdd.svelte";
   import SectionRow from "./SectionRow.svelte";
@@ -19,12 +21,17 @@
   const list = $derived(
     store.data.lists.find((l) => l.id === pane.listId) ?? store.data.lists[0],
   );
+  const filterQuery = $derived(pane.filterOpen ? pane.filterText.trim() : "");
   const paneRows = $derived(
     list === undefined
       ? { rows: [], visibleTodoIds: [] }
       : buildPaneRows(store.data, {
           listId: list.id,
           archivedOpen: ui.archOpen[list.id] === true,
+          matches:
+            filterQuery === ""
+              ? undefined
+              : (todo) => todoMatches(store.data, filterQuery, todo),
         }),
   );
   const isInbox = $derived(list?.fixed === true);
@@ -64,6 +71,9 @@
   <TabBar {paneIndex} activeListId={list?.id ?? null} />
   {#if list !== undefined}
     <QuickAdd {paneIndex} listName={list.name} />
+    {#if pane.filterOpen}
+      <FilterBar {paneIndex} matchCount={paneRows.visibleTodoIds.length} />
+    {/if}
     <div class="rows">
       {#each paneRows.rows as row (row.key)}
         {#if row.kind === "section"}
@@ -81,7 +91,12 @@
         {/if}
       {/each}
       {#if paneRows.rows.length === 0}
-        {#if isInbox}
+        {#if filterQuery !== ""}
+          <EmptyState
+            title="No matches"
+            body="Search is fuzzy and accent-insensitive — árvíztűrő matches ARVIZTURO. Try fewer letters."
+          />
+        {:else if isInbox}
           <EmptyState
             title="Inbox zero"
             body="Quick-captured todos land here until you file them into a list. Ctrl+Shift+Space captures from anywhere."
