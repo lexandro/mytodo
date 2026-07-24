@@ -4,6 +4,7 @@
   // app-wide native-context-menu suppression.
   import { ensureInbox } from "$lib/core/bootstrap";
   import { handleKeydown } from "$lib/state/keyboard";
+  import { persistUiSettings, restoreUiSettings } from "$lib/state/settings-sync.svelte";
   import { store } from "$lib/state/store.svelte";
   import { ui } from "$lib/state/ui.svelte";
   import CommandPalette from "./CommandPalette.svelte";
@@ -20,18 +21,32 @@
   import TrashView from "./TrashView.svelte";
 
   $effect(() => {
-    void store.init((data) => {
-      ensureInbox(data);
-    });
+    void store
+      .init((data) => {
+        ensureInbox(data);
+      })
+      .then(() => restoreUiSettings())
+      .then(() => (settingsRestored = true));
   });
 
-  // first load: point pane 0 at the first list
+  // fallback after restore: panes without a list point at the first one
+  let settingsRestored = $state(false);
   $effect(() => {
-    if (store.loaded && ui.panes[0].listId === null && store.data.lists.length > 0) {
+    if (!settingsRestored || store.data.lists.length === 0) return;
+    if (ui.panes[0].listId === null) {
       const first = [...store.data.lists].sort((a, b) => a.order - b.order)[0];
       ui.updatePane(0, { listId: first.id });
     }
   });
+
+  // persist layout/pane/view state on every change (single-row upsert)
+  $effect(() => {
+    if (!settingsRestored) return;
+    persistUiSettings();
+  });
+
+  const paneCount = $derived({ "1": 1, "2v": 2, "2h": 2, "4": 4 }[ui.layout]);
+  const paneIndexes = $derived([0, 1, 2, 3].slice(0, paneCount));
 
   // theme attribute drives the token overrides in tokens.css
   $effect(() => {
@@ -66,8 +81,14 @@
       <ListRail />
       <div class="center">
         {#if ui.view === "main"}
-          <div class="pane-grid">
-            <TodoPane paneIndex={0} />
+          <div
+            class="pane-grid"
+            style:grid-template-columns={ui.layout === "2v" || ui.layout === "4" ? "1fr 1fr" : "1fr"}
+            style:grid-template-rows={ui.layout === "2h" || ui.layout === "4" ? "1fr 1fr" : "1fr"}
+          >
+            {#each paneIndexes as paneIndex (paneIndex)}
+              <TodoPane {paneIndex} single={paneCount === 1} />
+            {/each}
           </div>
         {:else if ui.view === "pinned"}
           <PinnedView />

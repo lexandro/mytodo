@@ -10,12 +10,15 @@
   import EmptyState from "./EmptyState.svelte";
   import FilterBar from "./FilterBar.svelte";
   import GroupRow from "./GroupRow.svelte";
+  import ListSelector from "./ListSelector.svelte";
   import QuickAdd from "./QuickAdd.svelte";
   import SectionRow from "./SectionRow.svelte";
   import TabBar from "./TabBar.svelte";
   import TodoRow from "./TodoRow.svelte";
 
-  let { paneIndex }: { paneIndex: number } = $props();
+  let { paneIndex, single = true }: { paneIndex: number; single?: boolean } = $props();
+
+  const isActivePane = $derived(ui.activePane === paneIndex);
 
   const pane = $derived(ui.panes[paneIndex]);
   const list = $derived(
@@ -64,11 +67,16 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
   class="pane"
+  class:active-pane={!single && isActivePane}
   onmousedown={() => (ui.activePane = paneIndex)}
   ondragover={onBgDragOver}
   ondrop={onBgDrop}
 >
-  <TabBar {paneIndex} activeListId={list?.id ?? null} />
+  {#if single}
+    <TabBar {paneIndex} activeListId={list?.id ?? null} />
+  {:else}
+    <ListSelector {paneIndex} activeListId={list?.id ?? null} />
+  {/if}
   {#if list !== undefined}
     <QuickAdd {paneIndex} listName={list.name} />
     {#if pane.filterOpen}
@@ -122,6 +130,9 @@
     border-radius: 8px;
     background: var(--color-bg);
     overflow: hidden;
+  }
+  .pane.active-pane {
+    border-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
   }
   .rows {
     flex: 1;

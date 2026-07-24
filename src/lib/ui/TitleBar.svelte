@@ -1,7 +1,8 @@
 <script lang="ts">
-  // TitleBar (38px): brand → menu bar (later phase) → spacer → toolbar
-  // (later phases) → caption buttons. The whole bar is the drag region.
+  // TitleBar (38px): brand → menu bar (F9) → spacer → layout switcher →
+  // caption buttons. The whole bar is the drag region.
   import { windowClose, windowMinimize, windowToggleMaximize } from "$lib/ipc";
+  import LayoutSwitcher from "./LayoutSwitcher.svelte";
 </script>
 
 <header class="titlebar" data-tauri-drag-region>
@@ -10,6 +11,7 @@
     <span class="brand-name">myTODO</span>
   </div>
   <div class="spacer" data-tauri-drag-region></div>
+  <LayoutSwitcher />
   <div class="caption-buttons">
     <button class="caption" title="Minimize" onclick={() => void windowMinimize()}>─</button>
     <button class="caption" title="Maximize" onclick={() => void windowToggleMaximize()}>▢</button>
@@ -54,6 +56,7 @@
   .caption-buttons {
     display: flex;
     align-self: stretch;
+    margin-left: 8px;
   }
   .caption {
     width: 40px;

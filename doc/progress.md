@@ -25,8 +25,8 @@ Forrás-dokumentumok:
 | F4 | Detail panel, activity, színek, emoji, linkek | ✅ |
 | F5 | Pinning, Pinned view, Archive, Trash, Undo | ✅ |
 | F6 | Keresés (filter, global, palette) | ✅ |
-| F7 | Split pane rendszer + layout persist | 🔄 |
-| F8 | Global shortcuts, Quick Add ablak, Summon | 🔲 |
+| F7 | Split pane rendszer + layout persist | ✅ |
+| F8 | Global shortcuts, Quick Add ablak, Summon | 🔄 |
 | F9 | Scale, theme, keyboard polish, window state | 🔲 |
 | F10 | Backup, import/export, hardening, portable release | 🔲 |
 
@@ -172,15 +172,20 @@ Jelmagyarázat: 🔲 nincs elkezdve · 🔄 folyamatban · ✅ kész (review+pus
       Ctrl+F fuzzy filter match-counttal, palette → Trash view váltás. Zöld.
 - [x] Zárás: typecheck 0, 85 teszt zöld → push
 
-### F7 — Split pane rendszer
-- [ ] Layout: 1 / 2v / 2h / 4 (CSS grid, fix 1fr), LayoutSwitcher a toolbarban
-- [ ] Pane-állapot slotonként: lista, quick-add draft, filter, expanded, selection,
-      scroll; váltáskor (1→4→1) a slot-tartalom visszaáll
-- [ ] Aktív pane (accent border, multi-pane), minden keyboard-akció oda megy
-- [ ] Multi-pane: ListSelector dropdown a TabBar helyett
-- [ ] Pane-ek közti todo-DnD (másik pane háttere = list root)
-- [ ] Layout + pane→lista mapping persist, restart után visszaáll
-- [ ] Zárás: review → refactor → push
+### F7 — Split pane rendszer ✅ (2026-07-24)
+- [x] Layout: 1 / 2v / 2h / 4 CSS grid (fix 1fr trackek), LayoutSwitcher
+      segmented gomb a titlebarban
+- [x] Pane-állapot slotonként él (lista, quick-draft, filter, picker) —
+      1→4→1 váltásnál a slot-tartalom megmarad
+- [x] Aktív pane accent-border (csak multi-pane), keyboard oda megy
+- [x] Multi-pane: ListSelector dropdown popoverrel a TabBar helyett
+- [x] Pane-közti todo-DnD (pane háttér = list root — F2 óta kész)
+- [x] Settings-sync: layout + pane→lista + activePane + view a settings
+      táblába, restore induláskor validációval (törölt lista → null fallback)
+- [x] **CDP-verifikáció**: 2v váltás → 2 pane selectorral, pane 2 lista-váltás,
+      aktív-pane border követi a kattintást, 2×2 → 4 pane, roundtrip megőrzi
+      a slotokat; **restart után visszaállt** a layout és a mapping. Zöld.
+- [x] Zárás: typecheck 0, 85 teszt zöld → push
 
 ### F8 — Global shortcuts, Quick Add ablak, Summon Workspace
 - [ ] Rust modulok: `src-tauri/src/windows/{virtual_desktop,window_activation,global_shortcuts}.rs`
