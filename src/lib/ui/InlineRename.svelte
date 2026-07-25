@@ -11,6 +11,11 @@
   function autofocus(el: HTMLInputElement): void {
     el.focus();
     el.select();
+    // the double-click that opened this input completes its own word-selection
+    // after this tick and collapses the caret — take the whole text back
+    requestAnimationFrame(() => {
+      if (document.activeElement === el) el.select();
+    });
   }
 
   function onKeydown(e: KeyboardEvent): void {

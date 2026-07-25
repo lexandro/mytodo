@@ -6,6 +6,18 @@ inside the app.
 
 ## Unreleased
 
+### Added
+
+- **Settings has a sidebar** — the dialog is much roomier and split into
+  sections instead of one long column: **Appearance**, **Shortcuts** and
+  **Files**. Ctrl+K also jumps straight to a section ("Settings: appearance").
+- **Appearance section** — theme (follow system / dark / light), window scale
+  and todo text size now have a proper home, not just the title-bar popover.
+
+### Fixed
+
+- Text inside input fields could not be selected with the mouse.
+
 ### Changed
 
 - **Double-click renames a todo in place** — the row turns into an input, Enter

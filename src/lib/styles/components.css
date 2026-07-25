@@ -64,6 +64,9 @@
 
 /* — forms — */
 .input {
+  /* the app shell is user-select: none — text fields must opt back in, or the
+     user cannot drag-select what they typed */
+  user-select: text;
   width: 100%;
   min-height: 36px;
   padding: 6px 10px;

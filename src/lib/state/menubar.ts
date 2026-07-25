@@ -4,7 +4,7 @@
 
 import { byOrder } from "$lib/core/ordering";
 import { findTodo } from "$lib/core/todos-ops";
-import { newList, switchList, trashTodoAction, undoAction } from "./actions";
+import { newList, openSettings, switchList, trashTodoAction, undoAction } from "./actions";
 import { backupNowAction, exportJsonAction, importJsonAction } from "./actions-data";
 import { aiClients } from "./ai-clients.svelte";
 import { duplicateAction } from "./actions-detail";
@@ -51,7 +51,7 @@ function fileMenu(): MenuItem[] {
     item("Backup now", () => void backupNowAction()),
     item("Restore backup…", () => (ui.restoreOpen = true)),
     SEP,
-    item("Settings…", () => (ui.settingsOpen = true)),
+    item("Settings…", () => openSettings()),
     item("AI Clients…", () => aiClients.openDialog()),
     SEP,
     item("Exit", () => void windowClose()),

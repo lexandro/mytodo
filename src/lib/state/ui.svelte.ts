@@ -2,6 +2,8 @@
 // inline rename, drag & drop indicators, context menu, toast. Persistable
 // parts (layout, pane lists, archOpen…) are synced to settings in F7/F9.
 
+import { DEFAULT_SETTINGS_SECTION, type SettingsSectionId } from "$lib/core/settings-sections";
+
 export type LayoutName = "1" | "2v" | "2h" | "4";
 export type ViewName = "main" | "pinned" | "trash";
 
@@ -106,6 +108,8 @@ class UiState {
   todoFs = $state(13);
   /** Settings dialog (global shortcuts, …). */
   settingsOpen = $state(false);
+  /** Which Settings section the sidebar has selected. */
+  settingsSection = $state<SettingsSectionId>(DEFAULT_SETTINGS_SECTION);
   /** Workspace settings dialog for a list id; null = closed. */
   workspaceSettings = $state<string | null>(null);
   /** AI Clients settings dialog. */

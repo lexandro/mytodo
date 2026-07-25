@@ -4,6 +4,7 @@
 import { formatEmojiName, parseEmojiName } from "$lib/core/emoji";
 import { createGroup, deleteGroup, renameGroup, toggleGroupCollapsed } from "$lib/core/groups-ops";
 import { createList, deleteList, renameList, reorderList } from "$lib/core/lists-ops";
+import { DEFAULT_SETTINGS_SECTION, type SettingsSectionId } from "$lib/core/settings-sections";
 import { createTodo, cycleStatus, findTodo, moveTodo, reorderTodo, setStatus, trashTodo } from "$lib/core/todos-ops";
 import { renameTodoAction } from "./actions-detail";
 import { detailOpened } from "./ai-actions";
@@ -28,6 +29,13 @@ export function openDetails(id: string, paneIndex?: number): void {
 export function switchList(listId: string, paneIndex = ui.activePane): void {
   ui.view = "main";
   ui.updatePane(paneIndex, { listId, pickerOpen: false });
+}
+
+/** Opens Settings straight on a section — the deep link menus and links use. */
+export function openSettings(section: SettingsSectionId = DEFAULT_SETTINGS_SECTION): void {
+  ui.settingsSection = section;
+  ui.settingsOpen = true;
+  ui.menuOpen = null;
 }
 
 // ── todo actions ────────────────────────────────────────────────────────────

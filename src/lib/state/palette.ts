@@ -3,7 +3,8 @@
 
 import { byOrder } from "$lib/core/ordering";
 import { fuzzyMatch } from "$lib/core/search";
-import { switchList } from "./actions";
+import { SETTINGS_SECTIONS } from "$lib/core/settings-sections";
+import { openSettings, switchList } from "./actions";
 import { store } from "./store.svelte";
 import { ui, type LayoutName } from "./ui.svelte";
 
@@ -72,15 +73,15 @@ export function paletteCommands(query: string): PaletteCommand[] {
         close();
       },
     },
-    {
+    ...SETTINGS_SECTIONS.map((section): PaletteCommand => ({
       emoji: "⚙",
-      name: "Settings: global shortcuts",
+      name: `Settings: ${section.label.toLowerCase()}`,
       hint: "",
       run: () => {
-        ui.settingsOpen = true;
+        openSettings(section.id);
         close();
       },
-    },
+    })),
     {
       emoji: "ⓘ",
       name: "About myTODO (version, build)",
