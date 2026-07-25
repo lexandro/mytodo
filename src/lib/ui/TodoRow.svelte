@@ -1,16 +1,21 @@
 <script lang="ts">
   // One todo row: status circle (click cycles), emoji, title, G-tag, subtask
   // progress; 3px color stripe; drag source + before/after drop target.
+  // Double-click puts the title into an inline input (edit mode).
   import { labelColor } from "$lib/core/labels";
   import type { Todo } from "$lib/core/types";
-  import { cycleTodoStatus, openDetails, reorderTodoAction, selectTodo } from "$lib/state/actions";
+  import { armRename, cycleTodoStatus, reorderTodoAction, selectTodo } from "$lib/state/actions";
   import { openContextMenu, todoMenuItems } from "$lib/state/menus";
   import { store } from "$lib/state/store.svelte";
   import { ui } from "$lib/state/ui.svelte";
+  import InlineRename from "./InlineRename.svelte";
 
   let { todo, depth, paneIndex }: { todo: Todo; depth: number; paneIndex: number } = $props();
 
   const selected = $derived(ui.selectedId === todo.id);
+  const editing = $derived(
+    ui.renaming?.type === "todo" && ui.renaming.id === todo.id && ui.renaming.paneIndex === paneIndex,
+  );
   const stripe = $derived(labelColor(store.data, todo.colorLabelId) ?? "transparent");
   const subtasks = $derived(store.data.subtasks.filter((s) => s.todoId === todo.id));
   const subDone = $derived(subtasks.filter((s) => s.checked).length);
@@ -35,6 +40,12 @@
   const opacity = $derived(todo.status === "done" ? 0.55 : todo.status === "cancelled" ? 0.45 : 1);
 
   function onDragStart(e: DragEvent): void {
+    // dragging selected text inside the rename input bubbles up here — that is
+    // a text drag, not a row drag
+    if (editing) {
+      e.preventDefault();
+      return;
+    }
     if (e.dataTransfer !== null) {
       e.dataTransfer.effectAllowed = "move";
       e.dataTransfer.setData("text/plain", todo.id);
@@ -68,6 +79,12 @@
     selectTodo(todo.id, paneIndex);
     openContextMenu(e, todoMenuItems(todo));
   }
+
+  /** Double-click on the row = edit the title in place. */
+  function onDblClick(): void {
+    if (editing) return; // a double-click inside the input just selects a word
+    armRename("todo", todo.id);
+  }
 </script>
 
 <div
@@ -79,13 +96,13 @@
   style:border-left-color={stripe}
   role="button"
   tabindex="-1"
-  draggable="true"
+  draggable={!editing}
   ondragstart={onDragStart}
   ondragend={() => ui.clearDragState()}
   ondragover={onDragOver}
   ondrop={onDrop}
   onclick={() => selectTodo(todo.id, paneIndex)}
-  ondblclick={() => openDetails(todo.id, paneIndex)}
+  ondblclick={onDblClick}
   onkeydown={() => {}}
   oncontextmenu={onContextMenu}
 >
@@ -103,7 +120,11 @@
     <span>{meta.glyph}</span>
   </button>
   <span class="emoji">{todo.emoji}</span>
-  <span class="title" class:struck style:opacity>{todo.title}</span>
+  {#if editing}
+    <InlineRename fill />
+  {:else}
+    <span class="title" class:struck style:opacity>{todo.title}</span>
+  {/if}
   {#if todo.pinGlobal}
     <span class="tag tag-accent gtag" title="Pinned globally">G</span>
   {/if}

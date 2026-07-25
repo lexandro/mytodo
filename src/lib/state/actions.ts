@@ -5,10 +5,11 @@ import { formatEmojiName, parseEmojiName } from "$lib/core/emoji";
 import { createGroup, deleteGroup, renameGroup, toggleGroupCollapsed } from "$lib/core/groups-ops";
 import { createList, deleteList, renameList, reorderList } from "$lib/core/lists-ops";
 import { createTodo, cycleStatus, findTodo, moveTodo, reorderTodo, setStatus, trashTodo } from "$lib/core/todos-ops";
+import { renameTodoAction } from "./actions-detail";
 import { detailOpened } from "./ai-actions";
 import { aiConfig } from "./ai-config.svelte";
 import { store } from "./store.svelte";
-import { ui } from "./ui.svelte";
+import { ui, type RenamingState } from "./ui.svelte";
 
 // ── selection / navigation ──────────────────────────────────────────────────
 
@@ -115,7 +116,7 @@ export function newList(): void {
   store.apply("new list", (data) => {
     id = createList(data, "New list", "📝").id;
   });
-  ui.renaming = { type: "list", id, value: formatEmojiName("📝", "New list") };
+  armRename("list", id);
   switchList(id);
 }
 
@@ -144,7 +145,7 @@ export function newGroup(listId: string, parentId: string | null): void {
   store.apply("add group", (data) => {
     id = createGroup(data, listId, parentId, "New group")?.id ?? null;
   });
-  if (id !== null) ui.renaming = { type: "group", id, value: "New group" };
+  if (id !== null) armRename("group", id); // arms the input on the fresh "New group"
   ui.ctxMenu = null;
 }
 
@@ -160,13 +161,21 @@ export function toggleGroupAction(id: string): void {
 
 // ── inline rename ───────────────────────────────────────────────────────────
 
-export function armRename(type: "list" | "group", id: string): void {
+/** Initial input value, or null when the item is gone. */
+function renameStartValue(type: RenamingState["type"], id: string): string | null {
+  if (type === "todo") return findTodo(store.data, id)?.title ?? null;
   const item =
     type === "list"
       ? store.data.lists.find((l) => l.id === id)
       : store.data.groups.find((g) => g.id === id);
-  if (item === undefined) return;
-  ui.renaming = { type, id, value: formatEmojiName(item.emoji, item.name) };
+  return item === undefined ? null : formatEmojiName(item.emoji, item.name);
+}
+
+export function armRename(type: RenamingState["type"], id: string): void {
+  const value = renameStartValue(type, id);
+  if (value === null) return;
+  // the active pane is the one the row was clicked/right-clicked in
+  ui.renaming = { type, id, value, paneIndex: ui.activePane };
   ui.ctxMenu = null;
 }
 
@@ -176,6 +185,10 @@ export function commitRename(): void {
   const value = renaming.value.trim();
   ui.renaming = null;
   if (value === "") return;
+  if (renaming.type === "todo") {
+    renameTodoAction(renaming.id, value); // title only — no emoji parsing
+    return;
+  }
   const { emoji, name } = parseEmojiName(value);
   store.apply("rename", (data) => {
     if (renaming.type === "list") renameList(data, renaming.id, name, emoji ?? undefined);

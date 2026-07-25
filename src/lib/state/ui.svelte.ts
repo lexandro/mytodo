@@ -13,10 +13,18 @@ export interface PaneState {
   pickerOpen: boolean;
 }
 
+/**
+ * Inline rename in progress. Lists and groups parse a leading emoji out of the
+ * value; a todo edits its title only (its emoji has its own detail control).
+ * `paneIndex` is the pane the rename was armed in — the same todo or group can
+ * be on screen in several panes, and only one of them may show the input
+ * (a second one would steal the focus and blur-commit the first).
+ */
 export interface RenamingState {
-  type: "list" | "group";
+  type: "list" | "group" | "todo";
   id: string;
   value: string;
+  paneIndex: number;
 }
 
 export type DragPayload = { type: "todo" | "list"; id: string } | null;
@@ -123,6 +131,24 @@ class UiState {
   get effectiveTheme(): "dark" | "light" {
     if (this.theme === "system") return this.systemDark ? "dark" : "light";
     return this.theme;
+  }
+
+  /** A modal/popover owns the screen — plain-key shortcuts must not fire behind it. */
+  get overlayOpen(): boolean {
+    return (
+      this.menuOpen !== null ||
+      this.ctxMenu !== null ||
+      this.shortcutsOpen ||
+      this.aboutOpen ||
+      this.changelogOpen ||
+      this.settingsOpen ||
+      this.workspaceSettings !== null ||
+      this.aiClientsOpen ||
+      this.restoreOpen ||
+      this.scalePopOpen ||
+      this.palette !== null ||
+      this.globalSearch !== null
+    );
   }
 
   /** Quick-add input elements per pane — for Ctrl+N focus. Not reactive. */

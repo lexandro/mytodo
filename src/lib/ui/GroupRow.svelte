@@ -13,7 +13,9 @@
 
   const dropKey = $derived(`${paneIndex}_${group.id}`);
   const dropInto = $derived(ui.drop?.key === dropKey);
-  const renaming = $derived(ui.renaming?.type === "group" && ui.renaming.id === group.id);
+  const renaming = $derived(
+    ui.renaming?.type === "group" && ui.renaming.id === group.id && ui.renaming.paneIndex === paneIndex,
+  );
 
   function onDragOver(e: DragEvent): void {
     if (ui.drag?.type !== "todo") return;

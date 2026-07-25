@@ -4,6 +4,16 @@ All notable changes to myTODO are documented here. This project adheres to
 [Semantic Versioning](https://semver.org). Help → What's new shows this file
 inside the app.
 
+## Unreleased
+
+### Changed
+
+- **Double-click renames a todo in place** — the row turns into an input, Enter
+  saves, Esc cancels, clicking away saves. No more detour through the detail
+  panel for a typo.
+- **Enter opens the details** of the selected todo (this is what double-click
+  used to do). Right-click → Open details and F2 still work as before.
+
 ## v1.1.0 — 2026-07-25
 
 The AI release: a todo list can now be linked to a project directory, and the

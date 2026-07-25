@@ -7,8 +7,8 @@ import { buildPaneRows } from "$lib/core/rows";
 import { findTodo } from "$lib/core/todos-ops";
 import { openAiPanelForSelection } from "./ai-actions";
 import {
-  cancelRename, newList, switchList, toggleSelectedDone, trashTodoAction,
-  undoAction,
+  cancelRename, newList, openDetails, switchList, toggleSelectedDone,
+  trashTodoAction, undoAction,
 } from "./actions";
 import { togglePinAction } from "./actions-detail";
 import { moveUpOneLevel } from "./menus";
@@ -174,6 +174,12 @@ export function handleKeydown(e: KeyboardEvent): void {
     e.preventDefault();
     const todo = findTodo(store.data, ui.selectedId);
     if (todo !== undefined && todo.groupId !== null) moveUpOneLevel(todo);
+    return;
+  }
+  // double-click edits the title in place, so Enter is the details gesture
+  if (e.key === "Enter" && ui.selectedId !== null && !ui.overlayOpen) {
+    e.preventDefault();
+    openDetails(ui.selectedId);
     return;
   }
   if (e.key === "F2" && ui.selectedId !== null) {
