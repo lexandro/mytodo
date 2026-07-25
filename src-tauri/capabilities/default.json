@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Main + quickadd window permissions - minimal set, extend deliberately. Window perms: custom titlebar (decorations:false) needs drag + minimize/maximize/close; hide for the Summon toggle and closing quickadd; position/size/monitors for window-state persistence. Global-shortcut: Summon / Global Quick Add / optional Pinned+Search registration. Event: the quickadd window hands new todos to main. Updater+process: signed live updates with relaunch.",
+  "description": "Main + quickadd window permissions - minimal set, extend deliberately. Window perms: custom titlebar (decorations:false) needs drag + minimize/maximize/close; hide for the Summon toggle and closing quickadd; position/size/monitors for window-state persistence. Global-shortcut: Summon / Global Quick Add / optional Pinned+Search registration. Event: the quickadd window hands new todos to main. Updater+process: signed live updates with relaunch. Opener: web links in descriptions + the About dialog use the default url scheme scope (http/https/mailto/tel); open-path needs an open scope because the paths ARE the point of the feature - the user's own file/folder links and the data/backup folders next to the exe, none of which can be enumerated at build time. FS: the read/write commands are enabled but their scope stays EMPTY - JSON import/export grants exactly the file the user picked in the native dialog, at runtime (commands::fs_allow_picked).",
   "windows": [
     "main",
     "quickadd"
@@ -24,9 +24,18 @@
     "core:window:allow-maximize",
     "core:window:allow-available-monitors",
     "dialog:default",
-    "fs:default",
+    "fs:allow-read-text-file",
+    "fs:allow-write-text-file",
     "opener:allow-open-url",
-    "opener:allow-open-path",
+    "opener:allow-default-urls",
+    {
+      "identifier": "opener:allow-open-path",
+      "allow": [
+        {
+          "path": "**"
+        }
+      ]
+    },
     "global-shortcut:allow-register",
     "global-shortcut:allow-unregister",
     "global-shortcut:allow-is-registered",

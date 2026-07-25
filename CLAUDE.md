@@ -42,6 +42,7 @@ Native Windows desktop app: **Tauri v2** (Rust shell) + **Svelte 5** (SvelteKit 
 - **Only `src/lib/ipc.ts` may import the Tauri API** — the single boundary module toward the native side. Introduce new native capabilities there as wrapper functions.
 - Svelte components stay thin: state + rendering; logic comes from the core.
 - Rust-side (src-tauri) code only when the frontend can't do it: new `#[tauri::command]` + registration in `lib.rs`, plus a permission in `capabilities/default.json`. Keep the capability set minimal — extend deliberately.
+- **A plugin permission is not enough — check its SCOPE.** `opener:allow-open-path` and the `fs` commands are denied for every path until a scope allows it, and the failure only shows up when a user clicks (this silently broke links and JSON import/export). After touching capabilities, exercise the flow in the running app; `lib.rs` has capability regression tests.
 
 ## Commands
 

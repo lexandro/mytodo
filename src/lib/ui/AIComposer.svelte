@@ -37,11 +37,15 @@
     if (!customOpen) aiConfig.setModel(provider, value === "" ? null : value);
   }
 
-  function onCustomInput(e: Event & { currentTarget: HTMLInputElement }): void {
+  // on change, not on input: the model is a persisted setting, and writing it
+  // per keystroke would be a settings round-trip per character
+  function onCustomChange(e: Event & { currentTarget: HTMLInputElement }): void {
     const value = e.currentTarget.value.trim();
-    if (value === "" || isValidModelName(value)) {
-      aiConfig.setModel(provider, value === "" ? null : value);
+    if (value !== "" && !isValidModelName(value)) {
+      e.currentTarget.value = model ?? "";
+      return;
     }
+    aiConfig.setModel(provider, value === "" ? null : value);
   }
 
   function onKeydown(e: KeyboardEvent): void {
@@ -105,7 +109,7 @@
       class="input custom"
       placeholder="Model name passed to the CLI (e.g. claude-opus-5)"
       value={isCustomModel(provider, model) ? model : ""}
-      oninput={onCustomInput}
+      onchange={onCustomChange}
     />
   {/if}
 </div>

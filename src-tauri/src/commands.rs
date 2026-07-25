@@ -110,6 +110,22 @@ pub async fn ai_probe_provider(
         .map_err(|e| format!("probe task failed: {e}"))?
 }
 
+/// Grants the webview access to ONE file the user just picked in a native
+/// dialog. The fs plugin's capability scope stays empty on purpose: instead
+/// of letting the frontend read or write anywhere, JSON import/export widens
+/// the scope to exactly the chosen file, for this session only.
+#[tauri::command]
+pub fn fs_allow_picked(app: tauri::AppHandle, path: String) -> Result<(), String> {
+    use tauri_plugin_fs::FsExt;
+    let file = std::path::Path::new(&path);
+    if !file.is_absolute() {
+        return Err("only absolute paths can be granted".into());
+    }
+    app.fs_scope()
+        .allow_file(file)
+        .map_err(|e| format!("cannot grant access to {path}: {e}"))
+}
+
 /// Where this portable copy keeps its files — shown in Settings so the user
 /// can open the folders without hunting for the exe.
 #[derive(serde::Serialize)]

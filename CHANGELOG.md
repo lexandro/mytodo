@@ -44,6 +44,12 @@ inside the app.
 
 ### Fixed
 
+- **Links, folders and JSON import/export actually work.** Opening a URL or a
+  file/folder link from a description, the new *Open folder* buttons, and
+  `File → Export JSON… / Import JSON…` were all refused by the app's own
+  permission manifest — every one of them failed with a "not allowed"
+  message. Import/export now grants access to exactly the file you picked in
+  the dialog, and nothing else.
 - **Drag & drop works with a real mouse** — reordering todos did nothing in
   the packaged app because the native WebView2 drag handler swallowed the
   events.

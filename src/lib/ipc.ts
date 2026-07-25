@@ -151,13 +151,27 @@ export function restoreBackup(fileName: string): Promise<void> {
 
 // ── dialogs (JSON import/export flows) ──────────────────────────────────────
 
+/**
+ * The fs plugin's scope is empty by design, so a picked file is granted to
+ * the webview here — at the boundary, for exactly that path — before the
+ * caller reads or writes it (backend: commands::fs_allow_picked).
+ */
+async function grantPickedFile(path: string): Promise<void> {
+  await invoke<void>("fs_allow_picked", { path });
+}
+
 export async function pickFile(filters?: { name: string; extensions: string[] }[]): Promise<string | null> {
   const result = await open({ multiple: false, filters });
-  return typeof result === "string" ? result : null;
+  if (typeof result !== "string") return null;
+  await grantPickedFile(result);
+  return result;
 }
 
 export async function pickSavePath(defaultPath?: string): Promise<string | null> {
-  return save({ defaultPath });
+  const result = await save({ defaultPath });
+  if (result === null) return null;
+  await grantPickedFile(result);
+  return result;
 }
 
 export function readFile(path: string): Promise<string> {

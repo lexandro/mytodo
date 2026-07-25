@@ -27,12 +27,12 @@
         : null,
   );
 
-  // keep the newest turn in view as it streams
+  // keep the newest turn in view: re-runs when a turn is added and while the
+  // newest one streams (its log grows line by line)
   let threadEl = $state<HTMLDivElement | null>(null);
+  const streamProgress = $derived(`${turns.length}:${turns[turns.length - 1]?.log.length ?? 0}`);
   $effect(() => {
-    const lastLog = turns[turns.length - 1]?.log.length;
-    void lastLog;
-    void turns.length;
+    void streamProgress;
     if (threadEl !== null) threadEl.scrollTop = threadEl.scrollHeight;
   });
 </script>
