@@ -8,7 +8,7 @@ import { setLabelName } from "$lib/core/label-names";
 import {
   canAddCustomLabel, deleteCustomLabel, isBuiltinLabel, nextLabelOrder, resetBuiltinLabels,
 } from "$lib/core/labels";
-import { setListColor } from "$lib/core/lists-ops";
+import { setListColor, setListEmoji } from "$lib/core/lists-ops";
 import type { PaletteKind } from "$lib/core/types";
 import { store } from "./store.svelte";
 import { ui } from "./ui.svelte";
@@ -59,4 +59,8 @@ export function setLabelNameAction(listId: string, labelId: string, name: string
 export function setListColorAction(listId: string, colorLabelId: string | null): void {
   store.apply("list color", (data) => setListColor(data, listId, colorLabelId));
   ui.ctxMenu = null;
+}
+
+export function setListIconAction(listId: string, emoji: string): void {
+  store.apply("list icon", (data) => setListEmoji(data, listId, emoji));
 }

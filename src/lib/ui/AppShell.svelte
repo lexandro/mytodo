@@ -27,6 +27,7 @@
   import SettingsDialog from "./SettingsDialog.svelte";
   import ShortcutOfferDialog from "./ShortcutOfferDialog.svelte";
   import ShortcutsDialog from "./ShortcutsDialog.svelte";
+  import ListAppearanceDialog from "./ListAppearanceDialog.svelte";
   import ListRail from "./ListRail.svelte";
   import PinnedView from "./PinnedView.svelte";
   import StatusBar from "./StatusBar.svelte";
@@ -186,6 +187,7 @@
 <CommandPalette />
 <SettingsDialog />
 <WorkspaceSettingsDialog />
+<ListAppearanceDialog />
 <AIClientsDialog />
 <ShortcutsDialog />
 <AboutDialog />

@@ -112,6 +112,8 @@ class UiState {
   settingsSection = $state<SettingsSectionId>(DEFAULT_SETTINGS_SECTION);
   /** Workspace settings dialog for a list id; null = closed. */
   workspaceSettings = $state<string | null>(null);
+  /** Icon & color dialog for a list id; null = closed. */
+  listAppearance = $state<string | null>(null);
   /** AI Clients settings dialog. */
   aiClientsOpen = $state(false);
   /**
@@ -147,6 +149,7 @@ class UiState {
       this.changelogOpen ||
       this.settingsOpen ||
       this.workspaceSettings !== null ||
+      this.listAppearance !== null ||
       this.aiClientsOpen ||
       this.restoreOpen ||
       this.scalePopOpen ||

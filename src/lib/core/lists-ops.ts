@@ -21,6 +21,13 @@ export function createList(data: DomainData, name: string, emoji = ""): List {
   return list;
 }
 
+/** Sets (or with "" clears) the list's icon. */
+export function setListEmoji(data: DomainData, id: string, emoji: string): void {
+  const list = data.lists.find((l) => l.id === id);
+  if (list === undefined) return;
+  list.emoji = emoji;
+}
+
 /** Sets (or with null clears) the list's color from the "list" palette. */
 export function setListColor(data: DomainData, id: string, colorLabelId: string | null): void {
   const list = data.lists.find((l) => l.id === id);

@@ -1,6 +1,7 @@
 <script lang="ts">
   // Multi-pane mode: compact list selector (emoji + name + ▼) opening a
   // popover of all lists with open counts.
+  import { labelColor, tintBackground } from "$lib/core/labels";
   import { byOrder } from "$lib/core/ordering";
   import { listOpenCount } from "$lib/core/rows";
   import { switchList } from "$lib/state/actions";
@@ -23,7 +24,10 @@
 
 <div class="selector-row">
   <button class="selector" onclick={togglePicker}>
-    <span>{active?.emoji}</span>
+    <span
+      class="emoji"
+      style:background={tintBackground(labelColor(store.data, active?.colorLabelId ?? null))}
+    >{active?.emoji}</span>
     <span>{active?.name}</span>
     <span class="chev">▼</span>
   </button>
@@ -38,7 +42,10 @@
           class:active={list.id === activeListId}
           onclick={() => switchList(list.id, paneIndex)}
         >
-          <span class="emoji">{list.emoji}</span>
+          <span
+            class="emoji"
+            style:background={tintBackground(labelColor(store.data, list.colorLabelId))}
+          >{list.emoji}</span>
           <span class="name">{list.name}</span>
           <span class="cnt">{listOpenCount(store.data, list.id)}</span>
         </button>
@@ -115,8 +122,13 @@
     background: color-mix(in srgb, var(--color-accent) 12%, transparent);
   }
   .emoji {
-    width: 16px;
-    text-align: center;
+    width: 19px;
+    height: 19px;
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
   }
   .name {
     flex: 1;

@@ -53,6 +53,10 @@ function handleEscape(): void {
     ui.workspaceSettings = null;
     return;
   }
+  if (ui.listAppearance !== null) {
+    ui.listAppearance = null;
+    return;
+  }
   if (ui.aiClientsOpen) {
     ui.aiClientsOpen = false;
     return;

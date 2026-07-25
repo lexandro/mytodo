@@ -16,6 +16,9 @@ inside the app.
   names are yours: the same blue can be "Waiting for review" at work and
   "Groceries" at home. The todo detail panel's **Manage…** opens the names of
   the list you are in; empty means "use the shared name".
+- **Icon & color for a list** — right-click a list → **Icon & color…** opens a
+  roomy picker with 36 curated icons (work, home, study, travel, money…) and
+  the named list colors, with a live preview of how the list will look.
 - **Lists have their own color** — from a separate palette (**Settings → List
   colors**), so list colors and todo colors never fight over the same meaning.
   Pick one from the list's right-click menu; it shows as a stripe in the rail,
