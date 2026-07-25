@@ -4,7 +4,12 @@ All notable changes to myTODO are documented here. This project adheres to
 [Semantic Versioning](https://semver.org). Help → What's new shows this file
 inside the app.
 
-## Unreleased
+## v1.1.0 — 2026-07-25
+
+The AI release: a todo list can now be linked to a project directory, and the
+AI CLI you already use works against it — from preset tasks to a real
+conversation. Plus the parts that make a desktop app feel finished: an About
+dialog, this changelog in the app, and folder paths you can actually open.
 
 ### Added
 
@@ -26,6 +31,8 @@ inside the app.
   Execute before the first turn, and the mode is then fixed for that thread.
 - **About dialog** (Help → About myTODO) — app icon, version, the git commit
   the binary was built from, build time, and a copy button for bug reports.
+- **What's new** (Help → What's new) — this changelog, inside the app, with
+  the version you are running marked.
 - **Workspace badge** — lists with a linked workspace show a **WS** chip next
   to their name, amber when the linked directory has gone missing.
 - **Shortcut offer** — the portable copy offers to create Desktop and Start
