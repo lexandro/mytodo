@@ -21,9 +21,18 @@ pub fn apply_ops(conn: &mut Connection, ops: &[DbOp]) -> Result<(), String> {
         match op {
             DbOp::PutList { row } => tx
                 .execute(
-                    "INSERT INTO lists (id, name, emoji, fixed, ord) VALUES (?1,?2,?3,?4,?5)
-                     ON CONFLICT(id) DO UPDATE SET name=?2, emoji=?3, fixed=?4, ord=?5",
-                    params![row.id, row.name, row.emoji, row.fixed, row.order],
+                    "INSERT INTO lists (id, name, emoji, fixed, color_label_id, ord)
+                     VALUES (?1,?2,?3,?4,?5,?6)
+                     ON CONFLICT(id) DO UPDATE SET
+                       name=?2, emoji=?3, fixed=?4, color_label_id=?5, ord=?6",
+                    params![
+                        row.id,
+                        row.name,
+                        row.emoji,
+                        row.fixed,
+                        row.color_label_id,
+                        row.order
+                    ],
                 )
                 .map(|_| ())
                 .map_err(|e| fail("putList", e))?,
@@ -117,9 +126,9 @@ pub fn apply_ops(conn: &mut Connection, ops: &[DbOp]) -> Result<(), String> {
                 .map_err(|e| fail("delActivity", e))?,
             DbOp::PutLabel { row } => tx
                 .execute(
-                    "INSERT INTO color_labels (id, name, color, ord) VALUES (?1,?2,?3,?4)
-                     ON CONFLICT(id) DO UPDATE SET name=?2, color=?3, ord=?4",
-                    params![row.id, row.name, row.color, row.order],
+                    "INSERT INTO color_labels (id, kind, name, color, ord) VALUES (?1,?2,?3,?4,?5)
+                     ON CONFLICT(id) DO UPDATE SET kind=?2, name=?3, color=?4, ord=?5",
+                    params![row.id, row.kind, row.name, row.color, row.order],
                 )
                 .map(|_| ())
                 .map_err(|e| fail("putLabel", e))?,

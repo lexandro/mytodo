@@ -3,7 +3,7 @@ import { diffDomain } from "./diff";
 import { emptyDomainData, type DomainData, type List, type Todo } from "./types";
 
 function list(id: string, name = "L"): List {
-  return { id, name, emoji: "", fixed: false, order: 1000 };
+  return { id, name, emoji: "", fixed: false, colorLabelId: null, order: 1000 };
 }
 
 function todo(id: string, listId: string, title = "T"): Todo {
@@ -62,7 +62,7 @@ describe("diffDomain", () => {
       todos: [todo("t1", "l1")],
       subtasks: [{ id: "s1", todoId: "t1", text: "x", checked: false, order: 1000 }],
       activity: [{ id: "a1", todoId: "t1", type: "created", summary: "Created", createdAt: 1 }],
-      colorLabels: [{ id: "c1", name: null, color: "#fff", order: 1000 }],
+      colorLabels: [{ id: "c1", kind: "todo", name: null, color: "#fff", order: 1000 }],
       labelNames: [{ id: "l1::c1", listId: "l1", labelId: "c1", name: "Urgent" }],
     };
     const kinds = diffDomain(prev, next).map((op) => op.kind);

@@ -20,15 +20,20 @@ fn collect<T>(
 
 pub fn load_all(conn: &Connection) -> Result<DomainData, String> {
     Ok(DomainData {
-        lists: collect(conn, "SELECT id, name, emoji, fixed, ord FROM lists", |r| {
-            Ok(List {
-                id: r.get(0)?,
-                name: r.get(1)?,
-                emoji: r.get(2)?,
-                fixed: r.get(3)?,
-                order: r.get(4)?,
-            })
-        })?,
+        lists: collect(
+            conn,
+            "SELECT id, name, emoji, fixed, color_label_id, ord FROM lists",
+            |r| {
+                Ok(List {
+                    id: r.get(0)?,
+                    name: r.get(1)?,
+                    emoji: r.get(2)?,
+                    fixed: r.get(3)?,
+                    color_label_id: r.get(4)?,
+                    order: r.get(5)?,
+                })
+            },
+        )?,
         groups: collect(
             conn,
             "SELECT id, list_id, parent_id, name, emoji, ord, collapsed FROM groups",
@@ -97,14 +102,19 @@ pub fn load_all(conn: &Connection) -> Result<DomainData, String> {
                 })
             },
         )?,
-        color_labels: collect(conn, "SELECT id, name, color, ord FROM color_labels", |r| {
-            Ok(ColorLabel {
-                id: r.get(0)?,
-                name: r.get(1)?,
-                color: r.get(2)?,
-                order: r.get(3)?,
-            })
-        })?,
+        color_labels: collect(
+            conn,
+            "SELECT id, kind, name, color, ord FROM color_labels",
+            |r| {
+                Ok(ColorLabel {
+                    id: r.get(0)?,
+                    kind: r.get(1)?,
+                    name: r.get(2)?,
+                    color: r.get(3)?,
+                    order: r.get(4)?,
+                })
+            },
+        )?,
         label_names: collect(
             conn,
             "SELECT id, list_id, label_id, name FROM label_names",

@@ -14,10 +14,18 @@ export function createList(data: DomainData, name: string, emoji = ""): List {
     name,
     emoji,
     fixed: false,
+    colorLabelId: null,
     order: orderForIndex(sorted, sorted.length),
   };
   data.lists.push(list);
   return list;
+}
+
+/** Sets (or with null clears) the list's color from the "list" palette. */
+export function setListColor(data: DomainData, id: string, colorLabelId: string | null): void {
+  const list = data.lists.find((l) => l.id === id);
+  if (list === undefined) return;
+  list.colorLabelId = colorLabelId;
 }
 
 export function renameList(data: DomainData, id: string, name: string, emoji?: string): void {

@@ -44,7 +44,9 @@
           {#if current.id === "appearance"}
             <SettingsAppearance />
           {:else if current.id === "todo-colors"}
-            <SettingsColors />
+            <SettingsColors kind="todo" />
+          {:else if current.id === "list-colors"}
+            <SettingsColors kind="list" />
           {:else if current.id === "shortcuts"}
             <SettingsShortcuts />
           {:else if current.id === "files"}

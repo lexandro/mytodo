@@ -2,7 +2,12 @@
 // the dialog, the command palette and every "open Settings here" entry point
 // agree on the same ids, labels and order.
 
-export type SettingsSectionId = "appearance" | "todo-colors" | "shortcuts" | "files";
+export type SettingsSectionId =
+  | "appearance"
+  | "todo-colors"
+  | "list-colors"
+  | "shortcuts"
+  | "files";
 
 export interface SettingsSection {
   id: SettingsSectionId;
@@ -26,6 +31,12 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     label: "Todo colors",
     glyph: "◍",
     hint: "The shared color palette — colors carry categories, so give them names.",
+  },
+  {
+    id: "list-colors",
+    label: "List colors",
+    glyph: "◒",
+    hint: "A separate palette for the lists themselves — rail, tabs and panes.",
   },
   {
     id: "shortcuts",

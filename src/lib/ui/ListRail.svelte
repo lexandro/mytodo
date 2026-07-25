@@ -1,11 +1,13 @@
 <script lang="ts">
   // Left rail (210px): LISTS header + rows, VIEWS section, Trash.
   // List rows drag-reorder; todos can be dropped on a row to move them.
+  import { labelColor, tintBackground } from "$lib/core/labels";
   import { listOpenCount } from "$lib/core/rows";
   import { byOrder } from "$lib/core/ordering";
   import { newList, reorderListAction, moveTodoAction, switchList } from "$lib/state/actions";
   import { aiConfig } from "$lib/state/ai-config.svelte";
-  import { listMenuItems, openContextMenu } from "$lib/state/menus";
+  import { openContextMenu } from "$lib/state/menus";
+  import { listMenuItems } from "$lib/state/menus-lists";
   import { store } from "$lib/state/store.svelte";
   import { ui } from "$lib/state/ui.svelte";
   import InlineRename from "./InlineRename.svelte";
@@ -79,6 +81,7 @@
     {#if ui.renaming?.type === "list" && ui.renaming.id === list.id}
       <InlineRename />
     {:else}
+      {@const color = labelColor(store.data, list.colorLabelId)}
       <div
         class="row"
         class:active={list.id === activeListId}
@@ -96,7 +99,8 @@
         onkeydown={() => {}}
         oncontextmenu={(e) => openContextMenu(e, listMenuItems(list))}
       >
-        <span class="emoji">{list.emoji}</span>
+        <span class="stripe" style:background={color ?? "transparent"}></span>
+        <span class="emoji" style:background={tintBackground(color)}>{list.emoji}</span>
         <span class="name" class:muted={list.id !== activeListId}>{list.name}</span>
         <WorkspaceBadge listId={list.id} />
         <span class="count">{listOpenCount(store.data, list.id)}</span>
@@ -195,9 +199,21 @@
   .row.drop-into {
     background: color-mix(in srgb, var(--color-accent) 18%, transparent);
   }
+  /* the list's own color: a stripe down the row and a tint behind its icon */
+  .stripe {
+    width: 3px;
+    height: 17px;
+    flex: none;
+    border-radius: 2px;
+    margin-left: -4px;
+  }
   .emoji {
-    width: 18px;
-    text-align: center;
+    width: 21px;
+    height: 21px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
     font-size: 13px;
     flex: none;
   }

@@ -94,6 +94,7 @@ mod tests {
             name: "Inbox".into(),
             emoji: "📥".into(),
             fixed: true,
+            color_label_id: None,
             order: 1000.0,
         };
         let group = Group {
@@ -122,6 +123,7 @@ mod tests {
         };
         let label = ColorLabel {
             id: "c1".into(),
+            kind: "todo".into(),
             name: Some("Fontos".into()),
             color: "#e0567a".into(),
             order: 1000.0,
@@ -171,12 +173,14 @@ mod tests {
                         name: "Munka".into(),
                         emoji: "".into(),
                         fixed: false,
+                        color_label_id: None,
                         order: 1000.0,
                     },
                 },
                 DbOp::PutLabel {
                     row: ColorLabel {
                         id: "preset-blue".into(),
+                        kind: "todo".into(),
                         name: Some("Blue".into()),
                         color: "#6ca3e0".into(),
                         order: 6000.0,
@@ -211,6 +215,7 @@ mod tests {
             name: "Inbox".into(),
             emoji: "".into(),
             fixed: true,
+            color_label_id: None,
             order: 1.0,
         };
         write::apply_ops(&mut conn, &[DbOp::PutList { row: list.clone() }]).expect("insert");
@@ -245,6 +250,7 @@ mod tests {
                         name: "L".into(),
                         emoji: "".into(),
                         fixed: false,
+                        color_label_id: None,
                         order: 1.0,
                     },
                 },
@@ -273,6 +279,7 @@ mod tests {
             name: "L".into(),
             emoji: "".into(),
             fixed: false,
+            color_label_id: None,
             order: 1.0,
         };
         let result = write::apply_ops(

@@ -113,6 +113,13 @@ const MIGRATIONS: &[&str] = &[
     );
     CREATE INDEX idx_label_names_list ON label_names(list_id);
     ",
+    // v5 — lists get a color of their own, from a second palette. Existing
+    // rows are todo colors; the list palette is seeded by the frontend
+    // bootstrap (src/lib/core/bootstrap.ts) on the next launch.
+    "
+    ALTER TABLE color_labels ADD COLUMN kind TEXT NOT NULL DEFAULT 'todo';
+    ALTER TABLE lists ADD COLUMN color_label_id TEXT REFERENCES color_labels(id) ON DELETE SET NULL;
+    ",
 ];
 
 pub fn migrate(conn: &mut Connection) -> Result<(), String> {

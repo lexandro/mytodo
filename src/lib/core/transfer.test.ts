@@ -19,7 +19,8 @@ function fixture(): DomainData {
   const todo = createTodo(data, list.id, g2.id, "Árvíztűrő feladat", 1);
   todo.colorLabelId = "preset-red";
   addSubtask(data, todo.id, "első lépés", 2);
-  data.colorLabels.push({ id: "c1", name: "Fontos", color: "#e0567a", order: 9000 });
+  data.colorLabels.push({ id: "c1", kind: "todo", name: "Fontos", color: "#e0567a", order: 9000 });
+  list.colorLabelId = "list-teal";
   setLabelName(data, list.id, "preset-red", "Blocked");
   return data;
 }
@@ -47,7 +48,7 @@ describe("serialization roundtrip", () => {
     const result = parseImport(JSON.stringify(exported));
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.data.colorLabels).toHaveLength(8);
+    expect(result.data.colorLabels).toHaveLength(16); // both palettes seeded back
     // the todo pointed at preset-red and keeps its color
     expect(result.data.todos[0].colorLabelId).toBe("preset-red");
   });
@@ -98,17 +99,41 @@ describe("parseImport validation", () => {
     expect(parseImport(JSON.stringify(exported)).ok).toBe(false);
   });
 
-  it("caps added colors at 12 and keeps every built-in", () => {
+  it("caps added colors at 12 per palette and keeps every built-in", () => {
     const data = fixture();
     const exported = JSON.parse(exportJson(data, 1));
     for (let i = 0; i < 20; i += 1) {
-      exported.data.colorLabels.push({ id: `x${i}`, name: null, color: "#fff", order: 10000 + i });
+      exported.data.colorLabels.push({
+        id: `x${i}`, kind: "todo", name: null, color: "#fff", order: 10000 + i,
+      });
+      exported.data.colorLabels.push({
+        id: `y${i}`, kind: "list", name: null, color: "#fff", order: 10000 + i,
+      });
     }
     const result = parseImport(JSON.stringify(exported));
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(customLabels(result.data)).toHaveLength(12);
-    expect(result.data.colorLabels).toHaveLength(20); // 8 built-in + 12 added
+    expect(customLabels(result.data, "todo")).toHaveLength(12);
+    expect(customLabels(result.data, "list")).toHaveLength(12);
+    expect(result.data.colorLabels).toHaveLength(40); // (8 built-in + 12 added) × 2
+  });
+
+  it("reads a file from before list colors: added colors are todo colors", () => {
+    const data = fixture();
+    const exported = JSON.parse(exportJson(data, 1));
+    // a v1.1.0 file: no kinds, no list palette, no list color
+    exported.data.colorLabels = exported.data.colorLabels
+      .filter((l: { id: string }) => !l.id.startsWith("list-"))
+      .map(({ kind, ...rest }: { kind?: string }) => rest);
+    for (const list of exported.data.lists) delete list.colorLabelId;
+
+    const result = parseImport(JSON.stringify(exported));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(customLabels(result.data, "todo").map((l) => l.id)).toEqual(["c1"]);
+    expect(customLabels(result.data, "list")).toHaveLength(0);
+    expect(result.data.colorLabels.filter((l) => l.kind === "list")).toHaveLength(8);
+    expect(result.data.lists.every((l) => l.colorLabelId === null)).toBe(true);
   });
 
   it("guarantees a fixed Inbox even when the file has none", () => {

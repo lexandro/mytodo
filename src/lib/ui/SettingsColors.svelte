@@ -1,18 +1,26 @@
 <script lang="ts">
-  // Settings → Todo colors: the central palette every list starts from. One
-  // color per row with its name — the color carries the category, so the name
-  // is what makes it readable. Lists can rename these for themselves in the
-  // detail panel (Manage…); this is the shared default.
+  // One central palette, one color per row with its name — the color carries
+  // the category, so the name is what makes it readable. Used for both
+  // palettes: todo colors and list colors.
   import { customLabels, isBuiltinLabel, sortedLabels } from "$lib/core/labels";
-  import { MAX_CUSTOM_LABELS } from "$lib/core/types";
+  import { MAX_CUSTOM_LABELS, type PaletteKind } from "$lib/core/types";
   import {
     addCustomLabel, removeCustomLabel, resetBuiltinLabelsAction, updateLabel,
   } from "$lib/state/actions-labels";
   import { store } from "$lib/state/store.svelte";
   import ColorLabelRow from "./ColorLabelRow.svelte";
 
-  const labels = $derived(sortedLabels(store.data));
-  const customCount = $derived(customLabels(store.data).length);
+  let { kind }: { kind: PaletteKind } = $props();
+
+  const NOTES: Record<PaletteKind, string> = {
+    todo:
+      "Removing an added color clears it from the todos that used it. Every list sees these names — rename a color for one list from the todo detail panel.",
+    list:
+      "A list's color shows up in the rail, on its tab and along the top of its pane. Set it from the list's right-click menu.",
+  };
+
+  const labels = $derived(sortedLabels(store.data, kind));
+  const customCount = $derived(customLabels(store.data, kind).length);
 </script>
 
 <div class="rows">
@@ -32,21 +40,18 @@
   <button
     class="btn btn-secondary add"
     disabled={customCount >= MAX_CUSTOM_LABELS}
-    onclick={() => addCustomLabel()}
+    onclick={() => addCustomLabel(kind)}
   >
     + Add color
   </button>
   <span class="counter">{customCount} / {MAX_CUSTOM_LABELS} added</span>
   <div class="spacer"></div>
-  <button class="btn btn-ghost" onclick={() => resetBuiltinLabelsAction()}>
+  <button class="btn btn-ghost" onclick={() => resetBuiltinLabelsAction(kind)}>
     Reset built-in colors
   </button>
 </div>
 
-<p class="note">
-  Removing an added color clears it from the todos that used it. Every list sees
-  these names — rename a color for one list from the todo detail panel.
-</p>
+<p class="note">{NOTES[kind]}</p>
 
 <style>
   .rows {

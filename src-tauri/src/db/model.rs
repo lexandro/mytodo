@@ -11,6 +11,7 @@ pub struct List {
     pub name: String,
     pub emoji: String,
     pub fixed: bool,
+    pub color_label_id: Option<String>,
     pub order: f64,
 }
 
@@ -73,6 +74,8 @@ pub struct ActivityEvent {
 #[serde(rename_all = "camelCase")]
 pub struct ColorLabel {
     pub id: String,
+    /// 'todo' | 'list' — which palette the color belongs to
+    pub kind: String,
     pub name: Option<String>,
     pub color: String,
     pub order: f64,

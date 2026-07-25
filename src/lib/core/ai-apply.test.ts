@@ -8,8 +8,8 @@ import { emptyDomainData, type DomainData } from "./types";
 function fixture(): { data: DomainData; todoId: string; subtaskId: string } {
   const data = emptyDomainData();
   data.lists.push(
-    { id: "l1", name: "Main", emoji: "", fixed: false, order: 1 },
-    { id: "l2", name: "Other", emoji: "", fixed: false, order: 2 },
+    { id: "l1", name: "Main", emoji: "", fixed: false, colorLabelId: null, order: 1 },
+    { id: "l2", name: "Other", emoji: "", fixed: false, colorLabelId: null, order: 2 },
   );
   data.groups.push(
     { id: "g1", listId: "l1", parentId: null, name: "Backend", emoji: "", order: 1, collapsed: false },

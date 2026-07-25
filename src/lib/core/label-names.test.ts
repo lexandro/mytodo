@@ -8,8 +8,8 @@ import { emptyDomainData, type DomainData } from "./types";
 function seeded(): DomainData {
   const data = emptyDomainData();
   ensurePresetLabels(data);
-  data.lists.push({ id: "work", name: "Work", emoji: "", fixed: false, order: 1000 });
-  data.lists.push({ id: "home", name: "Home", emoji: "", fixed: false, order: 2000 });
+  data.lists.push({ id: "work", name: "Work", emoji: "", fixed: false, colorLabelId: null, order: 1000 });
+  data.lists.push({ id: "home", name: "Home", emoji: "", fixed: false, colorLabelId: null, order: 2000 });
   return data;
 }
 

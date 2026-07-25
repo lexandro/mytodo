@@ -3,7 +3,8 @@
   // group (appended + auto-expanded); inline rename in place.
   import type { Group } from "$lib/core/types";
   import { dropTodoIntoGroup, toggleGroupAction } from "$lib/state/actions";
-  import { groupMenuItems, openContextMenu } from "$lib/state/menus";
+  import { openContextMenu } from "$lib/state/menus";
+  import { groupMenuItems } from "$lib/state/menus-lists";
   import { ui } from "$lib/state/ui.svelte";
   import InlineRename from "./InlineRename.svelte";
 

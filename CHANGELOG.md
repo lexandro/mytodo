@@ -16,6 +16,11 @@ inside the app.
   names are yours: the same blue can be "Waiting for review" at work and
   "Groceries" at home. The todo detail panel's **Manage…** opens the names of
   the list you are in; empty means "use the shared name".
+- **Lists have their own color** — from a separate palette (**Settings → List
+  colors**), so list colors and todo colors never fight over the same meaning.
+  Pick one from the list's right-click menu; it shows as a stripe in the rail,
+  a tint behind the icon, the tab underline and a line along the top of the
+  pane — in a split view you can see at a glance which pane is which.
 - **Settings has a sidebar** — the dialog is much roomier and split into
   sections instead of one long column: **Appearance**, **Shortcuts** and
   **Files**. Ctrl+K also jumps straight to a section ("Settings: appearance").

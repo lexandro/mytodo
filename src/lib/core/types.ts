@@ -16,6 +16,8 @@ export interface List {
   emoji: string;
   /** Inbox is fixed: cannot be deleted */
   fixed: boolean;
+  /** References a ColorLabel of the "list" palette; null = no color. */
+  colorLabelId: string | null;
   order: number;
 }
 
@@ -65,13 +67,23 @@ export interface ActivityEvent {
   createdAt: number;
 }
 
+/** Todos and lists are colored from two independent palettes. */
+export type PaletteKind = "todo" | "list";
+
+export const PALETTE_KINDS: readonly PaletteKind[] = ["todo", "list"];
+
+export function isPaletteKind(value: unknown): value is PaletteKind {
+  return PALETTE_KINDS.includes(value as PaletteKind);
+}
+
 /**
- * One entry of the shared color palette. The 8 built-ins are seeded rows with
+ * One entry of a shared color palette. The built-ins are seeded rows with
  * fixed ids (core/labels.ts) — every list sees the same colors; only the names
- * can differ per list (LabelNameOverride).
+ * of the "todo" palette can differ per list (LabelNameOverride).
  */
 export interface ColorLabel {
   id: string;
+  kind: PaletteKind;
   name: string | null;
   color: string;
   order: number;

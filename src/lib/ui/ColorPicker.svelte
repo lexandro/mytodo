@@ -11,7 +11,7 @@
   let { todo }: { todo: Todo } = $props();
 
   let managerOpen = $state(false);
-  const labels = $derived(sortedLabels(store.data));
+  const labels = $derived(sortedLabels(store.data, "todo"));
   const currentName = $derived(labelName(store.data, todo.listId, todo.colorLabelId));
   const listName = $derived(
     store.data.lists.find((l) => l.id === todo.listId)?.name ?? "this list",

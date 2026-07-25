@@ -1,15 +1,12 @@
-// Context menu builders — per COMPONENTS.md/prototype. Right-clicking a todo
-// also selects it (INTERACTIONS.md).
+// Context menu plumbing and the todo menu — per COMPONENTS.md/prototype.
+// Right-clicking a todo also selects it (INTERACTIONS.md). The group and list
+// menus live in menus-lists.ts.
 
 import { STATUS_LABEL, locationPath } from "$lib/core/activity";
 import { ACTION_LABELS, ACTION_MODES, TODO_ACTIONS } from "$lib/core/ai-types";
-import { groupDepth } from "$lib/core/groups-ops";
-import { createTodo, setStatus } from "$lib/core/todos-ops";
-import { MAX_GROUP_DEPTH, type Group, type List, type Todo, type TodoStatus } from "$lib/core/types";
-import {
-  armRename, deleteGroupAction, deleteListAction, moveTodoAction, newGroup,
-  openDetails, trashTodoAction,
-} from "./actions";
+import { setStatus } from "$lib/core/todos-ops";
+import type { Todo, TodoStatus } from "$lib/core/types";
+import { moveTodoAction, openDetails, trashTodoAction } from "./actions";
 import { duplicateAction, setArchivedAction, togglePinAction } from "./actions-detail";
 import { openAiPanel } from "./ai-actions";
 import { aiConfig } from "./ai-config.svelte";
@@ -29,7 +26,8 @@ export function openContextMenu(e: MouseEvent, items: CtxItem[]): void {
   };
 }
 
-function closeAnd(action: () => void): () => void {
+/** Wraps an action so the menu closes before it runs. */
+export function closeAnd(action: () => void): () => void {
   return () => {
     ui.ctxMenu = null;
     action();
@@ -114,46 +112,4 @@ export function aiActionItems(todo: Todo): CtxItem[] {
     hint: ACTION_MODES[action] === "execute" ? "may modify files" : "read only",
     action: closeAnd(() => openAiPanel(todo.listId, todo.id, action)),
   }));
-}
-
-export function groupMenuItems(group: Group): CtxItem[] {
-  const depth = groupDepth(store.data, group.id);
-  return [
-    { label: "Rename", hint: "F2", action: () => armRename("group", group.id) },
-    { label: "New todo here", action: closeAnd(() => newTodoInGroup(group)) },
-    depth < MAX_GROUP_DEPTH
-      ? { label: "New subgroup", action: () => newGroup(group.listId, group.id) }
-      : { label: "New subgroup", hint: "3-level limit", disabled: true, action: () => {} },
-    { separator: true },
-    { label: "Delete group", danger: true, action: () => deleteGroupAction(group.id) },
-  ];
-}
-
-/** Prototype: creates "New todo" in the group and opens details to edit it. */
-function newTodoInGroup(group: Group): void {
-  let id = "";
-  store.apply("add todo", (data) => {
-    id = createTodo(data, group.listId, group.id, "New todo", Date.now()).id;
-  });
-  openDetails(id);
-}
-
-export function listMenuItems(list: List): CtxItem[] {
-  const linked = aiConfig.linkFor(list.id) !== undefined;
-  return [
-    { label: "Rename", hint: "F2", action: () => armRename("list", list.id) },
-    { label: "New group", action: () => newGroup(list.id, null) },
-    { separator: true },
-    {
-      label: linked ? "Workspace settings…" : "Link Workspace…",
-      action: closeAnd(() => {
-        ui.workspaceSettings = list.id;
-        if (linked) void aiConfig.refreshMissing(list.id);
-      }),
-    },
-    { separator: true },
-    list.fixed
-      ? { label: "Delete list", hint: "Inbox is permanent", disabled: true, action: () => {} }
-      : { label: "Delete list", danger: true, action: () => deleteListAction(list.id) },
-  ];
 }

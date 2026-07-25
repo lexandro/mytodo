@@ -3,6 +3,7 @@
   // empty state. The pane background is a drop target: dropping a todo from
   // another list moves it to this list's root.
   import inboxWatermark from "$lib/assets/inbox-watermark.png";
+  import { labelColor } from "$lib/core/labels";
   import { buildPaneRows } from "$lib/core/rows";
   import { todoMatches } from "$lib/core/search";
   import { moveTodoAction } from "$lib/state/actions";
@@ -39,6 +40,7 @@
         }),
   );
   const isInbox = $derived(list?.fixed === true);
+  const listColor = $derived(labelColor(store.data, list?.colorLabelId ?? null));
 
   function onBgDragOver(e: DragEvent): void {
     if (ui.drag !== null) e.preventDefault();
@@ -73,6 +75,10 @@
   ondragover={onBgDragOver}
   ondrop={onBgDrop}
 >
+  {#if listColor !== null}
+    <!-- the pane wears its list's color, so a split view says where you are -->
+    <div class="pane-color" style:background={listColor}></div>
+  {/if}
   {#if single}
     <TabBar {paneIndex} activeListId={list?.id ?? null} />
   {:else}
@@ -139,6 +145,10 @@
   }
   .pane.active-pane {
     border-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
+  }
+  .pane-color {
+    height: 3px;
+    flex: none;
   }
   .inbox-watermark {
     position: absolute;

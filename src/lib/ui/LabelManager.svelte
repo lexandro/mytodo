@@ -12,7 +12,7 @@
   let { listId, listName, onclose }: { listId: string; listName: string; onclose: () => void } =
     $props();
 
-  const labels = $derived(sortedLabels(store.data));
+  const labels = $derived(sortedLabels(store.data, "todo"));
 
   function onBackdropClick(e: MouseEvent): void {
     if (e.target === e.currentTarget) onclose();

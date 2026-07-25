@@ -3,8 +3,8 @@
 // can never corrupt the database. The apply itself is one undo-able step.
 
 import {
-  MAX_CUSTOM_LABELS, MAX_GROUP_DEPTH, TODO_STATUSES, emptyDomainData,
-  type DomainData, type TodoStatus,
+  MAX_CUSTOM_LABELS, MAX_GROUP_DEPTH, PALETTE_KINDS, TODO_STATUSES, emptyDomainData,
+  isPaletteKind, type DomainData, type TodoStatus,
 } from "./types";
 import { ensureInbox, ensurePresetLabels } from "./bootstrap";
 import { labelNameId } from "./label-names";
@@ -73,7 +73,9 @@ export function parseImport(json: string): ImportResult {
     listIds.add(l.id);
     out.lists.push({
       id: l.id, name: l.name, emoji: str(l.emoji) ? l.emoji : "",
-      fixed: bool(l.fixed) ? l.fixed : false, order: l.order,
+      fixed: bool(l.fixed) ? l.fixed : false,
+      colorLabelId: str(l.colorLabelId) ? l.colorLabelId : null,
+      order: l.order,
     });
   }
 
@@ -169,14 +171,23 @@ export function parseImport(json: string): ImportResult {
     if (!str(c.id) || !str(c.color) || !num(c.order) || labelIds.has(c.id)) continue;
     labelIds.add(c.id);
     out.colorLabels.push({
-      id: c.id, name: str(c.name) ? c.name : null, color: c.color, order: c.order,
+      id: c.id,
+      // files written before list colors existed carry todo colors only
+      kind: isPaletteKind(c.kind) ? c.kind : "todo",
+      name: str(c.name) ? c.name : null,
+      color: c.color,
+      order: c.order,
     });
   }
   // the cap covers added colors only — the built-ins are part of every install
-  const customs = out.colorLabels.filter((label) => !isBuiltinLabel(label.id)).sort(byOrder);
-  for (const extra of customs.slice(MAX_CUSTOM_LABELS)) {
-    out.colorLabels = out.colorLabels.filter((label) => label.id !== extra.id);
-    labelIds.delete(extra.id);
+  for (const kind of PALETTE_KINDS) {
+    const customs = out.colorLabels
+      .filter((label) => label.kind === kind && !isBuiltinLabel(label.id))
+      .sort(byOrder);
+    for (const extra of customs.slice(MAX_CUSTOM_LABELS)) {
+      out.colorLabels = out.colorLabels.filter((label) => label.id !== extra.id);
+      labelIds.delete(extra.id);
+    }
   }
 
   // the built-in palette is part of every install — a file written before the
@@ -194,9 +205,12 @@ export function parseImport(json: string): ImportResult {
     out.labelNames.push({ id, listId: n.listId, labelId: n.labelId, name: n.name.trim() });
   }
 
-  // todos may only point at a color that came with the file
+  // todos and lists may only point at a color that came with the file
   for (const todo of out.todos) {
     if (todo.colorLabelId !== null && !labelIds.has(todo.colorLabelId)) todo.colorLabelId = null;
+  }
+  for (const list of out.lists) {
+    if (list.colorLabelId !== null && !labelIds.has(list.colorLabelId)) list.colorLabelId = null;
   }
 
   // the workspace always has a fixed Inbox
