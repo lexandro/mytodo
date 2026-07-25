@@ -67,17 +67,18 @@ jobs:
           $end = ($rest | Select-String -Pattern '^## ' | Select-Object -First 1).LineNumber
           $body = if ($end) { $rest[0..($end - 2)] } else { $rest }
           $notes = ($body -join "`n").Trim()
-          $install = @'
-
-## Install
-
-- **Installer**: `myTODO_x.y.z_x64-setup.exe` (NSIS) or the `.msi` - installed
-  copies update themselves from here.
-- **Portable**: `myTODO-<tag>-portable.zip` - unzip and run, data stays in the
-  folder.
-
-Full changelog: [CHANGELOG.md](https://github.com/lexandro/mytodo/blob/main/CHANGELOG.md)
-'@
+          # single-quoted lines: backticks are markdown here, not PowerShell
+          # escapes — and a here-string would have to be dedented to column 0,
+          # which ends the YAML block scalar
+          $install = @(
+            '',
+            '## Install',
+            '',
+            '- **Installer**: `myTODO_x.y.z_x64-setup.exe` (NSIS) or the `.msi` — installed copies update themselves from here.',
+            '- **Portable**: the `-portable.zip` — unzip and run, your data stays in the folder.',
+            '',
+            'Full changelog: [CHANGELOG.md](https://github.com/lexandro/mytodo/blob/main/CHANGELOG.md)'
+          ) -join "`n"
           "body<<CHANGELOG_EOF" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
           ($notes + "`n" + $install) | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
           "CHANGELOG_EOF" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
