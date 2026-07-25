@@ -84,7 +84,9 @@ tükörfúrógép proj`).
 - [ ] G5 Switch the composer to Execute BEFORE the first turn → thread runs
       in execute mode; after the first turn the toggle is locked
 - [ ] G6 `+` starts an empty thread; the clock icon lists conversations and
-      reopening one continues it (a new turn keeps the session)
+      reopening one continues it *(CDP ✓ — a thread created before an app
+      RESTART was reopened from history and the next turn still recalled
+      both earlier messages; pre-v3 rows list as single-turn threads)*
 - [ ] G7 Model picker: pick Sonnet/Haiku → the turn header shows it; type a
       custom name → used verbatim; garbage like `--foo` is refused
 - [ ] G8 Codex with a non-default model (`openai/terra`) answers, and a
