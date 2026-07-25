@@ -51,11 +51,13 @@ export function diffDomain(prev: DomainData, next: DomainData): DbOp[] {
     (row) => ({ kind: "putActivity", row }), (id) => ({ kind: "delActivity", id }));
   const labels = diffTable(prev.colorLabels, next.colorLabels,
     (row) => ({ kind: "putLabel", row }), (id) => ({ kind: "delLabel", id }));
+  const labelNames = diffTable(prev.labelNames, next.labelNames,
+    (row) => ({ kind: "putLabelName", row }), (id) => ({ kind: "delLabelName", id }));
 
   return [
     ...lists.puts, ...groups.puts, ...todos.puts,
-    ...subtasks.puts, ...activity.puts, ...labels.puts,
+    ...subtasks.puts, ...activity.puts, ...labels.puts, ...labelNames.puts,
     ...subtasks.dels, ...activity.dels, ...todos.dels,
-    ...groups.dels, ...lists.dels, ...labels.dels,
+    ...groups.dels, ...lists.dels, ...labelNames.dels, ...labels.dels,
   ];
 }

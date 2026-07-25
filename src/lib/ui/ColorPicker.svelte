@@ -1,7 +1,8 @@
 <script lang="ts">
-  // Color label picker: None + 8 built-ins + custom labels as 17px swatches;
-  // "Manage…" opens the LabelManager (max 12 custom).
-  import { PRESET_LABELS, labelName, sortedCustomLabels } from "$lib/core/labels";
+  // Color label picker: None + the whole palette as swatches, labelled with
+  // the name this list uses. "Manage…" opens the per-list name editor.
+  import { labelName } from "$lib/core/label-names";
+  import { sortedLabels } from "$lib/core/labels";
   import type { Todo } from "$lib/core/types";
   import { setColorLabelAction } from "$lib/state/actions-detail";
   import { store } from "$lib/state/store.svelte";
@@ -10,8 +11,11 @@
   let { todo }: { todo: Todo } = $props();
 
   let managerOpen = $state(false);
-  const customs = $derived(sortedCustomLabels(store.data));
-  const currentName = $derived(labelName(store.data, todo.colorLabelId));
+  const labels = $derived(sortedLabels(store.data));
+  const currentName = $derived(labelName(store.data, todo.listId, todo.colorLabelId));
+  const listName = $derived(
+    store.data.lists.find((l) => l.id === todo.listId)?.name ?? "this list",
+  );
 </script>
 
 <div class="field">
@@ -24,24 +28,15 @@
       aria-label="No color label"
       onclick={() => setColorLabelAction(todo.id, null)}
     >✕</button>
-    {#each PRESET_LABELS as preset (preset.id)}
+    {#each labels as label (label.id)}
+      {@const name = labelName(store.data, todo.listId, label.id)}
       <button
         class="swatch"
-        class:selected={todo.colorLabelId === preset.id}
-        style:background={preset.color}
-        title={preset.name}
-        aria-label={preset.name}
-        onclick={() => setColorLabelAction(todo.id, preset.id)}
-      ></button>
-    {/each}
-    {#each customs as custom (custom.id)}
-      <button
-        class="swatch"
-        class:selected={todo.colorLabelId === custom.id}
-        style:background={custom.color}
-        title={custom.name ?? custom.color}
-        aria-label={custom.name ?? custom.color}
-        onclick={() => setColorLabelAction(todo.id, custom.id)}
+        class:selected={todo.colorLabelId === label.id}
+        style:background={label.color}
+        title={name}
+        aria-label={name}
+        onclick={() => setColorLabelAction(todo.id, label.id)}
       ></button>
     {/each}
     <button class="btn btn-ghost manage" onclick={() => (managerOpen = true)}>Manage…</button>
@@ -49,7 +44,7 @@
 </div>
 
 {#if managerOpen}
-  <LabelManager onclose={() => (managerOpen = false)} />
+  <LabelManager listId={todo.listId} {listName} onclose={() => (managerOpen = false)} />
 {/if}
 
 <style>

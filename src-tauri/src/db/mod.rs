@@ -126,6 +126,12 @@ mod tests {
             color: "#e0567a".into(),
             order: 1000.0,
         };
+        let label_name = LabelNameOverride {
+            id: "l1::c1".into(),
+            list_id: "l1".into(),
+            label_id: "c1".into(),
+            name: "Sürgős".into(),
+        };
 
         write::apply_ops(
             &mut conn,
@@ -136,6 +142,9 @@ mod tests {
                 DbOp::PutSubtask { row: sub.clone() },
                 DbOp::PutActivity { row: act.clone() },
                 DbOp::PutLabel { row: label.clone() },
+                DbOp::PutLabelName {
+                    row: label_name.clone(),
+                },
             ],
         )
         .expect("apply");
@@ -147,6 +156,51 @@ mod tests {
         assert_eq!(data.subtasks, vec![sub]);
         assert_eq!(data.activity, vec![act]);
         assert_eq!(data.color_labels, vec![label]);
+        assert_eq!(data.label_names, vec![label_name]);
+    }
+
+    #[test]
+    fn deleting_a_list_cascades_its_label_names() {
+        let mut conn = mem_db();
+        write::apply_ops(
+            &mut conn,
+            &[
+                DbOp::PutList {
+                    row: List {
+                        id: "l1".into(),
+                        name: "Munka".into(),
+                        emoji: "".into(),
+                        fixed: false,
+                        order: 1000.0,
+                    },
+                },
+                DbOp::PutLabel {
+                    row: ColorLabel {
+                        id: "preset-blue".into(),
+                        name: Some("Blue".into()),
+                        color: "#6ca3e0".into(),
+                        order: 6000.0,
+                    },
+                },
+                DbOp::PutLabelName {
+                    row: LabelNameOverride {
+                        id: "l1::preset-blue".into(),
+                        list_id: "l1".into(),
+                        label_id: "preset-blue".into(),
+                        name: "Waiting for review".into(),
+                    },
+                },
+            ],
+        )
+        .expect("seed");
+
+        write::apply_ops(&mut conn, &[DbOp::DelList { id: "l1".into() }]).expect("delete list");
+
+        let data = load::load_all(&conn).expect("load");
+        assert!(
+            data.label_names.is_empty(),
+            "a deleted list must not leave label names behind"
+        );
     }
 
     #[test]

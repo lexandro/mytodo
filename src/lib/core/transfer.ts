@@ -2,8 +2,14 @@
 // format. Import validates BEFORE anything touches the store — a bad file
 // can never corrupt the database. The apply itself is one undo-able step.
 
-import { MAX_GROUP_DEPTH, TODO_STATUSES, emptyDomainData, type DomainData, type TodoStatus } from "./types";
-import { ensureInbox } from "./bootstrap";
+import {
+  MAX_CUSTOM_LABELS, MAX_GROUP_DEPTH, TODO_STATUSES, emptyDomainData,
+  type DomainData, type TodoStatus,
+} from "./types";
+import { ensureInbox, ensurePresetLabels } from "./bootstrap";
+import { labelNameId } from "./label-names";
+import { isBuiltinLabel } from "./labels";
+import { byOrder } from "./ordering";
 
 export const EXPORT_FORMAT = 1;
 
@@ -33,6 +39,10 @@ function num(v: unknown): v is number {
 }
 function bool(v: unknown): v is boolean {
   return typeof v === "boolean";
+}
+/** Optional array section — files written before the section existed lack it. */
+function asArray(v: unknown): unknown[] {
+  return Array.isArray(v) ? v : [];
 }
 
 /* eslint-disable complexity */
@@ -153,16 +163,42 @@ export function parseImport(json: string): ImportResult {
     });
   }
 
+  const labelIds = new Set<string>();
   for (const item of src.colorLabels as unknown[]) {
     const c = item as Record<string, unknown>;
-    if (!str(c.id) || !str(c.color) || !num(c.order)) continue;
+    if (!str(c.id) || !str(c.color) || !num(c.order) || labelIds.has(c.id)) continue;
+    labelIds.add(c.id);
     out.colorLabels.push({
       id: c.id, name: str(c.name) ? c.name : null, color: c.color, order: c.order,
     });
   }
+  // the cap covers added colors only — the built-ins are part of every install
+  const customs = out.colorLabels.filter((label) => !isBuiltinLabel(label.id)).sort(byOrder);
+  for (const extra of customs.slice(MAX_CUSTOM_LABELS)) {
+    out.colorLabels = out.colorLabels.filter((label) => label.id !== extra.id);
+    labelIds.delete(extra.id);
+  }
 
-  // exactly the newest 12 custom labels survive the cap
-  out.colorLabels = out.colorLabels.slice(0, 12);
+  // the built-in palette is part of every install — a file written before the
+  // colors became rows still references preset ids, and those must resolve
+  ensurePresetLabels(out);
+  for (const label of out.colorLabels) labelIds.add(label.id);
+
+  // per-list label names: silently dropped when either side is gone (best-effort)
+  for (const item of asArray(src.labelNames)) {
+    const n = item as Record<string, unknown>;
+    if (!str(n.listId) || !str(n.labelId) || !str(n.name) || n.name.trim() === "") continue;
+    if (!listIds.has(n.listId) || !labelIds.has(n.labelId)) continue;
+    const id = labelNameId(n.listId, n.labelId);
+    if (out.labelNames.some((entry) => entry.id === id)) continue;
+    out.labelNames.push({ id, listId: n.listId, labelId: n.labelId, name: n.name.trim() });
+  }
+
+  // todos may only point at a color that came with the file
+  for (const todo of out.todos) {
+    if (todo.colorLabelId !== null && !labelIds.has(todo.colorLabelId)) todo.colorLabelId = null;
+  }
+
   // the workspace always has a fixed Inbox
   ensureInbox(out);
   return { ok: true, data: out };

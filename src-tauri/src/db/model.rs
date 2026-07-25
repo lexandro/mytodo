@@ -78,6 +78,16 @@ pub struct ColorLabel {
     pub order: f64,
 }
 
+/// One list's own name for a palette color. `id` is `listId::labelId`.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct LabelNameOverride {
+    pub id: String,
+    pub list_id: String,
+    pub label_id: String,
+    pub name: String,
+}
+
 /// The complete persisted domain state — loaded in one piece at startup.
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -88,6 +98,7 @@ pub struct DomainData {
     pub subtasks: Vec<Subtask>,
     pub activity: Vec<ActivityEvent>,
     pub color_labels: Vec<ColorLabel>,
+    pub label_names: Vec<LabelNameOverride>,
 }
 
 /// A single write operation — produced by the frontend diff, runs in one transaction.
@@ -118,4 +129,8 @@ pub enum DbOp {
     PutLabel { row: ColorLabel },
     #[serde(rename = "delLabel")]
     DelLabel { id: String },
+    #[serde(rename = "putLabelName")]
+    PutLabelName { row: LabelNameOverride },
+    #[serde(rename = "delLabelName")]
+    DelLabelName { id: String },
 }

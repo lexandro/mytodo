@@ -105,5 +105,17 @@ pub fn load_all(conn: &Connection) -> Result<DomainData, String> {
                 order: r.get(3)?,
             })
         })?,
+        label_names: collect(
+            conn,
+            "SELECT id, list_id, label_id, name FROM label_names",
+            |r| {
+                Ok(LabelNameOverride {
+                    id: r.get(0)?,
+                    list_id: r.get(1)?,
+                    label_id: r.get(2)?,
+                    name: r.get(3)?,
+                })
+            },
+        )?,
     })
 }

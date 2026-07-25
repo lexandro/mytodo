@@ -5,6 +5,7 @@
   import { SETTINGS_SECTIONS, settingsSection } from "$lib/core/settings-sections";
   import { ui } from "$lib/state/ui.svelte";
   import SettingsAppearance from "./SettingsAppearance.svelte";
+  import SettingsColors from "./SettingsColors.svelte";
   import SettingsFiles from "./SettingsFiles.svelte";
   import SettingsShortcuts from "./SettingsShortcuts.svelte";
 
@@ -42,6 +43,8 @@
           </div>
           {#if current.id === "appearance"}
             <SettingsAppearance />
+          {:else if current.id === "todo-colors"}
+            <SettingsColors />
           {:else if current.id === "shortcuts"}
             <SettingsShortcuts />
           {:else if current.id === "files"}

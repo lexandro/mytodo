@@ -65,12 +65,28 @@ export interface ActivityEvent {
   createdAt: number;
 }
 
-/** User-defined color label (max 12); built-in presets are constants, not rows. */
+/**
+ * One entry of the shared color palette. The 8 built-ins are seeded rows with
+ * fixed ids (core/labels.ts) — every list sees the same colors; only the names
+ * can differ per list (LabelNameOverride).
+ */
 export interface ColorLabel {
   id: string;
   name: string | null;
   color: string;
   order: number;
+}
+
+/**
+ * A label's name inside one list: the palette is central, but "Blue" can be
+ * "Waiting for review" in one list and "Home" in another.
+ */
+export interface LabelNameOverride {
+  /** `${listId}::${labelId}` — one row per pair, so no id generation is needed. */
+  id: string;
+  listId: string;
+  labelId: string;
+  name: string;
 }
 
 export interface DomainData {
@@ -80,10 +96,14 @@ export interface DomainData {
   subtasks: Subtask[];
   activity: ActivityEvent[];
   colorLabels: ColorLabel[];
+  labelNames: LabelNameOverride[];
 }
 
 export function emptyDomainData(): DomainData {
-  return { lists: [], groups: [], todos: [], subtasks: [], activity: [], colorLabels: [] };
+  return {
+    lists: [], groups: [], todos: [], subtasks: [], activity: [],
+    colorLabels: [], labelNames: [],
+  };
 }
 
 /** Group nesting cap — enforced in UI, import and drag & drop alike. */

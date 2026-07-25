@@ -63,10 +63,11 @@ describe("diffDomain", () => {
       subtasks: [{ id: "s1", todoId: "t1", text: "x", checked: false, order: 1000 }],
       activity: [{ id: "a1", todoId: "t1", type: "created", summary: "Created", createdAt: 1 }],
       colorLabels: [{ id: "c1", name: null, color: "#fff", order: 1000 }],
+      labelNames: [{ id: "l1::c1", listId: "l1", labelId: "c1", name: "Urgent" }],
     };
     const kinds = diffDomain(prev, next).map((op) => op.kind);
     expect(kinds).toEqual([
-      "putList", "putGroup", "putTodo", "putSubtask", "putActivity", "putLabel",
+      "putList", "putGroup", "putTodo", "putSubtask", "putActivity", "putLabel", "putLabelName",
     ]);
   });
 });

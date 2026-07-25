@@ -2,7 +2,7 @@
   // App shell per COMPONENTS.md: TitleBar → main row (rail | center | detail)
   // → StatusBar. Owns startup (store.init), global keyboard handling and the
   // app-wide native-context-menu suppression.
-  import { ensureInbox } from "$lib/core/bootstrap";
+  import { ensureInbox, ensurePresetLabels } from "$lib/core/bootstrap";
   import { createTodo } from "$lib/core/todos-ops";
   import { onQuickAdd } from "$lib/ipc";
   import { aiConfig } from "$lib/state/ai-config.svelte";
@@ -43,6 +43,7 @@
     void store
       .init((data) => {
         ensureInbox(data);
+        ensurePresetLabels(data); // the 8 built-in colors are rows, not constants
       })
       .then(() => restoreUiSettings())
       .then((all) => {

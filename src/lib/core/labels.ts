@@ -1,15 +1,19 @@
-// Color labels: 8 fixed built-in presets (constants, not DB rows) plus up to
-// 12 user-defined labels stored in DomainData.colorLabels.
+// The color palette: 8 built-in labels every install starts with, plus up to
+// MAX_CUSTOM_LABELS user-added ones. Built-ins are ordinary rows seeded on
+// first run (bootstrap.ts) and recognised by their fixed ids — so they can be
+// renamed and recolored centrally, but never deleted (a todo pointing at one
+// must never lose its color). Per-list names live in label-names.ts.
 
+import { byOrder } from "./ordering";
 import { MAX_CUSTOM_LABELS, type ColorLabel, type DomainData } from "./types";
 
-export interface PresetLabel {
+export interface LabelDefault {
   id: string;
   color: string;
   name: string;
 }
 
-export const PRESET_LABELS: readonly PresetLabel[] = [
+export const DEFAULT_LABELS: readonly LabelDefault[] = [
   { id: "preset-neutral", color: "#9397ab", name: "Neutral" },
   { id: "preset-red", color: "#e07b7b", name: "Red" },
   { id: "preset-orange", color: "#e0a36c", name: "Orange" },
@@ -20,35 +24,69 @@ export const PRESET_LABELS: readonly PresetLabel[] = [
   { id: "preset-gray", color: "#75798c", name: "Gray" },
 ];
 
-/** Hex color for a todo's colorLabelId — preset or custom; null when unset/gone. */
-export function labelColor(data: DomainData, colorLabelId: string | null): string | null {
-  if (colorLabelId === null) return null;
-  const preset = PRESET_LABELS.find((p) => p.id === colorLabelId);
-  if (preset !== undefined) return preset.color;
-  return data.colorLabels.find((c) => c.id === colorLabelId)?.color ?? null;
+/** Order values 1000, 2000… keep the built-ins ahead of every added color. */
+export const BUILTIN_ORDER_STEP = 1000;
+
+export function isBuiltinLabel(id: string): boolean {
+  return DEFAULT_LABELS.some((d) => d.id === id);
 }
 
-/** Display name for the picker ("Fontos", "Red", …). */
-export function labelName(data: DomainData, colorLabelId: string | null): string {
-  if (colorLabelId === null) return "None";
-  const preset = PRESET_LABELS.find((p) => p.id === colorLabelId);
-  if (preset !== undefined) return preset.name;
-  const custom = data.colorLabels.find((c) => c.id === colorLabelId);
-  return custom?.name ?? custom?.color ?? "None";
+/** The whole palette in display order: built-ins first, then added colors. */
+export function sortedLabels(data: DomainData): ColorLabel[] {
+  return [...data.colorLabels].sort(byOrder);
+}
+
+export function customLabels(data: DomainData): ColorLabel[] {
+  return sortedLabels(data).filter((label) => !isBuiltinLabel(label.id));
 }
 
 export function canAddCustomLabel(data: DomainData): boolean {
-  return data.colorLabels.length < MAX_CUSTOM_LABELS;
+  return customLabels(data).length < MAX_CUSTOM_LABELS;
 }
 
-/** Removes a custom label; todos referencing it fall back to no label. */
+/** Order for a newly added color — always after everything else. */
+export function nextLabelOrder(data: DomainData): number {
+  const highest = Math.max(0, ...data.colorLabels.map((label) => label.order));
+  return highest + BUILTIN_ORDER_STEP;
+}
+
+export function findLabel(data: DomainData, id: string | null): ColorLabel | undefined {
+  return id === null ? undefined : data.colorLabels.find((label) => label.id === id);
+}
+
+/** Hex color for a todo's colorLabelId; null when unset or the label is gone. */
+export function labelColor(data: DomainData, colorLabelId: string | null): string | null {
+  return findLabel(data, colorLabelId)?.color ?? null;
+}
+
+/** The palette-wide name — what every list sees unless it renamed the label. */
+export function centralLabelName(data: DomainData, colorLabelId: string | null): string {
+  const label = findLabel(data, colorLabelId);
+  if (label === undefined) return "None";
+  return label.name ?? label.color;
+}
+
+/** Removes an added color; todos and per-list names referencing it follow. */
 export function deleteCustomLabel(data: DomainData, id: string): void {
-  data.colorLabels = data.colorLabels.filter((c) => c.id !== id);
+  if (isBuiltinLabel(id)) return; // built-ins are permanent by design
+  data.colorLabels = data.colorLabels.filter((label) => label.id !== id);
+  data.labelNames = data.labelNames.filter((entry) => entry.labelId !== id);
   for (const todo of data.todos) {
     if (todo.colorLabelId === id) todo.colorLabelId = null;
   }
 }
 
-export function sortedCustomLabels(data: DomainData): ColorLabel[] {
-  return [...data.colorLabels].sort((a, b) => a.order - b.order || (a.id < b.id ? -1 : 1));
+/** Restores the shipped name and color of the 8 built-ins; adds back missing ones. */
+export function resetBuiltinLabels(data: DomainData): void {
+  DEFAULT_LABELS.forEach((preset, index) => {
+    const existing = data.colorLabels.find((label) => label.id === preset.id);
+    const order = (index + 1) * BUILTIN_ORDER_STEP;
+    if (existing === undefined) {
+      data.colorLabels.push({ id: preset.id, name: preset.name, color: preset.color, order });
+      return;
+    }
+    existing.name = preset.name;
+    existing.color = preset.color;
+    existing.order = order;
+  });
 }

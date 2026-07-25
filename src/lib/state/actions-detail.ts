@@ -1,10 +1,7 @@
 // Detail-panel actions: field edits, pin/archive/duplicate, subtasks,
 // custom labels, link opening. Kept separate from actions.ts for focus.
 
-import { newId } from "$lib/core/ids";
-import { canAddCustomLabel, deleteCustomLabel } from "$lib/core/labels";
 import { isSafeWindowsPath } from "$lib/core/links";
-import { ORDER_STEP } from "$lib/core/ordering";
 import { addSubtask, editSubtask, removeSubtask, toggleSubtask } from "$lib/core/subtasks-ops";
 import {
   duplicateTodo, setArchived, setColorLabel, setDescription, setEmoji, togglePin,
@@ -79,29 +76,6 @@ export function editSubtaskAction(id: string, text: string): void {
 
 export function removeSubtaskAction(id: string): void {
   store.apply("remove subtask", (data) => removeSubtask(data, id, Date.now()));
-}
-
-// ── custom color labels (max 12) ────────────────────────────────────────────
-
-export function addCustomLabel(color: string, name: string | null): void {
-  if (!canAddCustomLabel(store.data)) return;
-  store.apply("add label", (data) => {
-    const maxOrder = Math.max(0, ...data.colorLabels.map((c) => c.order));
-    data.colorLabels.push({ id: newId(), name, color, order: maxOrder + ORDER_STEP });
-  });
-}
-
-export function updateCustomLabel(id: string, color: string, name: string | null): void {
-  store.apply("edit label", (data) => {
-    const label = data.colorLabels.find((c) => c.id === id);
-    if (label === undefined) return;
-    label.color = color;
-    label.name = name;
-  });
-}
-
-export function removeCustomLabel(id: string): void {
-  store.apply("remove label", (data) => deleteCustomLabel(data, id));
 }
 
 // ── links ───────────────────────────────────────────────────────────────────

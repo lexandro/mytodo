@@ -1,59 +1,69 @@
 <script lang="ts">
-  // Label manager modal: built-in palette preview (read-only), custom label
-  // rows (color + optional name + remove), add until 12, counter, Done.
-  import { MAX_CUSTOM_LABELS } from "$lib/core/types";
-  import { PRESET_LABELS, sortedCustomLabels } from "$lib/core/labels";
-  import { addCustomLabel, removeCustomLabel, updateCustomLabel } from "$lib/state/actions-detail";
+  // Per-list color names. The palette itself is central (Settings → Todo
+  // colors); here a list says what a color means to it — "Blue" can be
+  // "Waiting for review" at work and "Groceries" at home. One color per row,
+  // because the name is the point.
+  import { labelNameOverride } from "$lib/core/label-names";
+  import { centralLabelName, sortedLabels } from "$lib/core/labels";
+  import { openSettings } from "$lib/state/actions";
+  import { setLabelNameAction } from "$lib/state/actions-labels";
   import { store } from "$lib/state/store.svelte";
 
-  let { onclose }: { onclose: () => void } = $props();
+  let { listId, listName, onclose }: { listId: string; listName: string; onclose: () => void } =
+    $props();
 
-  const customs = $derived(sortedCustomLabels(store.data));
+  const labels = $derived(sortedLabels(store.data));
 
   function onBackdropClick(e: MouseEvent): void {
     if (e.target === e.currentTarget) onclose();
+  }
+
+  function openCentral(): void {
+    onclose();
+    openSettings("todo-colors");
   }
 </script>
 
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 <div class="dialog-backdrop" onclick={onBackdropClick}>
   <div class="dialog manager">
-    <span class="dialog-title mgr-title">Color labels</span>
-    <div class="preset-row">
-      {#each PRESET_LABELS as preset (preset.id)}
-        <span class="preset" style:background={preset.color} title={preset.name}></span>
+    <span class="dialog-title mgr-title">Color names in {listName}</span>
+    <p class="lead">
+      The colors are shared by every list; the names are yours to set per list.
+      Leave a field empty to fall back to the shared name.
+    </p>
+
+    <div class="rows">
+      {#each labels as label (label.id)}
+        {@const own = labelNameOverride(store.data, listId, label.id)}
+        <div class="row">
+          <span class="swatch" style:background={label.color}></span>
+          <input
+            class="input name"
+            class:overridden={own !== null}
+            placeholder={centralLabelName(store.data, label.id)}
+            value={own ?? ""}
+            onchange={(e) => setLabelNameAction(listId, label.id, e.currentTarget.value)}
+          />
+          {#if own !== null}
+            <button
+              class="reset"
+              title="Use the shared name"
+              onclick={() => setLabelNameAction(listId, label.id, null)}
+            >
+              ↺
+            </button>
+          {:else}
+            <span class="reset placeholder"></span>
+          {/if}
+        </div>
       {/each}
-      <span class="preset-note">built-in</span>
     </div>
-    {#each customs as custom (custom.id)}
-      <div class="row">
-        <input
-          class="color"
-          type="color"
-          value={custom.color}
-          onchange={(e) => updateCustomLabel(custom.id, e.currentTarget.value, custom.name)}
-        />
-        <input
-          class="input name"
-          placeholder="Optional name"
-          value={custom.name ?? ""}
-          onchange={(e) => {
-            const name = e.currentTarget.value.trim();
-            updateCustomLabel(custom.id, custom.color, name === "" ? null : name);
-          }}
-        />
-        <button class="remove" aria-label="Remove label" onclick={() => removeCustomLabel(custom.id)}>✕</button>
-      </div>
-    {/each}
+
     <div class="footer">
-      <button
-        class="btn btn-secondary add"
-        disabled={customs.length >= MAX_CUSTOM_LABELS}
-        onclick={() => addCustomLabel("#9184d9", null)}
-      >
-        Add label
+      <button class="btn btn-ghost palette" onclick={() => openCentral()}>
+        Edit the shared palette…
       </button>
-      <span class="counter">{customs.length} / {MAX_CUSTOM_LABELS}</span>
       <div class="spacer"></div>
       <button class="btn btn-primary" onclick={() => onclose()}>Done</button>
     </div>
@@ -62,68 +72,70 @@
 
 <style>
   .manager {
-    width: min(380px, 100%);
+    width: min(430px, 100%);
   }
   .mgr-title {
     font-size: 16px;
   }
-  .preset-row {
+  .lead {
+    font-size: 11px;
+    color: var(--color-neutral-500);
+    line-height: 1.45;
+    margin: 0;
+  }
+  .rows {
     display: flex;
-    gap: 6px;
-    align-items: center;
-  }
-  .preset {
-    width: 15px;
-    height: 15px;
-    border-radius: 50%;
-  }
-  .preset-note {
-    font-size: 10px;
-    color: var(--color-neutral-600);
-    margin-left: 4px;
+    flex-direction: column;
+    gap: 5px;
+    max-height: 48vh;
+    overflow-y: auto;
   }
   .row {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
   }
-  .color {
-    width: 26px;
-    height: 24px;
-    padding: 0;
-    border: 1px solid var(--color-divider);
-    border-radius: 4px;
-    background: transparent;
-    cursor: pointer;
+  .swatch {
+    width: 15px;
+    height: 15px;
+    flex: none;
+    border-radius: 50%;
   }
   .name {
-    min-height: 26px;
-    font-size: 12px;
+    flex: 1;
+    min-width: 0;
+    min-height: 27px;
+    font-size: 12.5px;
   }
-  .remove {
+  .name::placeholder {
+    color: var(--color-neutral-600);
+  }
+  .name.overridden {
+    border-color: color-mix(in srgb, var(--color-accent) 55%, transparent);
+  }
+  .reset {
+    width: 22px;
+    flex: none;
     border: none;
     background: transparent;
     color: var(--color-neutral-600);
-    font-size: 11px;
+    font-size: 12px;
     cursor: pointer;
   }
-  .remove:hover {
-    color: #e07b7b;
+  .reset:hover {
+    color: var(--color-accent);
+  }
+  .reset.placeholder {
+    cursor: default;
   }
   .footer {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-top: 4px;
   }
-  .add {
-    font-size: 12px;
-    padding: 4px 10px;
-  }
-  .counter {
-    font-size: 11px;
-    color: var(--color-neutral-500);
-    font-variant-numeric: tabular-nums;
+  .palette {
+    font-size: 11.5px;
+    padding: 2px 6px;
   }
   .spacer {
     flex: 1;

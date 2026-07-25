@@ -101,6 +101,18 @@ const MIGRATIONS: &[&str] = &[
     ALTER TABLE ai_runs ADD COLUMN model TEXT;
     CREATE INDEX idx_ai_runs_conversation ON ai_runs(conversation_id);
     ",
+    // v4 — per-list label names: the color palette is central, but a list may
+    // rename a color for its own context. The id is `listId::labelId`
+    // (src/lib/core/label-names.ts), so the pair is unique by construction.
+    "
+    CREATE TABLE label_names (
+        id       TEXT PRIMARY KEY,
+        list_id  TEXT NOT NULL REFERENCES lists(id) ON DELETE CASCADE,
+        label_id TEXT NOT NULL REFERENCES color_labels(id) ON DELETE CASCADE,
+        name     TEXT NOT NULL
+    );
+    CREATE INDEX idx_label_names_list ON label_names(list_id);
+    ",
 ];
 
 pub fn migrate(conn: &mut Connection) -> Result<(), String> {

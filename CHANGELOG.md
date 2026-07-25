@@ -8,6 +8,14 @@ inside the app.
 
 ### Added
 
+- **Named color labels** — colors carry categories, so they now have names.
+  **Settings → Todo colors** lists the whole palette one color per row: rename
+  or recolor any of the 8 built-ins, add up to 12 of your own, and put the
+  built-ins back with one click.
+- **Every list can rename a color for itself** — the palette is shared, the
+  names are yours: the same blue can be "Waiting for review" at work and
+  "Groceries" at home. The todo detail panel's **Manage…** opens the names of
+  the list you are in; empty means "use the shared name".
 - **Settings has a sidebar** — the dialog is much roomier and split into
   sections instead of one long column: **Appearance**, **Shortcuts** and
   **Files**. Ctrl+K also jumps straight to a section ("Settings: appearance").

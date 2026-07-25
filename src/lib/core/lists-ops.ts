@@ -3,6 +3,7 @@
 // gets the same rules.
 
 import { newId } from "./ids";
+import { clearListLabelNames } from "./label-names";
 import { orderForDrop, orderForIndex, sortedByOrder } from "./scope";
 import type { DomainData, List } from "./types";
 
@@ -38,6 +39,7 @@ export function deleteList(data: DomainData, id: string, now: number): void {
   if (inbox === undefined) return; // never happens: Inbox is bootstrapped
   data.lists = data.lists.filter((l) => l.id !== id);
   data.groups = data.groups.filter((g) => g.listId !== id);
+  clearListLabelNames(data, id); // the DB cascades these; keep memory in step
   for (const todo of data.todos) {
     if (todo.listId !== id) continue;
     todo.listId = inbox.id;

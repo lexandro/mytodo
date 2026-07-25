@@ -127,6 +127,18 @@ pub fn apply_ops(conn: &mut Connection, ops: &[DbOp]) -> Result<(), String> {
                 .execute("DELETE FROM color_labels WHERE id=?1", params![id])
                 .map(|_| ())
                 .map_err(|e| fail("delLabel", e))?,
+            DbOp::PutLabelName { row } => tx
+                .execute(
+                    "INSERT INTO label_names (id, list_id, label_id, name) VALUES (?1,?2,?3,?4)
+                     ON CONFLICT(id) DO UPDATE SET list_id=?2, label_id=?3, name=?4",
+                    params![row.id, row.list_id, row.label_id, row.name],
+                )
+                .map(|_| ())
+                .map_err(|e| fail("putLabelName", e))?,
+            DbOp::DelLabelName { id } => tx
+                .execute("DELETE FROM label_names WHERE id=?1", params![id])
+                .map(|_| ())
+                .map_err(|e| fail("delLabelName", e))?,
         }
     }
 
