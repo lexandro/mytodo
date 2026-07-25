@@ -1,7 +1,9 @@
 @echo off
-rem Portable release build: tests + release exe + portable folder.
+rem Local (dev-channel) build: tests + exe + portable folder.
 rem Output: release\myTODO\ (exe + empty data/ + backup/)
 rem Also refreshes the exe of the C:\temp\myTODO test environment.
+rem The exe carries the DEV icon and a -dev version - only the tagged CI
+rem release build (release.yml) produces the clean icon and bare version.
 rem Full MSI installer instead: bun run tauri build
 
 echo === 1/5 Typecheck ===
@@ -19,7 +21,7 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 echo === 3/5 Release build ===
-call bun run tauri build --no-bundle
+call bun run tauri build --no-bundle --config src-tauri/tauri.dev.conf.json
 if %ERRORLEVEL% NEQ 0 (
   echo BUILD FAILED
   exit /b 1
@@ -56,6 +58,7 @@ echo.
 echo Done: %OUT%\myTODO.exe
 echo Test env: %TESTENV%\myTODO.exe
 echo Copy the whole myTODO folder anywhere - data moves with it.
+
 
 
 

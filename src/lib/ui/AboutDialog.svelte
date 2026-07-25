@@ -7,12 +7,15 @@
   import { openWebUrl } from "$lib/ipc";
   import { ui } from "$lib/state/ui.svelte";
   import { updater } from "$lib/state/updater.svelte";
-  import iconUrl from "../../../src-tauri/icons/128x128.png";
+  import releaseIconUrl from "../../../src-tauri/icons/128x128.png";
+  import devIconUrl from "../../../src-tauri/icons/dev/128x128.png";
 
   const REPO_URL = "https://github.com/lexandro/mytodo";
 
   const builtAt = formatBuiltAt(BUILD_INFO.builtAt);
   const isDev = BUILD_INFO.channel === "dev";
+  // matches the icon the exe itself carries (tauri.dev.conf.json)
+  const iconUrl = isDev ? devIconUrl : releaseIconUrl;
 
   function close(): void {
     ui.aboutOpen = false;
