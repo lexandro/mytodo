@@ -192,10 +192,12 @@ workspace at a time.
 
 ## Releasing (maintainer)
 
-1. Bump the version in all THREE places together: `package.json`,
+1. Move `CHANGELOG.md`'s `## Unreleased` block under a
+   `## vX.Y.Z — YYYY-MM-DD` heading (it is what Help → What's new shows)
+2. Bump the version in all THREE places together: `package.json`,
    `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`
-2. `git tag vX.Y.Z && git push origin vX.Y.Z`
-3. GitHub Actions (`release.yml`) verifies that the tag matches all three
+3. `git tag vX.Y.Z && git push origin vX.Y.Z`
+4. GitHub Actions (`release.yml`) verifies that the tag matches all three
    version places, then builds the signed MSI + NSIS installers with updater
    artifacts (`latest.json`), publishes the release live and attaches the
    portable zip — installed apps update from it automatically.

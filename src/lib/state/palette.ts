@@ -90,6 +90,15 @@ export function paletteCommands(query: string): PaletteCommand[] {
         close();
       },
     },
+    {
+      emoji: "✦",
+      name: "What's new (changelog)",
+      hint: "",
+      run: () => {
+        ui.changelogOpen = true;
+        close();
+      },
+    },
   ];
   return commands.filter((c) => fuzzyMatch(query, c.name)).slice(0, PALETTE_LIMIT);
 }

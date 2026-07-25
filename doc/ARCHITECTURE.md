@@ -162,6 +162,13 @@ AI result → proposed actions (strongly typed)
 - `ui/AboutDialog.svelte` (Help → About myTODO, also in Ctrl+K) shows the
   app icon imported straight from `src-tauri/icons/`, the version/commit/build
   time and a copy button for bug reports.
+- **Help → What's new** renders `CHANGELOG.md`, inlined at build time with
+  `?raw` so it always matches the shipped binary. There is no markdown
+  library: `core/changelog.ts` parses the Keep-a-Changelog subset the file
+  uses (releases, sections, bullets, `**bold**`/`*italic*`/`` `code` ``) into
+  typed data and the dialog renders real elements — no `{@html}`, nothing to
+  escape. The entry describing the running build is badged, using the same
+  build info as the About dialog.
 
 ## Startup
 

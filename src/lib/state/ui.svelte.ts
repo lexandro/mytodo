@@ -115,6 +115,8 @@ class UiState {
   shortcutsOpen = $state(false);
   /** About dialog (Help → About myTODO). */
   aboutOpen = $state(false);
+  /** Changelog dialog (Help → What's new). */
+  changelogOpen = $state(false);
   /** Scale controls popover in the title bar. */
   scalePopOpen = $state(false);
 

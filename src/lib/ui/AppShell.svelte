@@ -15,6 +15,7 @@
   import { ui } from "$lib/state/ui.svelte";
   import { WINDOW_STATE_KEY, restoreWindowState, startWindowStateSaving } from "$lib/state/window-state";
   import AboutDialog from "./AboutDialog.svelte";
+  import ChangelogDialog from "./ChangelogDialog.svelte";
   import AIClientsDialog from "./AIClientsDialog.svelte";
   import AIPanel from "./AIPanel.svelte";
   import CommandPalette from "./CommandPalette.svelte";
@@ -187,6 +188,7 @@
 <AIClientsDialog />
 <ShortcutsDialog />
 <AboutDialog />
+<ChangelogDialog />
 <RestoreDialog />
 <ShortcutOfferDialog />
 <Toast />

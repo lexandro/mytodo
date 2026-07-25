@@ -33,6 +33,10 @@ function handleEscape(): void {
     ui.aboutOpen = false;
     return;
   }
+  if (ui.changelogOpen) {
+    ui.changelogOpen = false;
+    return;
+  }
   if (ui.ctxMenu !== null) {
     ui.ctxMenu = null;
     return;

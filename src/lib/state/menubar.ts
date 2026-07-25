@@ -123,6 +123,7 @@ function goMenu(): MenuItem[] {
 function helpMenu(): MenuItem[] {
   return [
     item("Keyboard shortcuts", () => (ui.shortcutsOpen = true), "F1"),
+    item("What's new", () => (ui.changelogOpen = true)),
     item("Check for updates…", () => void updater.check(true)),
     item("About myTODO", () => (ui.aboutOpen = true)),
   ];

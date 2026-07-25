@@ -59,7 +59,8 @@ Native Windows desktop app: **Tauri v2** (Rust shell) + **Svelte 5** (SvelteKit 
 ## Releases and live update
 
 - **Releases happen ONLY on the owner's explicit request.** Features and fixes accumulate on main (commit + push is fine); never bump the version or push a tag on your own. At most, mention that releasable work has piled up — the decision is the owner's.
-- **Release flow** (when requested): bump the version in THREE places → `git tag vX.Y.Z` → `git push origin vX.Y.Z` → `.github/workflows/release.yml` (tauri-action) builds the signed MSI+NSIS installers with updater artifacts, publishes the GitHub Release and attaches the portable zip. No manual publish step.
+- **Release flow** (when requested): move `CHANGELOG.md`'s `## Unreleased` block under a `## vX.Y.Z — YYYY-MM-DD` heading → bump the version in THREE places → `git tag vX.Y.Z` → `git push origin vX.Y.Z` → `.github/workflows/release.yml` (tauri-action) builds the signed MSI+NSIS installers with updater artifacts, publishes the GitHub Release and attaches the portable zip. No manual publish step.
+- **CHANGELOG.md is user-facing**: Help → What's new renders it in the app (inlined at build time). Add user-visible changes there as they land, in the user's words — not commit subjects.
 - **Updater**: `tauri-plugin-updater`; endpoint `releases/latest/download/latest.json`, pubkey in `tauri.conf.json`. The frontend checks quietly every 6 hours via `state/updater.svelte.ts` and only OFFERS the update (status bar chip / Help menu) — download+install is always user-initiated.
 - **Signing keypair**: `E:\Mega\keys\mytodo-updater\` (mytodo.key + password.txt); repo secrets `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`. Losing the key = existing installs can never update again. Changing the pubkey is breaking.
 - CI (`ci.yml`) runs typecheck + tests + build on every push — never leave main red.
