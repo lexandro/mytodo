@@ -1,8 +1,11 @@
-// AI panel + menu actions: open/close transitions, run start from the
-// panel, retry, and the narrow-window exclusivity rule between the detail
-// panel and the AI panel (design DESIGN.md §AI run panel).
+// AI panel actions: open/close transitions, preset runs and chat turns
+// inside the panel's conversation, and the narrow-window exclusivity rule
+// between the detail panel and the AI panel (design DESIGN.md §AI run panel).
+// The ✦ AI button opens this panel directly — there is no dropdown menu.
 
-import { TODO_ACTIONS, isTodoAction, type AIAction } from "$lib/core/ai-types";
+import { conversationRuns } from "$lib/core/ai-runs";
+import { isTodoAction, type AIAction, type AIMode } from "$lib/core/ai-types";
+import { newId } from "$lib/core/ids";
 import { findTodo } from "$lib/core/todos-ops";
 import { aiClients } from "./ai-clients.svelte";
 import { aiConfig } from "./ai-config.svelte";
@@ -17,20 +20,32 @@ function isNarrow(): boolean {
   return window.innerWidth / (ui.uiScale / 100) < NARROW_WIDTH;
 }
 
-function basePanel(listId: string, todoId: string | null, action: AIAction): AiPanelState {
-  return { listId, todoId, action, question: "", runId: null, history: false, error: null };
+function basePanel(listId: string, todoId: string | null): AiPanelState {
+  return {
+    listId,
+    todoId,
+    conversationId: newId(),
+    draft: "",
+    chatMode: "analyze",
+    presetsOpen: true,
+    history: false,
+    error: null,
+  };
 }
 
-/** Opens the panel in the ready phase for a todo- or workspace-level action. */
-export function openAiPanel(listId: string, todoId: string | null, action?: AIAction): void {
-  const resolved = action ?? (todoId !== null ? "investigate" : "analyzeWorkspace");
-  ui.aiPanel = basePanel(listId, isTodoAction(resolved) ? todoId : null, resolved);
-  ui.aiMenuOpen = false;
+function show(panel: AiPanelState): void {
+  ui.aiPanel = panel;
   if (isNarrow()) ui.detailOpen = false;
-  if (aiConfig.linkFor(listId) !== undefined) void aiConfig.refreshMissing(listId);
+  if (aiConfig.linkFor(panel.listId) !== undefined) void aiConfig.refreshMissing(panel.listId);
 }
 
-/** Ctrl+Shift+A: panel for the selected todo, else the active pane's list. */
+/** Opens the panel on a fresh conversation for a list (and optional todo). */
+export function openAiPanel(listId: string, todoId: string | null, action?: AIAction): void {
+  show(basePanel(listId, todoId));
+  if (action !== undefined) void runPreset(action);
+}
+
+/** ✦ AI / Ctrl+Shift+A: the selected todo's list, else the active pane's. */
 export function openAiPanelForSelection(): void {
   const selected = ui.selectedId !== null ? findTodo(store.data, ui.selectedId) : undefined;
   if (selected !== undefined && !selected.trashed) {
@@ -42,18 +57,22 @@ export function openAiPanelForSelection(): void {
 }
 
 export function openAiHistory(listId: string): void {
-  ui.aiPanel = { ...basePanel(listId, null, "analyzeWorkspace"), history: true };
-  ui.aiMenuOpen = false;
-  if (isNarrow()) ui.detailOpen = false;
+  show({ ...basePanel(listId, null), history: true });
 }
 
-/** Reopens a run (history rows, AI tab) — result, failure or live view. */
-export function openAiRun(runId: string): void {
-  const run = aiRuns.runById(runId);
-  if (run === undefined) return;
-  ui.aiPanel = { ...basePanel(run.listId, run.todoId, run.action), runId };
-  ui.aiMenuOpen = false;
-  if (isNarrow()) ui.detailOpen = false;
+/** Reopens a stored conversation (history rows, AI tab) for further turns. */
+export function openConversation(conversationId: string): void {
+  const turns = conversationRuns(aiRuns.runs, conversationId);
+  const first = turns[0];
+  if (first === undefined) return;
+  const last = turns[turns.length - 1];
+  show({
+    ...basePanel(first.listId, first.todoId),
+    conversationId,
+    // a resumed thread keeps the permission mode it was created with
+    chatMode: last.mode === "execute" ? "execute" : "analyze",
+    presetsOpen: false,
+  });
 }
 
 export function closeAiPanel(): void {
@@ -66,49 +85,70 @@ export function detailOpened(): void {
   if (isNarrow()) ui.aiPanel = null;
 }
 
-/** Run button: starts the panel's action; guard errors render in-panel. */
-export async function runFromPanel(): Promise<void> {
+/** Preset action card: runs it as the newest turn of the panel's thread. */
+export async function runPreset(action: AIAction): Promise<void> {
   const panel = ui.aiPanel;
   if (panel === null) return;
   panel.error = null;
+  panel.presetsOpen = false;
   const error = await aiRuns.startAction({
     listId: panel.listId,
-    todoId: isTodoAction(panel.action) ? panel.todoId : null,
-    action: panel.action,
-    question: panel.action === "askWorkspace" ? panel.question : undefined,
+    todoId: isTodoAction(action) ? panel.todoId : null,
+    action,
+    conversationId: panel.conversationId,
   });
-  if (ui.aiPanel !== panel) return; // panel was closed/replaced meanwhile
-  if (error !== null) {
-    panel.error = error;
-    return;
-  }
-  // bind the newest run (startAction pushes it to the front)
-  panel.runId = aiRuns.runs[0]?.id ?? null;
+  if (ui.aiPanel === panel && error !== null) panel.error = error;
 }
 
-/** Retry from a failed/cancelled run: back to ready with the same action. */
-export function retryFromRun(runId: string): void {
-  const run = aiRuns.runById(runId);
-  if (run === undefined || ui.aiPanel === null) return;
-  ui.aiPanel = { ...basePanel(run.listId, run.todoId, run.action), question: ui.aiPanel.question };
-  void runFromPanel();
-}
-
-/** New run: ready phase again, keeping the panel's context. */
-export function newRunFromPanel(): void {
+/** Composer: sends the draft as the next turn of the conversation. */
+export async function sendChatMessage(): Promise<void> {
   const panel = ui.aiPanel;
   if (panel === null) return;
-  ui.aiPanel = { ...panel, runId: null, history: false, error: null };
+  const message = panel.draft.trim();
+  if (message === "") return;
+  panel.error = null;
+  panel.draft = "";
+  panel.presetsOpen = false;
+  const error = await aiRuns.sendChatTurn({
+    listId: panel.listId,
+    todoId: panel.todoId,
+    conversationId: panel.conversationId,
+    message,
+    mode: panel.chatMode,
+  });
+  if (ui.aiPanel !== panel || error === null) return;
+  panel.error = error;
+  panel.draft = message; // nothing ran — give the text back
+}
+
+/**
+ * Chat mode is locked once the thread has turns: the provider session was
+ * created with that sandbox/permission mode and a resumed turn must not
+ * quietly widen it.
+ */
+export function chatModeLocked(panel: AiPanelState): boolean {
+  return aiRuns.turnsOf(panel.conversationId).length > 0;
+}
+
+export function setChatMode(mode: AIMode): void {
+  const panel = ui.aiPanel;
+  if (panel === null || chatModeLocked(panel)) return;
+  panel.chatMode = mode;
+}
+
+/** Starts an empty thread in the same list/todo context. */
+export function newConversation(): void {
+  const panel = ui.aiPanel;
+  if (panel === null) return;
+  ui.aiPanel = { ...basePanel(panel.listId, panel.todoId), chatMode: panel.chatMode };
 }
 
 export function openAiClientsFromPanel(): void {
   aiClients.openDialog();
 }
 
-/** The todo whose id a todo-level action would use, when valid. */
+/** Title of the todo the panel is bound to, when it still exists. */
 export function panelTodoTitle(panel: AiPanelState): string | null {
   if (panel.todoId === null) return null;
   return findTodo(store.data, panel.todoId)?.title ?? null;
 }
-
-export { TODO_ACTIONS };

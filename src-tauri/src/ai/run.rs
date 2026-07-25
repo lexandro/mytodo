@@ -30,37 +30,79 @@ pub enum RunEvent {
     Exit { code: Option<i32> },
 }
 
-/// Fixed argv per provider+mode. Analyze/Plan are read-only; Execute maps to
-/// the provider's own permission model — NEVER a full bypass (§15: no
-/// dangerously-skip-permissions or equivalent).
-fn build_args(provider: &str, mode: &str) -> Result<Vec<&'static str>, String> {
+/// Argv per provider+mode, plus the two caller-supplied values a
+/// conversation needs: the model and the session to resume. Analyze/Plan are
+/// read-only; Execute maps to the provider's own permission model — NEVER a
+/// full bypass (§15: no dangerously-skip-permissions or equivalent).
+///
+/// `codex exec resume` has no --sandbox flag, so the sandbox travels as a
+/// `-c sandbox_mode=…` config override there: a resumed turn can never end
+/// up with weaker isolation than the mode the user chose.
+fn build_args(
+    provider: &str,
+    mode: &str,
+    model: Option<&str>,
+    resume_session: Option<&str>,
+) -> Result<Vec<String>, String> {
     let read_only = match mode {
         "analyze" | "plan" => true,
         "execute" => false,
         other => return Err(format!("unknown mode '{other}'")),
     };
+    if let Some(name) = model {
+        validate_model(name)?;
+    }
+    if let Some(session) = resume_session {
+        validate_session_id(session)?;
+    }
+    let mut args: Vec<String> = Vec::new();
     match provider {
         "claude" => {
-            let mut args = vec!["-p", "--output-format", "stream-json", "--verbose"];
-            if read_only {
-                args.extend(["--permission-mode", "plan"]);
+            args.extend(["-p", "--output-format", "stream-json", "--verbose"].map(String::from));
+            args.push("--permission-mode".into());
+            args.push(if read_only {
+                "plan".into()
             } else {
-                args.extend(["--permission-mode", "acceptEdits"]);
+                "acceptEdits".into()
+            });
+            if let Some(session) = resume_session {
+                args.push("--resume".into());
+                args.push(session.into());
             }
-            Ok(args)
+            if let Some(name) = model {
+                args.push("--model".into());
+                args.push(name.into());
+            }
         }
         "codex" => {
-            let mut args = vec!["exec", "--json", "--skip-git-repo-check"];
-            if read_only {
-                args.extend(["--sandbox", "read-only"]);
+            let sandbox = if read_only {
+                "read-only"
             } else {
-                args.extend(["--sandbox", "workspace-write"]);
+                "workspace-write"
+            };
+            args.push("exec".into());
+            if resume_session.is_some() {
+                args.push("resume".into());
+                args.push("-c".into());
+                args.push(format!("sandbox_mode=\"{sandbox}\""));
             }
-            args.push("-"); // prompt from stdin
-            Ok(args)
+            args.extend(["--json", "--skip-git-repo-check"].map(String::from));
+            if resume_session.is_none() {
+                args.push("--sandbox".into());
+                args.push(sandbox.into());
+            }
+            if let Some(name) = model {
+                args.push("-m".into());
+                args.push(name.into());
+            }
+            if let Some(session) = resume_session {
+                args.push(session.into()); // positional SESSION_ID
+            }
+            args.push("-".into()); // prompt from stdin
         }
-        other => Err(format!("unknown provider '{other}'")),
+        other => return Err(format!("unknown provider '{other}'")),
     }
+    Ok(args)
 }
 
 fn validate_run_id(run_id: &str) -> Result<(), String> {
@@ -73,6 +115,39 @@ fn validate_run_id(run_id: &str) -> Result<(), String> {
         Ok(())
     } else {
         Err("invalid run id".into())
+    }
+}
+
+/// Model names come from the user (custom field), so they are validated
+/// before entering argv: a value starting with '-' would be read as a flag.
+/// Mirrors isValidModelName in src/lib/core/ai-models.ts.
+fn validate_model(model: &str) -> Result<(), String> {
+    let ok = !model.is_empty()
+        && model.len() <= 64
+        && !model.starts_with('-')
+        && model
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '/' | ':' | '-'));
+    if ok {
+        Ok(())
+    } else {
+        Err(format!("invalid model name '{model}'"))
+    }
+}
+
+/// Session ids are echoed back from the provider's own stream (UUIDs and
+/// similar), never typed by a human — validated all the same.
+fn validate_session_id(session: &str) -> Result<(), String> {
+    let ok = !session.is_empty()
+        && session.len() <= 64
+        && !session.starts_with('-')
+        && session
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-'));
+    if ok {
+        Ok(())
+    } else {
+        Err("invalid session id".into())
     }
 }
 
@@ -92,24 +167,53 @@ fn validate_executable(path: &str) -> Result<(), String> {
     Ok(())
 }
 
+/// One run's start parameters as they arrive from the frontend
+/// (src/lib/ipc.ts AiRunStartRequest).
+#[derive(serde::Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct StartRequest {
+    pub run_id: String,
+    pub provider: String,
+    pub exe_path: String,
+    pub workspace_dir: String,
+    pub mode: String,
+    pub prompt: String,
+    /// None = let the client use its own default model.
+    #[serde(default)]
+    pub model: Option<String>,
+    /// Some = continue that provider session instead of starting a new one.
+    #[serde(default)]
+    pub resume_session_id: Option<String>,
+}
+
 /// Spawns the provider process and streams its output as events. Returns
 /// once the process is RUNNING; completion arrives as an Exit event.
 pub fn start(
     app: tauri::AppHandle,
     manager: &AiRunManager,
-    run_id: String,
-    provider: String,
-    exe_path: String,
-    workspace_dir: String,
-    mode: String,
-    prompt: String,
+    req: StartRequest,
 ) -> Result<(), String> {
+    let StartRequest {
+        run_id,
+        provider,
+        exe_path,
+        workspace_dir,
+        mode,
+        prompt,
+        model,
+        resume_session_id,
+    } = req;
     validate_run_id(&run_id)?;
     validate_executable(&exe_path)?;
     if !std::path::Path::new(&workspace_dir).is_dir() {
         return Err("Workspace not found.".into());
     }
-    let args = build_args(&provider, &mode)?;
+    let args = build_args(
+        &provider,
+        &mode,
+        model.as_deref(),
+        resume_session_id.as_deref(),
+    )?;
     {
         let children = self_lock(&manager.children)?;
         if children.contains_key(&run_id) {
@@ -117,7 +221,8 @@ pub fn start(
         }
     }
 
-    let mut cmd = provider_command(&exe_path, &args)?;
+    let arg_refs: Vec<&str> = args.iter().map(String::as_str).collect();
+    let mut cmd = provider_command(&exe_path, &arg_refs)?;
     cmd.current_dir(&workspace_dir)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -260,47 +365,100 @@ fn self_lock<'a, T>(m: &'a Arc<Mutex<T>>) -> Result<std::sync::MutexGuard<'a, T>
 mod tests {
     use super::*;
 
+    fn args(provider: &str, mode: &str) -> Vec<String> {
+        build_args(provider, mode, None, None).expect("args")
+    }
+
+    fn has_pair(args: &[String], a: &str, b: &str) -> bool {
+        args.windows(2).any(|w| w[0] == a && w[1] == b)
+    }
+
     #[test]
     fn args_never_contain_permission_bypass() {
         for provider in ["claude", "codex"] {
             for mode in ["analyze", "plan", "execute"] {
-                let args = build_args(provider, mode).expect("args");
-                assert!(
-                    !args
-                        .iter()
-                        .any(|a| a.contains("dangerously") || a.contains("bypass")),
-                    "{provider}/{mode} must not bypass permissions: {args:?}"
-                );
+                for resume in [None, Some("sess-1")] {
+                    let args = build_args(provider, mode, Some("sonnet"), resume).expect("args");
+                    assert!(
+                        !args
+                            .iter()
+                            .any(|a| a.contains("dangerously") || a.contains("bypass")),
+                        "{provider}/{mode} must not bypass permissions: {args:?}"
+                    );
+                }
             }
         }
     }
 
     #[test]
     fn read_only_modes_map_to_read_only_flags() {
-        let claude = build_args("claude", "analyze").unwrap();
-        assert!(claude
-            .windows(2)
-            .any(|w| w == ["--permission-mode", "plan"]));
-        let codex = build_args("codex", "plan").unwrap();
-        assert!(codex.windows(2).any(|w| w == ["--sandbox", "read-only"]));
+        assert!(has_pair(
+            &args("claude", "analyze"),
+            "--permission-mode",
+            "plan"
+        ));
+        assert!(has_pair(&args("codex", "plan"), "--sandbox", "read-only"));
     }
 
     #[test]
     fn execute_maps_to_workspace_scoped_write() {
-        let claude = build_args("claude", "execute").unwrap();
-        assert!(claude
-            .windows(2)
-            .any(|w| w == ["--permission-mode", "acceptEdits"]));
-        let codex = build_args("codex", "execute").unwrap();
-        assert!(codex
-            .windows(2)
-            .any(|w| w == ["--sandbox", "workspace-write"]));
+        assert!(has_pair(
+            &args("claude", "execute"),
+            "--permission-mode",
+            "acceptEdits"
+        ));
+        assert!(has_pair(
+            &args("codex", "execute"),
+            "--sandbox",
+            "workspace-write"
+        ));
     }
 
     #[test]
     fn unknown_provider_or_mode_rejected() {
-        assert!(build_args("gemini", "analyze").is_err());
-        assert!(build_args("claude", "yolo").is_err());
+        assert!(build_args("gemini", "analyze", None, None).is_err());
+        assert!(build_args("claude", "yolo", None, None).is_err());
+    }
+
+    #[test]
+    fn model_is_passed_with_each_provider_own_flag() {
+        assert!(has_pair(
+            &build_args("claude", "analyze", Some("sonnet"), None).unwrap(),
+            "--model",
+            "sonnet"
+        ));
+        assert!(has_pair(
+            &build_args("codex", "analyze", Some("openai/terra"), None).unwrap(),
+            "-m",
+            "openai/terra"
+        ));
+        // no model chosen → no flag at all, the client keeps its own default
+        assert!(!args("claude", "analyze").iter().any(|a| a == "--model"));
+        assert!(!args("codex", "analyze").iter().any(|a| a == "-m"));
+    }
+
+    #[test]
+    fn claude_resume_keeps_the_permission_mode() {
+        let args = build_args("claude", "analyze", None, Some("sess-1")).unwrap();
+        assert!(has_pair(&args, "--resume", "sess-1"));
+        assert!(has_pair(&args, "--permission-mode", "plan"));
+    }
+
+    #[test]
+    fn codex_resume_carries_the_sandbox_as_a_config_override() {
+        // `codex exec resume` has no --sandbox flag, so a resumed turn would
+        // otherwise fall back to the user's config default
+        let args = build_args("codex", "analyze", None, Some("sess-1")).unwrap();
+        assert_eq!(args[0], "exec");
+        assert_eq!(args[1], "resume");
+        assert!(has_pair(&args, "-c", "sandbox_mode=\"read-only\""));
+        assert!(!args.iter().any(|a| a == "--sandbox"));
+        assert_eq!(args.last().map(String::as_str), Some("-"));
+        // the session id stays positional, right before the stdin marker
+        assert_eq!(args[args.len() - 2], "sess-1");
+
+        let execute = build_args("codex", "execute", None, Some("s2")).unwrap();
+        assert!(has_pair(&execute, "-c", "sandbox_mode=\"workspace-write\""));
     }
 
     #[test]
@@ -310,5 +468,24 @@ mod tests {
         assert!(validate_run_id("evil id").is_err());
         assert!(validate_run_id("a:b").is_err());
         assert!(validate_run_id(&"x".repeat(65)).is_err());
+    }
+
+    #[test]
+    fn model_and_session_values_can_never_smuggle_a_flag() {
+        assert!(validate_model("sonnet").is_ok());
+        assert!(validate_model("openai/luna").is_ok());
+        assert!(validate_model("claude-opus-5").is_ok());
+        assert!(validate_model("--dangerously-skip-permissions").is_err());
+        assert!(validate_model("sonnet --sandbox danger-full-access").is_err());
+        assert!(validate_model("").is_err());
+        assert!(validate_model(&"x".repeat(65)).is_err());
+
+        assert!(validate_session_id("0199f0a1-2b3c-4d5e-8f90-abcdef012345").is_ok());
+        assert!(validate_session_id("--last").is_err());
+        assert!(validate_session_id("a b").is_err());
+
+        // and the builder refuses them too, before anything is spawned
+        assert!(build_args("claude", "analyze", Some("--evil"), None).is_err());
+        assert!(build_args("codex", "analyze", None, Some("--last")).is_err());
     }
 }

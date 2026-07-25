@@ -43,10 +43,15 @@ export type AIAction =
   | "analyzeWorkspace"
   | "suggestTodos"
   | "reconcile"
-  | "askWorkspace";
+  | "askWorkspace"
+  | "chat";
 
 /** Semantic permission mode; Execute may modify the LINKED WORKSPACE only. */
 export type AIMode = "analyze" | "plan" | "execute";
+
+export function isMode(value: unknown): value is AIMode {
+  return value === "analyze" || value === "plan" || value === "execute";
+}
 
 export const TODO_ACTIONS: readonly AIAction[] = [
   "investigate",
@@ -73,7 +78,19 @@ export const ACTION_MODES: Record<AIAction, AIMode> = {
   suggestTodos: "analyze",
   reconcile: "analyze",
   askWorkspace: "analyze",
+  // chat is the one action whose mode the user picks per conversation
+  chat: "analyze",
 };
+
+/**
+ * The mode a run really uses: preset actions have a fixed one, chat carries
+ * the mode chosen when its conversation started (§chat is read-only unless
+ * the user explicitly switched it to Execute).
+ */
+export function runMode(action: AIAction, chosen: AIMode | null): AIMode {
+  if (action !== "chat") return ACTION_MODES[action];
+  return chosen === "execute" ? "execute" : "analyze";
+}
 
 export const ACTION_LABELS: Record<AIAction, string> = {
   investigate: "Investigate",
@@ -85,6 +102,7 @@ export const ACTION_LABELS: Record<AIAction, string> = {
   suggestTodos: "Suggest Todos",
   reconcile: "Reconcile Todos ↔ Workspace",
   askWorkspace: "Ask Workspace…",
+  chat: "Chat",
 };
 
 export const ACTION_DESCRIPTIONS: Record<AIAction, string> = {
@@ -97,6 +115,7 @@ export const ACTION_DESCRIPTIONS: Record<AIAction, string> = {
   suggestTodos: "Propose new todos from the workspace state",
   reconcile: "Compare todos with reality, suggest changes",
   askWorkspace: "One read-only question about the workspace",
+  chat: "Free-form conversation about this list and workspace",
 };
 
 export function isTodoAction(action: AIAction): boolean {
@@ -183,7 +202,17 @@ export interface AIRun {
   listId: string;
   /** null = workspace-level run. */
   todoId: string | null;
+  /**
+   * Thread this run belongs to. Every run has one: a preset action starts a
+   * fresh conversation, chat turns keep appending to the same id. The
+   * provider session is resumed from the newest run that reported one.
+   */
+  conversationId: string;
+  /** What the user typed for this turn; null for preset actions. */
+  userMessage: string | null;
   provider: AIProviderId;
+  /** Model passed to the CLI; null = the client's own default. */
+  model: string | null;
   action: AIAction;
   mode: AIMode;
   status: AIRunStatus;

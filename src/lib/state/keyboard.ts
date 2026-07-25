@@ -25,10 +25,6 @@ function handleEscape(): void {
     ui.menuOpen = null;
     return;
   }
-  if (ui.aiMenuOpen) {
-    ui.aiMenuOpen = false;
-    return;
-  }
   if (ui.shortcutsOpen) {
     ui.shortcutsOpen = false;
     return;

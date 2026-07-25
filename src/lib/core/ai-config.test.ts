@@ -13,13 +13,24 @@ describe("normalizeAiClients", () => {
 
   it("keeps valid fields and repairs invalid ones per provider", () => {
     const result = normalizeAiClients({
-      claude: { enabled: false, path: "C:\\bin\\claude.exe", version: "2.1.4" },
+      claude: { enabled: false, path: "C:\\bin\\claude.exe", version: "2.1.4", model: "sonnet" },
       codex: { enabled: "yes", path: 7, version: "" },
       defaultClient: "codex",
     });
-    expect(result.claude).toEqual({ enabled: false, path: "C:\\bin\\claude.exe", version: "2.1.4" });
-    expect(result.codex).toEqual({ enabled: true, path: null, version: null });
+    expect(result.claude).toEqual({
+      enabled: false, path: "C:\\bin\\claude.exe", version: "2.1.4", model: "sonnet",
+    });
+    expect(result.codex).toEqual({ enabled: true, path: null, version: null, model: null });
     expect(result.defaultClient).toBe("codex");
+  });
+
+  it("refuses a stored model name that could act as a flag", () => {
+    const result = normalizeAiClients({
+      claude: { model: "--dangerously-skip-permissions" },
+      codex: { model: "openai/terra" },
+    });
+    expect(result.claude.model).toBeNull();
+    expect(result.codex.model).toBe("openai/terra");
   });
 
   it("rejects an unknown defaultClient", () => {

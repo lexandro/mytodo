@@ -41,12 +41,20 @@ export interface ToastState {
 export interface AiPanelState {
   listId: string;
   todoId: string | null;
-  /** Selected action in the ready phase. */
-  action: import("$lib/core/ai-types").AIAction;
-  /** Ask Workspace's question draft. */
-  question: string;
-  /** Bound run (running or reopened from history); null = ready phase. */
-  runId: string | null;
+  /**
+   * Thread the panel is showing. Preset actions and chat turns all append to
+   * it, so the panel is one continuous conversation until "New chat".
+   */
+  conversationId: string;
+  /** Composer draft (the console input). */
+  draft: string;
+  /**
+   * Permission mode for THIS conversation's chat turns. Fixed once the
+   * thread has turns: a resumed session must not silently gain write access.
+   */
+  chatMode: import("$lib/core/ai-types").AIMode;
+  /** Preset action cards expanded (auto-collapse once a thread has turns). */
+  presetsOpen: boolean;
   /** History list view. */
   history: boolean;
   /** Guard error from the last start attempt (shown in the panel). */
@@ -94,8 +102,6 @@ class UiState {
   workspaceSettings = $state<string | null>(null);
   /** AI Clients settings dialog. */
   aiClientsOpen = $state(false);
-  /** ✦ AI action menu (title bar dropdown). */
-  aiMenuOpen = $state(false);
   /**
    * AI run panel (right drawer). Bound to the list/todo context it was
    * opened from (aiprompt §39); a running run keeps going when this closes.

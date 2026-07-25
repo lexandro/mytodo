@@ -5,6 +5,7 @@
   import { switchList } from "$lib/state/actions";
   import { listMenuItems, openContextMenu } from "$lib/state/menus";
   import { store } from "$lib/state/store.svelte";
+  import WorkspaceBadge from "./WorkspaceBadge.svelte";
 
   let { paneIndex, activeListId }: { paneIndex: number; activeListId: string | null } = $props();
 
@@ -21,6 +22,7 @@
     >
       <span>{list.emoji}</span>
       <span>{list.name}</span>
+      <WorkspaceBadge listId={list.id} />
       <span class="count">{listOpenCount(store.data, list.id)}</span>
     </button>
   {/each}

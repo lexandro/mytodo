@@ -4,6 +4,7 @@
 // normalize functions accept unknown and fall back field-by-field, so a
 // broken value can never take the app down. Credentials are never stored.
 
+import { normalizeModel } from "./ai-models";
 import { isProviderId, type AIProviderId, type WorkspaceLink, type WorkspaceType } from "./ai-types";
 
 export const AI_CLIENTS_KEY = "aiClients";
@@ -16,6 +17,12 @@ export interface AIClientConfig {
   path: string | null;
   /** Version reported by the validated executable (display only). */
   version: string | null;
+  /**
+   * Model passed to this client's --model flag; null = the client's own
+   * default. Global per client (the panel's picker writes here too), because
+   * neither CLI can enumerate its models for us.
+   */
+  model: string | null;
 }
 
 export interface AIClientsSettings {
@@ -28,7 +35,9 @@ export interface AIClientsSettings {
 export type WorkspaceLinks = Record<string, WorkspaceLink>;
 
 export function defaultAiClients(): AIClientsSettings {
-  const client = (): AIClientConfig => ({ enabled: true, path: null, version: null });
+  const client = (): AIClientConfig => ({
+    enabled: true, path: null, version: null, model: null,
+  });
   return { claude: client(), codex: client(), defaultClient: "claude" };
 }
 
@@ -39,6 +48,8 @@ function normalizeClient(raw: unknown, fallback: AIClientConfig): AIClientConfig
     enabled: typeof v.enabled === "boolean" ? v.enabled : fallback.enabled,
     path: typeof v.path === "string" && v.path !== "" ? v.path : null,
     version: typeof v.version === "string" && v.version !== "" ? v.version : null,
+    // a bogus name from disk must never reach the CLI argv
+    model: normalizeModel(v.model),
   };
 }
 

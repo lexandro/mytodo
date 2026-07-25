@@ -2,20 +2,18 @@
   // AI run panel (336px right drawer, design §AIRunPanel). Bound to the
   // list/todo context it was opened from; phases: unlinked / missing /
   // history / run view / ready. Closing never stops a running run.
-  import { closeAiPanel, openAiHistory } from "$lib/state/ai-actions";
+  import { closeAiPanel, newConversation, openAiHistory } from "$lib/state/ai-actions";
   import { aiConfig } from "$lib/state/ai-config.svelte";
   import { aiRuns } from "$lib/state/ai-runs.svelte";
   import { store } from "$lib/state/store.svelte";
   import { ui } from "$lib/state/ui.svelte";
-  import AIPanelReady from "./AIPanelReady.svelte";
+  import AIConversation from "./AIConversation.svelte";
   import AIRunHistoryList from "./AIRunHistoryList.svelte";
-  import AIRunView from "./AIRunView.svelte";
 
   const panel = $derived(ui.aiPanel);
   const list = $derived(panel === null ? undefined : store.data.lists.find((l) => l.id === panel.listId));
   const link = $derived(panel === null ? undefined : aiConfig.linkFor(panel.listId));
   const missing = $derived(panel !== null && aiConfig.isMissing(panel.listId));
-  const boundRun = $derived(panel?.runId != null ? aiRuns.runById(panel.runId) : undefined);
   const crumb = $derived(list === undefined ? "" : list.name);
 
   function locate(): void {
@@ -34,9 +32,10 @@
       <span class="title">AI</span>
       <span class="crumb" title={crumb}>{crumb}</span>
       <div class="spacer"></div>
+      <button class="icon-btn" title="New chat" onclick={newConversation}>+</button>
       <button
         class="icon-btn"
-        title="Run history"
+        title="Conversation history"
         onclick={() => openAiHistory(panel.listId)}
       >
         <svg width="12" height="12" viewBox="0 0 14 14">
@@ -63,10 +62,8 @@
         </div>
       {:else if panel.history}
         <AIRunHistoryList runs={aiRuns.runsForList(panel.listId)} />
-      {:else if boundRun !== undefined}
-        <AIRunView run={boundRun} />
       {:else}
-        <AIPanelReady {panel} />
+        <AIConversation {panel} />
       {/if}
     </div>
   </aside>

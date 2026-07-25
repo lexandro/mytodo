@@ -1,9 +1,10 @@
 # AI-TESTS — manual AI integration checklist (aiprompt §44)
 
-Automated coverage already exists (189 TS + 31 Rust tests; CDP end-to-end
-runs incl. a real `claude -p` run, batch apply + single-undo, cancel and
-failure paths — see `doc/progress.md` AI1–AI6). This checklist covers what
-only a live user session can verify. Mark items as they are done.
+Automated coverage already exists (218 TS + 37 Rust tests; CDP end-to-end
+runs incl. real `claude -p` runs, a resumed two-turn conversation, batch
+apply + single-undo, cancel and failure paths — see `doc/progress.md`
+AI1–AI8). This checklist covers what only a live user session can verify.
+Mark items as they are done.
 
 Prereqs: Claude Code and Codex installed + authenticated; a Git repo and a
 plain folder to link (one path with spaces/accents, e.g. `D:\árvíztűrő
@@ -68,6 +69,27 @@ tükörfúrógép proj`).
 - [ ] E3 Reconcile on a list with done-but-open todos → mapping rows with
       tones + Suggested Changes; apply a status change
 - [ ] E4 Ask Workspace → one question, one answer, no chat thread
+
+## G — Conversations and models
+
+- [ ] G1 ✦ AI opens the panel straight away (no dropdown); the composer is
+      focusable and Enter sends, Shift+Enter adds a newline *(CDP ✓)*
+- [ ] G2 Ask something, then a follow-up that only a resumed session can
+      answer ("what did I just ask?") → correct answer with Claude *(CDP ✓)*
+      AND with Codex *(codex exec resume — not yet exercised live)*
+- [ ] G3 Preset task first, then a chat follow-up about its result → the
+      answer refers to the preset run (same session)
+- [ ] G4 Chat that proposes todo changes → proposals render and Apply
+      Selected works from inside the thread
+- [ ] G5 Switch the composer to Execute BEFORE the first turn → thread runs
+      in execute mode; after the first turn the toggle is locked
+- [ ] G6 `+` starts an empty thread; the clock icon lists conversations and
+      reopening one continues it (a new turn keeps the session)
+- [ ] G7 Model picker: pick Sonnet/Haiku → the turn header shows it; type a
+      custom name → used verbatim; garbage like `--foo` is refused
+- [ ] G8 Codex with a non-default model (`openai/terra`) answers, and a
+      resumed Codex turn still runs read-only (no file writes in a
+      read-only thread)
 
 ## F — App behavior around runs
 

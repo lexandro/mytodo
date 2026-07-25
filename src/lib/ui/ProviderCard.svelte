@@ -2,6 +2,7 @@
   // One provider's card in the AI Clients dialog (design COMPONENTS.md
   // §AIClientSettings): status dot, version, Enabled, mono path + Browse…,
   // Auto Detect + Test, amber human message line.
+  import { isValidModelName } from "$lib/core/ai-models";
   import { PROVIDER_LABELS, type AIProviderId } from "$lib/core/ai-types";
   import { aiClients } from "$lib/state/ai-clients.svelte";
   import { aiConfig } from "$lib/state/ai-config.svelte";
@@ -11,6 +12,19 @@
   const config = $derived(aiConfig.clients[provider]);
   const runtime = $derived(aiClients.runtime[provider]);
   const busy = $derived(runtime.status === "detecting");
+
+  // an unusable name is refused here rather than failing later in the CLI
+  let modelRejected = $state(false);
+
+  function onModelChange(e: Event & { currentTarget: HTMLInputElement }): void {
+    const value = e.currentTarget.value.trim();
+    modelRejected = value !== "" && !isValidModelName(value);
+    if (modelRejected) {
+      e.currentTarget.value = config.model ?? "";
+      return;
+    }
+    aiConfig.setModel(provider, value === "" ? null : value);
+  }
 
   const STATUS_TEXT = {
     unknown: "○ Not checked",
@@ -57,7 +71,23 @@
     <button class="btn btn-ghost" disabled={busy} onclick={() => void aiClients.test(provider)}>
       Test
     </button>
+    <div class="spacer"></div>
+    <label class="model-row">
+      Model
+      <input
+        class="input model"
+        placeholder="client default"
+        value={config.model ?? ""}
+        title="Passed to the CLI's --model flag; empty = the client's own default"
+        onchange={onModelChange}
+      />
+    </label>
   </div>
+  {#if modelRejected}
+    <p class="message">
+      A model name may only contain letters, digits and . _ / : - — and cannot start with a dash.
+    </p>
+  {/if}
   {#if runtime.message !== null}
     <p class="message">{runtime.message}</p>
   {/if}
@@ -122,7 +152,20 @@
   }
   .actions {
     display: flex;
+    align-items: center;
     gap: 8px;
+  }
+  .model-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    color: var(--color-neutral-400);
+  }
+  .model {
+    width: 150px;
+    min-height: 26px;
+    font-size: 11.5px;
   }
   .message {
     font-size: 11px;

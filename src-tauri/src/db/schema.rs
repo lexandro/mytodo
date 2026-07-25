@@ -91,6 +91,16 @@ const MIGRATIONS: &[&str] = &[
     );
     CREATE INDEX idx_ai_runs_list ON ai_runs(list_id);
     ",
+    // v3 — conversations: runs group into threads, a turn remembers what the
+    // user typed and which model answered. Rows written before this keep an
+    // empty conversation_id and stand alone as their own thread
+    // (src/lib/core/ai-runs.ts rowToRun).
+    "
+    ALTER TABLE ai_runs ADD COLUMN conversation_id TEXT NOT NULL DEFAULT '';
+    ALTER TABLE ai_runs ADD COLUMN user_message TEXT;
+    ALTER TABLE ai_runs ADD COLUMN model TEXT;
+    CREATE INDEX idx_ai_runs_conversation ON ai_runs(conversation_id);
+    ",
 ];
 
 pub fn migrate(conn: &mut Connection) -> Result<(), String> {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { MAX_SNAPSHOT_TODOS, buildRunPrompt } from "./ai-context";
+import { MAX_SNAPSHOT_TODOS } from "./ai-context-parts";
+import { buildRunPrompt } from "./ai-context";
 import type { WorkspaceLink } from "./ai-types";
 import { createTodo } from "./todos-ops";
 import { addSubtask } from "./subtasks-ops";

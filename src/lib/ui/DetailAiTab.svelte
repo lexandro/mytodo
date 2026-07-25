@@ -1,6 +1,7 @@
 <script lang="ts">
   // Detail panel AI tab (design §DetailPanel): the 5 todo-level actions as
-  // outlined rows + the todo's run history; unlinked list → centered CTA.
+  // outlined rows, a shortcut into the chat panel, and this todo's
+  // conversations; unlinked list → centered CTA.
   import {
     ACTION_DESCRIPTIONS, ACTION_LABELS, ACTION_MODES, TODO_ACTIONS,
   } from "$lib/core/ai-types";
@@ -38,8 +39,11 @@
       </button>
     {/each}
   </div>
+  <button class="chat-row" onclick={() => openAiPanel(todo.listId, todo.id)}>
+    ✦ Chat about this todo…
+  </button>
   <div class="history">
-    <span class="field-label">Runs</span>
+    <span class="field-label">Conversations</span>
     <AIRunHistoryList {runs} />
   </div>
 {/if}
@@ -97,6 +101,20 @@
   .desc {
     font-size: 10px;
     color: var(--color-neutral-500);
+  }
+  .chat-row {
+    border: 1px solid color-mix(in srgb, var(--color-accent) 55%, transparent);
+    border-radius: 7px;
+    background: transparent;
+    color: var(--color-accent);
+    font: inherit;
+    font-size: 12px;
+    padding: 6px 9px;
+    text-align: left;
+    cursor: pointer;
+  }
+  .chat-row:hover {
+    background: color-mix(in srgb, var(--color-accent) 10%, transparent);
   }
   .history {
     display: flex;

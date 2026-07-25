@@ -4,10 +4,12 @@
 // the app (aiprompt §24/§42).
 
 import {
-  ACTION_MODES, MAX_RUN_LOG_LINES, emptyRunResult, isProviderId,
-  type AIAction, type AIMode, type AIRun, type AIRunResult,
+  ACTION_LABELS, ACTION_MODES, MAX_RUN_LOG_LINES, emptyRunResult, isMode,
+  isProviderId, runMode,
+  type AIAction, type AIRun, type AIRunResult,
   type AIRunStatus, type AICheck, type AIMappingRow, type AIVerdictValue,
 } from "./ai-types";
+import { normalizeModel } from "./ai-models";
 import { parseProposals } from "./ai-proposals";
 
 /** Wire format of one ai_runs row (mirrors src-tauri/src/db/ai_runs.rs). */
@@ -15,7 +17,11 @@ export interface AIRunRow {
   id: string;
   listId: string;
   todoId: string | null;
+  /** "" in rows written before conversations existed. */
+  conversationId: string;
+  userMessage: string | null;
   provider: string;
+  model: string | null;
   action: string;
   mode: string;
   status: string;
@@ -42,7 +48,10 @@ export function runToRow(run: AIRun): AIRunRow {
     id: run.id,
     listId: run.listId,
     todoId: run.todoId,
+    conversationId: run.conversationId,
+    userMessage: run.userMessage,
     provider: run.provider,
+    model: run.model,
     action: run.action,
     mode: run.mode,
     status: run.status,
@@ -138,16 +147,19 @@ export function rowToRun(row: AIRunRow): AIRun | null {
   if (!isProviderId(row.provider) || !STATUSES.includes(row.status)) return null;
   if (!(row.action in ACTION_MODES)) return null;
   const action = row.action as AIAction;
-  const expectedMode: AIMode = ACTION_MODES[action];
   const interrupted = row.status === "running";
   return {
     id: row.id,
     listId: row.listId,
     todoId: row.todoId,
+    // rows from before conversations existed stand alone as their own thread
+    conversationId: row.conversationId === "" ? row.id : row.conversationId,
+    userMessage: row.userMessage,
     provider: row.provider,
+    model: normalizeModel(row.model),
     action,
-    // the mode column is informational; the action is authoritative
-    mode: expectedMode,
+    // for preset actions the action is authoritative; only chat stores a mode
+    mode: runMode(action, isMode(row.mode) ? row.mode : null),
     status: interrupted ? "failed" : (row.status as AIRunStatus),
     startedAt: row.startedAt,
     finishedAt: row.finishedAt,
@@ -160,6 +172,67 @@ export function rowToRun(row: AIRunRow): AIRun | null {
 
 export function rowsToRuns(rows: readonly AIRunRow[]): AIRun[] {
   return rows.map(rowToRun).filter((run): run is AIRun => run !== null);
+}
+
+// ── conversations ────────────────────────────────────────────────────────────
+
+/** One thread's runs in reading order (oldest turn first). */
+export function conversationRuns(
+  runs: readonly AIRun[],
+  conversationId: string,
+): AIRun[] {
+  return runs
+    .filter((run) => run.conversationId === conversationId)
+    .sort((a, b) => a.startedAt - b.startedAt);
+}
+
+/**
+ * The provider session a follow-up turn must resume: the newest one any turn
+ * of this thread reported. null = start a fresh session (first turn, or the
+ * provider never announced an id — then the turn silently loses context, so
+ * callers must send the full context again).
+ */
+export function resumeSessionId(
+  runs: readonly AIRun[],
+  conversationId: string,
+): string | null {
+  const withSession = conversationRuns(runs, conversationId).filter(
+    (run) => run.sessionId !== null,
+  );
+  return withSession.length === 0 ? null : withSession[withSession.length - 1].sessionId;
+}
+
+/** History row: one line per thread instead of one per run. */
+export interface ConversationSummary {
+  conversationId: string;
+  title: string;
+  turns: number;
+  startedAt: number;
+  /** Status of the newest turn — what the row's dot shows. */
+  status: AIRunStatus;
+}
+
+export function conversationSummaries(runs: readonly AIRun[]): ConversationSummary[] {
+  const byId = new Map<string, AIRun[]>();
+  for (const run of runs) {
+    const existing = byId.get(run.conversationId);
+    if (existing === undefined) byId.set(run.conversationId, [run]);
+    else existing.push(run);
+  }
+  const summaries: ConversationSummary[] = [];
+  for (const [conversationId, group] of byId) {
+    const ordered = [...group].sort((a, b) => a.startedAt - b.startedAt);
+    const first = ordered[0];
+    const last = ordered[ordered.length - 1];
+    summaries.push({
+      conversationId,
+      title: first.userMessage ?? ACTION_LABELS[first.action],
+      turns: ordered.length,
+      startedAt: first.startedAt,
+      status: last.status,
+    });
+  }
+  return summaries.sort((a, b) => b.startedAt - a.startedAt);
 }
 
 /**

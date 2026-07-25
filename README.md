@@ -29,8 +29,14 @@ From the [Releases](https://github.com/lexandro/mytodo/releases/latest) page:
 
 ```
 bun install
-bun run tauri dev     # the first launch compiles Rust — takes minutes
+bun run app           # the first launch compiles Rust — takes minutes
 ```
+
+`bun run app` is `tauri dev` with `src-tauri/tauri.dev.conf.json`, which
+swaps in the **DEV icon** (same artwork, red DEV band) so a development build
+is never mistaken for the installed one. `bun run app:build` does the same for
+a local release-profile exe. Plain `bun run tauri dev` still works — it just
+carries the clean icon.
 
 Prerequisites: [Rust](https://rustup.rs) + VS Build Tools (C++ workload), Bun.
 
@@ -120,34 +126,50 @@ apply** — nothing touches your todo data automatically.
   [Codex CLI](https://github.com/openai/codex) and authenticate them in
   their own CLI (`claude` / `codex login`). myTODO **never asks for or
   stores API keys or accounts** — it drives the CLIs you already use.
-- `File → AI Clients…` (or ✦ AI → AI Clients…): **Auto Detect** finds the
-  executables on your PATH (no drive scanning); **Browse…** lets you pick
-  one manually — an arbitrary file is validated (identity + version) before
-  it counts as detected. **Test** checks executable → version →
-  authentication readiness where the CLI supports a non-interactive check.
-  Pick a global **Default AI client**; each workspace can override it.
-- **Link a workspace**: right-click a list → *Link Workspace…* (or the ✦ AI
-  menu). The optional **AI Brief** is plain text added to every run's
-  context (build commands, conventions, no-go areas). Provider-native
-  project files (`CLAUDE.md`, `AGENTS.md`, …) are never read, written or
-  merged by myTODO — the CLI runs inside your workspace and uses them
-  natively.
+- `File → AI Clients…`: **Auto Detect** finds the executables on your PATH
+  (no drive scanning); **Browse…** lets you pick one manually — an arbitrary
+  file is validated (identity + version) before it counts as detected.
+  **Test** checks executable → version → authentication readiness where the
+  CLI supports a non-interactive check. Pick a global **Default AI client**;
+  each workspace can override it.
+- **Model**: pick one per client in the AI Clients dialog or straight from
+  the panel's composer (Claude: Opus / Sonnet / Haiku / Fable, Codex: Sol /
+  Terra / Luna, or any model name you type). Empty = whatever the CLI is
+  configured to use. Neither CLI can list its models, so the built-in list is
+  curated — an unknown name simply fails visibly in the run.
+- **Link a workspace**: right-click a list → *Link Workspace…* (or the panel's
+  CTA). Linked lists get a **WS** badge next to their name (amber `WS!` when
+  the directory has gone missing). The optional **AI Brief** is plain text
+  added to every run's context (build commands, conventions, no-go areas).
+  Provider-native project files (`CLAUDE.md`, `AGENTS.md`, …) are never read,
+  written or merged by myTODO — the CLI runs inside your workspace and uses
+  them natively.
 
-### Actions and modes
+### The AI panel: preset tasks or a conversation
 
-Every action maps to a semantic mode, always shown before you run:
+**✦ AI** (or `Ctrl+Shift+A`) opens the side panel for the current list and
+selection — no dropdown. There you either pick a **preset task** or just type
+into the console at the bottom and talk to the workspace.
+
+- **Conversation**: every answer can be followed up. myTODO resumes the CLI's
+  own session (`claude --resume`, `codex exec resume`), so the AI remembers
+  the thread while your todo list is re-sent fresh each turn. `+` starts a new
+  chat; the clock icon lists earlier conversations, and reopening one
+  continues it.
+- **Permission mode** is picked per conversation (Read-only / Execute) and
+  then locked for that thread — a resumed session can never quietly gain
+  write access. Preset tasks keep their own fixed mode:
 
 | Mode | Meaning | Actions |
 | --- | --- | --- |
 | ● Analyze | read only | Investigate, Verify, Analyze Workspace, Suggest Todos, Reconcile, Ask Workspace |
 | ● Plan | read only | Break into Subtasks, Plan Implementation |
-| ● Execute | **may modify the linked workspace** | Implement only |
+| ● Execute | **may modify the linked workspace** | Implement, and chat you switched to Execute |
 
-Todo-level actions live in the todo's **AI tab** / context menu; workspace
-actions in the **✦ AI** menu. `Ctrl+Shift+A` opens the AI panel for the
-current selection. Runs stream compact progress, can be cancelled any time,
-keep running if you close the panel, and stay reopenable from the history.
-One run per workspace at a time.
+Todo-level tasks are also on the todo's **AI tab** / context menu. Turns
+stream compact progress, can be stopped any time, keep running if you close
+the panel, and any answer may carry todo **proposals** you review. One run per
+workspace at a time.
 
 ### Security model
 
@@ -155,7 +177,8 @@ One run per workspace at a time.
   with fixed, mode-derived arguments — there is no generic "run a command"
   IPC, and full permission-bypass flags are never used. Execute maps to the
   provider's own scoped permission model (Claude Code `acceptEdits`, Codex
-  `workspace-write`).
+  `workspace-write`). Model names and session ids are charset-validated
+  before they enter the argv, so nothing you type can turn into a flag.
 - The AI **never gets database access**. Results arrive as structured
   proposals (create todo, change status, add subtask, …) that are validated
   by the same rules as manual edits and applied only after your review —

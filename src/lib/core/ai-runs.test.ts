@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { MAX_RUN_LOG_LINES, emptyRunResult, type AIRun } from "./ai-types";
 import {
-  capLog, hasActiveRunForWorkspace, parseRunResult, rowToRun, rowsToRuns, runToRow,
+  capLog, conversationRuns, conversationSummaries, hasActiveRunForWorkspace,
+  parseRunResult, resumeSessionId, rowToRun, rowsToRuns, runToRow,
 } from "./ai-runs";
 
 function sampleRun(overrides: Partial<AIRun> = {}): AIRun {
@@ -9,7 +10,10 @@ function sampleRun(overrides: Partial<AIRun> = {}): AIRun {
     id: "r1",
     listId: "l1",
     todoId: "t1",
+    conversationId: "c1",
+    userMessage: null,
     provider: "claude",
+    model: null,
     action: "investigate",
     mode: "analyze",
     status: "completed",
@@ -72,6 +76,61 @@ describe("rowToRun robustness", () => {
   it("derives the mode from the action, not the stored column", () => {
     const run = rowToRun({ ...row, mode: "execute" });
     expect(run?.mode).toBe("analyze"); // investigate is always read-only
+  });
+
+  it("keeps the stored mode for chat turns — there the user picks it", () => {
+    expect(rowToRun({ ...row, action: "chat", mode: "execute" })?.mode).toBe("execute");
+    expect(rowToRun({ ...row, action: "chat", mode: "analyze" })?.mode).toBe("analyze");
+    expect(rowToRun({ ...row, action: "chat", mode: "nonsense" })?.mode).toBe("analyze");
+  });
+
+  it("drops an invalid model name instead of passing it on", () => {
+    expect(rowToRun({ ...row, model: "sonnet" })?.model).toBe("sonnet");
+    expect(rowToRun({ ...row, model: "--dangerously-skip-permissions" })?.model).toBeNull();
+  });
+
+  it("treats a pre-conversation row as a thread of its own", () => {
+    const run = rowToRun({ ...row, conversationId: "" });
+    expect(run?.conversationId).toBe(row.id);
+  });
+});
+
+describe("conversations", () => {
+  const turns = [
+    // newest turn is still starting up and has not reported a session yet
+    sampleRun({ id: "r3", conversationId: "c1", startedAt: 3000, userMessage: "and the second one?", action: "chat", status: "running", sessionId: null }),
+    sampleRun({ id: "r1", conversationId: "c1", startedAt: 1000, sessionId: "sess-a" }),
+    sampleRun({ id: "r2", conversationId: "c1", startedAt: 2000, userMessage: "what is left?", action: "chat", sessionId: "sess-b" }),
+    sampleRun({ id: "r9", conversationId: "c2", startedAt: 500, action: "analyzeWorkspace" }),
+  ];
+
+  it("orders a thread oldest turn first", () => {
+    expect(conversationRuns(turns, "c1").map((r) => r.id)).toEqual(["r1", "r2", "r3"]);
+  });
+
+  it("resumes the NEWEST session id the thread reported", () => {
+    expect(resumeSessionId(turns, "c1")).toBe("sess-b");
+  });
+
+  it("has no session to resume for an unknown or session-less thread", () => {
+    expect(resumeSessionId(turns, "nope")).toBeNull();
+    expect(resumeSessionId([sampleRun({ conversationId: "c3", sessionId: null })], "c3")).toBeNull();
+  });
+
+  it("summarizes threads newest first, titled by the first turn", () => {
+    const summaries = conversationSummaries(turns);
+    expect(summaries.map((s) => s.conversationId)).toEqual(["c1", "c2"]);
+    expect(summaries[0]).toMatchObject({
+      title: "Investigate", // first turn was a preset action, not a message
+      turns: 3,
+      status: "running", // the newest turn's status drives the row
+    });
+    expect(summaries[1].title).toBe("Analyze Workspace");
+  });
+
+  it("titles a chat-started thread with what the user typed", () => {
+    const chatOnly = [sampleRun({ conversationId: "c4", action: "chat", userMessage: "hi there" })];
+    expect(conversationSummaries(chatOnly)[0].title).toBe("hi there");
   });
 });
 

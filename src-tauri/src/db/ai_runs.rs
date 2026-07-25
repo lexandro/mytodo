@@ -17,7 +17,13 @@ pub struct AiRun {
     pub id: String,
     pub list_id: String,
     pub todo_id: Option<String>,
+    /// Thread this turn belongs to; "" in rows from before conversations.
+    pub conversation_id: String,
+    /// What the user typed for this turn; None for preset actions.
+    pub user_message: Option<String>,
     pub provider: String,
+    /// Model the CLI was asked to use; None = the client's own default.
+    pub model: Option<String>,
     pub action: String,
     pub mode: String,
     pub status: String,
@@ -34,8 +40,9 @@ pub struct AiRun {
 pub fn load_all(conn: &Connection) -> Result<Vec<AiRun>, String> {
     let mut stmt = conn
         .prepare(
-            "SELECT id, list_id, todo_id, provider, action, mode, status,
-                    started_at, finished_at, session_id, log, result, error
+            "SELECT id, list_id, todo_id, conversation_id, user_message, provider,
+                    model, action, mode, status, started_at, finished_at,
+                    session_id, log, result, error
              FROM ai_runs ORDER BY started_at DESC",
         )
         .map_err(|e| format!("ai_runs query: {e}"))?;
@@ -45,16 +52,19 @@ pub fn load_all(conn: &Connection) -> Result<Vec<AiRun>, String> {
                 id: r.get(0)?,
                 list_id: r.get(1)?,
                 todo_id: r.get(2)?,
-                provider: r.get(3)?,
-                action: r.get(4)?,
-                mode: r.get(5)?,
-                status: r.get(6)?,
-                started_at: r.get(7)?,
-                finished_at: r.get(8)?,
-                session_id: r.get(9)?,
-                log: r.get(10)?,
-                result: r.get(11)?,
-                error: r.get(12)?,
+                conversation_id: r.get(3)?,
+                user_message: r.get(4)?,
+                provider: r.get(5)?,
+                model: r.get(6)?,
+                action: r.get(7)?,
+                mode: r.get(8)?,
+                status: r.get(9)?,
+                started_at: r.get(10)?,
+                finished_at: r.get(11)?,
+                session_id: r.get(12)?,
+                log: r.get(13)?,
+                result: r.get(14)?,
+                error: r.get(15)?,
             })
         })
         .map_err(|e| format!("ai_runs query: {e}"))?;
@@ -69,17 +79,23 @@ pub fn put(conn: &mut Connection, run: &AiRun) -> Result<(), String> {
         .transaction()
         .map_err(|e| format!("ai_run put: cannot open transaction: {e}"))?;
     tx.execute(
-        "INSERT INTO ai_runs (id, list_id, todo_id, provider, action, mode, status,
-            started_at, finished_at, session_id, log, result, error)
-         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13)
+        "INSERT INTO ai_runs (id, list_id, todo_id, conversation_id, user_message,
+            provider, model, action, mode, status, started_at, finished_at,
+            session_id, log, result, error)
+         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16)
          ON CONFLICT(id) DO UPDATE SET
-           list_id=?2, todo_id=?3, provider=?4, action=?5, mode=?6, status=?7,
-           started_at=?8, finished_at=?9, session_id=?10, log=?11, result=?12, error=?13",
+           list_id=?2, todo_id=?3, conversation_id=?4, user_message=?5,
+           provider=?6, model=?7, action=?8, mode=?9, status=?10,
+           started_at=?11, finished_at=?12, session_id=?13, log=?14,
+           result=?15, error=?16",
         params![
             run.id,
             run.list_id,
             run.todo_id,
+            run.conversation_id,
+            run.user_message,
             run.provider,
+            run.model,
             run.action,
             run.mode,
             run.status,
@@ -135,7 +151,10 @@ mod tests {
             id: id.into(),
             list_id: list_id.into(),
             todo_id: None,
+            conversation_id: format!("conv-{id}"),
+            user_message: Some("mi maradt a listából?".into()),
             provider: "claude".into(),
+            model: Some("sonnet".into()),
             action: "investigate".into(),
             mode: "analyze".into(),
             status: "completed".into(),
@@ -214,6 +233,52 @@ mod tests {
             runs.iter().any(|r| r.id == "keep-l2"),
             "other list untouched"
         );
+    }
+
+    #[test]
+    fn conversation_turns_round_trip_together() {
+        let mut conn = mem_db_with_list("l1");
+        let mut first = sample_run("r1", "l1", 100);
+        first.conversation_id = "c1".into();
+        first.user_message = None; // preset action opened the thread
+        let mut second = sample_run("r2", "l1", 200);
+        second.conversation_id = "c1".into();
+        second.action = "chat".into();
+        second.mode = "execute".into();
+        second.model = None; // client default
+        put(&mut conn, &first).expect("first");
+        put(&mut conn, &second).expect("second");
+
+        let runs = load_all(&conn).expect("load");
+        let loaded_second = runs.iter().find(|r| r.id == "r2").expect("r2");
+        assert_eq!(loaded_second, &second);
+        assert_eq!(
+            runs.iter().filter(|r| r.conversation_id == "c1").count(),
+            2,
+            "both turns belong to the same thread"
+        );
+        assert!(runs
+            .iter()
+            .find(|r| r.id == "r1")
+            .unwrap()
+            .user_message
+            .is_none());
+    }
+
+    #[test]
+    fn rows_from_before_conversations_load_with_an_empty_thread_id() {
+        let mut conn = mem_db_with_list("l1");
+        // simulates a v2 row: the migration's DEFAULT '' fills the new column
+        conn.execute(
+            "INSERT INTO ai_runs (id, list_id, provider, action, mode, status, started_at, log)
+             VALUES ('old', 'l1', 'claude', 'investigate', 'analyze', 'completed', 1, '[]')",
+            [],
+        )
+        .expect("legacy insert");
+        let runs = load_all(&conn).expect("load");
+        let old = runs.iter().find(|r| r.id == "old").expect("old row");
+        assert_eq!(old.conversation_id, "");
+        assert!(old.user_message.is_none() && old.model.is_none());
     }
 
     #[test]

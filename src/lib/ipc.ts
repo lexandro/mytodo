@@ -88,6 +88,10 @@ export interface AiRunStartRequest {
   workspaceDir: string;
   mode: string;
   prompt: string;
+  /** null = let the client use its own default model. */
+  model: string | null;
+  /** Set = continue that provider session instead of starting a new one. */
+  resumeSessionId: string | null;
 }
 
 export type AiRunEvent =

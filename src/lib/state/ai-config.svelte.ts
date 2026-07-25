@@ -7,6 +7,7 @@ import {
   AI_CLIENTS_KEY, WORKSPACES_KEY, defaultAiClients, normalizeAiClients,
   normalizeWorkspaceLinks, type AIClientsSettings, type WorkspaceLinks,
 } from "$lib/core/ai-config";
+import { normalizeModel } from "$lib/core/ai-models";
 import type { AIProviderId, WorkspaceLink } from "$lib/core/ai-types";
 import {
   isUsableWorkspace, newWorkspaceLink, relocatedWorkspaceLink,
@@ -90,6 +91,20 @@ class AiConfigState {
 
   setDefaultClient(provider: AIProviderId): void {
     this.clients = { ...this.clients, defaultClient: provider };
+    this.persistClients();
+  }
+
+  /**
+   * Model for one client — global by design: the CLIs cannot enumerate their
+   * models, so the user's choice is a client-level setting the panel picker
+   * and the AI Clients dialog both write. null = the client's own default.
+   */
+  setModel(provider: AIProviderId, model: string | null): void {
+    const value = model === null ? null : normalizeModel(model);
+    this.clients = {
+      ...this.clients,
+      [provider]: { ...this.clients[provider], model: value },
+    };
     this.persistClients();
   }
 

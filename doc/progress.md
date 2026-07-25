@@ -609,6 +609,24 @@ F4 kill-mid-run, F5 no-AI baseline).
 
 ## Log
 
+- **2026-07-25** — **AI8: conversations, models, build identity**. The ✦ AI
+  button now opens the panel directly (dropdown deleted): preset tasks on
+  top, a chat thread in the middle, a console at the bottom. Every run
+  carries a `conversationId`; follow-up turns resume the provider session
+  (`claude --resume`, `codex exec resume` — the latter has no `--sandbox`
+  flag, so the mode travels as `-c sandbox_mode=…` and a thread's mode is
+  locked once it has turns). Model is a per-client setting (curated catalog
+  + validated free text; neither CLI can enumerate models) settable from the
+  composer and the AI Clients dialog. Schema v3 adds conversation_id /
+  user_message / model; pre-v3 rows load as single-turn threads. Lists with
+  a linked workspace show a **WS** badge (amber `WS!` when missing).
+  Also: a real **About dialog** (icon, version, git hash, copy for bug
+  reports) fed by build metadata baked in by vite.config.js — only tagged CI
+  builds are `release`, everything else is `-dev` and now carries a **DEV
+  icon** (`tauri.dev.conf.json` + `icons/dev/`, used by `bun run app` and
+  build.bat). Verified live over CDP: two-turn conversation where turn 2
+  quoted turn 1 (proving session resume), WS badge, and the DEV icon
+  extracted from the built exe. 218 TS + 37 Rust tests green.
 - **2026-07-24 (late night, 2)** — **Real-mouse drag & drop fix**: todo
   reordering did nothing when dragging with a real mouse in the packaged
   app — Tauri's `dragDropEnabled` defaults to true and its native WebView2

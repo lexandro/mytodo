@@ -100,11 +100,27 @@ AI result → proposed actions (strongly typed)
           → SQLite + activity log + single-step undo
 ```
 
+- **Conversations**: the ✦ AI button opens the panel directly (no dropdown).
+  There the user either picks a preset task or types into the console. Every
+  run belongs to a `conversationId`; a follow-up turn resumes the provider
+  session of the newest turn that reported one (`claude --resume <id>`,
+  `codex exec resume <id>`), so only the refreshed list snapshot plus the
+  message travel — the rest is already in the session. With no session id to
+  resume, the turn falls back to sending the full context.
+  A thread's permission mode is fixed when it starts: `codex exec resume` has
+  no `--sandbox` flag, so the sandbox goes as `-c sandbox_mode=…` and a
+  resumed turn can never widen what the user agreed to.
+- **Model choice**: per client, global (`aiClients.<provider>.model`, null =
+  the CLI's own default) — neither CLI can enumerate its models, so
+  `core/ai-models.ts` holds a curated catalog plus a validated free-text
+  name. Model strings are charset-checked on both sides before entering argv
+  (a value starting with `-` would read as a flag).
 - **Persistence**: run history in the `ai_runs` table (capped log lines,
-  newest 50 terminal runs per list, pruned on write); workspace links +
-  client config as portable settings keys (`workspaces`, `aiClients`) —
-  no credentials, ever. Interrupted (still-"running") rows surface as
-  failed on load.
+  newest 50 terminal runs per list, pruned on write; `conversation_id`,
+  `user_message` and `model` since schema v3 — older rows load as
+  single-turn threads); workspace links + client config as portable settings
+  keys (`workspaces`, `aiClients`) — no credentials, ever. Interrupted
+  (still-"running") rows surface as failed on load.
 - **Zero-cost when unused**: no provider detection on startup or routine
   actions — only on the AI Clients dialog, explicit Auto Detect/Test, or
   a run attempt. Without a linked workspace or installed CLI the entire

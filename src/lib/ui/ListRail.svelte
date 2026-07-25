@@ -4,10 +4,12 @@
   import { listOpenCount } from "$lib/core/rows";
   import { byOrder } from "$lib/core/ordering";
   import { newList, reorderListAction, moveTodoAction, switchList } from "$lib/state/actions";
+  import { aiConfig } from "$lib/state/ai-config.svelte";
   import { listMenuItems, openContextMenu } from "$lib/state/menus";
   import { store } from "$lib/state/store.svelte";
   import { ui } from "$lib/state/ui.svelte";
   import InlineRename from "./InlineRename.svelte";
+  import WorkspaceBadge from "./WorkspaceBadge.svelte";
 
   const lists = $derived([...store.data.lists].sort(byOrder));
   const trashCount = $derived(store.data.todos.filter((t) => t.trashed).length);
@@ -96,6 +98,7 @@
       >
         <span class="emoji">{list.emoji}</span>
         <span class="name" class:muted={list.id !== activeListId}>{list.name}</span>
+        <WorkspaceBadge listId={list.id} />
         <span class="count">{listOpenCount(store.data, list.id)}</span>
         <span class="kbd">{index < 9 ? index + 1 : ""}</span>
       </div>

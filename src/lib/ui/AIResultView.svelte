@@ -1,6 +1,7 @@
 <script lang="ts">
   // Result blocks (design COMPONENTS.md §AIResult): task-execution-record
   // look — only the blocks the action produced, in a fixed order.
+  import { modelLabel } from "$lib/core/ai-models";
   import { PROVIDER_LABELS, type AIRun } from "$lib/core/ai-types";
   import { aiRuns } from "$lib/state/ai-runs.svelte";
   import AIProposalList from "./AIProposalList.svelte";
@@ -11,6 +12,7 @@
   const elapsed = $derived(
     run.finishedAt === null ? "" : `${Math.round((run.finishedAt - run.startedAt) / 1000)}s`,
   );
+  const model = $derived(modelLabel(run.provider, run.model));
   let detailsOpen = $state(false);
 
   const VERDICT_LABEL = {
@@ -32,7 +34,7 @@
 
 {#if result !== null}
   <div class="result">
-    <p class="status-line">{PROVIDER_LABELS[run.provider]} · {elapsed}</p>
+    <p class="status-line">{PROVIDER_LABELS[run.provider]} · {model} · {elapsed}</p>
     {#if result.question !== null}
       <div class="block"><span class="field-label">Question</span><p class="text">{result.question}</p></div>
     {/if}
@@ -43,7 +45,13 @@
       </div>
     {/if}
     {#if result.summary !== null}
-      <div class="block"><span class="field-label">Summary</span><p class="text">{result.summary}</p></div>
+      <div class="block">
+        <!-- a chat answer is prose: labelling it "Summary" would read as a form -->
+        {#if run.action !== "chat"}
+          <span class="field-label">Summary</span>
+        {/if}
+        <p class="text">{result.summary}</p>
+      </div>
     {/if}
     {#if result.answer !== null}
       <div class="block"><span class="field-label">Answer</span><p class="text">{result.answer}</p></div>

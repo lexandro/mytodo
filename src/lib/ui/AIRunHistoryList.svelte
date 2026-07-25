@@ -1,34 +1,37 @@
 <script lang="ts">
-  // Run history rows (design COMPONENTS.md §AIRunHistory): action + status
-  // tag, then time · provider · mode. Click reopens the run.
-  import { ACTION_LABELS, PROVIDER_LABELS, type AIRun } from "$lib/core/ai-types";
+  // Conversation history (design COMPONENTS.md §AIRunHistory): one row per
+  // THREAD, not per run — first turn's wording + the newest turn's status.
+  // Click reopens the thread, where follow-up messages continue its session.
+  import { conversationSummaries } from "$lib/core/ai-runs";
+  import type { AIRun } from "$lib/core/ai-types";
   import { formatTimestamp } from "$lib/core/time";
-  import { openAiRun } from "$lib/state/ai-actions";
+  import { openConversation } from "$lib/state/ai-actions";
 
   let { runs }: { runs: AIRun[] } = $props();
+
+  const threads = $derived(conversationSummaries(runs));
 
   const STATUS_TAG = {
     running: "Running",
     completed: "Completed",
     failed: "Failed",
-    cancelled: "Cancelled",
+    cancelled: "Stopped",
   } as const;
-
-  const MODE_LABEL = { analyze: "Analyze", plan: "Plan", execute: "Execute" } as const;
 </script>
 
-{#if runs.length === 0}
-  <p class="empty">No AI runs yet.</p>
+{#if threads.length === 0}
+  <p class="empty">No AI conversations yet.</p>
 {:else}
   <div class="list">
-    {#each runs as run (run.id)}
-      <button class="row" onclick={() => openAiRun(run.id)}>
+    {#each threads as thread (thread.conversationId)}
+      <button class="row" onclick={() => openConversation(thread.conversationId)}>
         <span class="line1">
-          <span class="action">{ACTION_LABELS[run.action]}</span>
-          <span class="tag {run.status}">{STATUS_TAG[run.status]}</span>
+          <span class="action">{thread.title}</span>
+          <span class="tag {thread.status}">{STATUS_TAG[thread.status]}</span>
         </span>
         <span class="line2">
-          {formatTimestamp(run.startedAt, Date.now())} · {PROVIDER_LABELS[run.provider]} · {MODE_LABEL[run.mode]}
+          {formatTimestamp(thread.startedAt, Date.now())} · {thread.turns}
+          {thread.turns === 1 ? "turn" : "turns"}
         </span>
       </button>
     {/each}
@@ -70,6 +73,10 @@
   }
   .action {
     font-size: 12px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .tag {
     font-size: 9px;

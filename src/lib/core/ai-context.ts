@@ -1,18 +1,17 @@
-// AIContextBuilder (aiprompt §18): assembles the run prompt from the action,
-// mode, workspace metadata, AI Brief and the relevant slice of todo data —
-// NEVER the whole database. Also emits the output contract: which envelope
-// blocks the action must produce and which proposal kinds it may use.
+// AIContextBuilder (aiprompt §18) for the PRESET actions: assembles the run
+// prompt from the action, mode, workspace metadata, AI Brief and the relevant
+// slice of todo data — NEVER the whole database. Also emits the output
+// contract: which envelope blocks the action must produce and which proposal
+// kinds it may use. The free-form conversation prompt lives in ai-chat.ts;
+// the shared section builders in ai-context-parts.ts.
 // The provider's own project instructions (CLAUDE.md etc.) are NOT read or
 // merged here — the CLI runs in the workspace and picks them up natively (§19).
 
-import { STATUS_LABEL, locationPath } from "./activity";
+import {
+  groupCatalog, listSnapshot, modeSection, proposalActionDoc, todoSection,
+} from "./ai-context-parts";
 import { ACTION_MODES, type AIAction, type WorkspaceLink } from "./ai-types";
-import type { DomainData, Subtask, Todo } from "./types";
-
-/** Caps keeping run context bounded (§18: no full-DB dumps). */
-export const MAX_SNAPSHOT_TODOS = 150;
-const MAX_DESCRIPTION_CHARS = 2000;
-const MAX_ACTIVITY_LINES = 5;
+import type { DomainData } from "./types";
 
 export interface RunPromptParams {
   action: AIAction;
@@ -20,63 +19,6 @@ export interface RunPromptParams {
   todoId: string | null;
   /** Ask Workspace's single free-text question. */
   question: string | null;
-}
-
-function truncate(text: string, max: number): string {
-  return text.length <= max ? text : `${text.slice(0, max)}\n[…truncated]`;
-}
-
-function modeSection(action: AIAction): string {
-  if (ACTION_MODES[action] === "execute") {
-    return "Mode: EXECUTE. You may modify files inside this workspace to complete the task. Never touch anything outside the workspace directory.";
-  }
-  return "Mode: READ-ONLY. Inspect the workspace but do not create, modify or delete any files, and do not run commands that change state.";
-}
-
-function todoSection(data: DomainData, todo: Todo, subtasks: Subtask[]): string {
-  const lines: string[] = [
-    `## The selected todo`,
-    `Title: ${todo.title}`,
-    `Status: ${STATUS_LABEL[todo.status]}`,
-    `Location: ${locationPath(data, todo.listId, todo.groupId)}`,
-  ];
-  if (todo.description !== "") {
-    lines.push(`Description:\n${truncate(todo.description, MAX_DESCRIPTION_CHARS)}`);
-  }
-  if (subtasks.length > 0) {
-    lines.push(
-      "Subtasks:",
-      ...subtasks.map((s) => `- [${s.checked ? "x" : " "}] ${s.text} (subtaskId: ${s.id})`),
-    );
-  }
-  const recent = data.activity
-    .filter((event) => event.todoId === todo.id)
-    .slice(-MAX_ACTIVITY_LINES)
-    .map((event) => `- ${event.summary}`);
-  if (recent.length > 0) lines.push("Recent activity:", ...recent);
-  return lines.join("\n");
-}
-
-/** Compact "[id] title — status" snapshot of the list (suggest/reconcile). */
-function listSnapshot(data: DomainData, listId: string): string {
-  const todos = data.todos
-    .filter((t) => t.listId === listId && !t.trashed)
-    .slice(0, MAX_SNAPSHOT_TODOS);
-  if (todos.length === 0) return "## Current todos in this list\n(none)";
-  const lines = todos.map((t) => {
-    const flags = t.archived ? ", archived" : "";
-    return `- [${t.id}] ${t.title} — ${STATUS_LABEL[t.status]}${flags}`;
-  });
-  return `## Current todos in this list\n${lines.join("\n")}`;
-}
-
-function groupCatalog(data: DomainData, listId: string): string {
-  const groups = data.groups.filter((g) => g.listId === listId);
-  if (groups.length === 0) return "";
-  const lines = groups.map(
-    (g) => `- [${g.id}] ${locationPath(data, listId, g.id)}`,
-  );
-  return `## Groups in this list (for moveTodo targets)\n${lines.join("\n")}`;
 }
 
 const ACTION_INSTRUCTIONS: Record<AIAction, string> = {
@@ -98,6 +40,8 @@ const ACTION_INSTRUCTIONS: Record<AIAction, string> = {
     "Compare the todo list above with the workspace's actual state. Fill the mapping block: one row per relevant todo with tone done (likely completed), missing (still missing), partial (partially completed) — plus tone new for work you found that has no todo. Propose concrete changes (changeStatus, createTodo, addSubtask, archiveTodo).",
   askWorkspace:
     "Answer the user's question below using this workspace's contents. Put the answer into the answer block. One question, one answer — no follow-up dialogue.",
+  // chat never goes through this builder — see ai-chat.ts
+  chat: "",
 };
 
 /** Envelope blocks each action is expected to fill. */
@@ -111,6 +55,7 @@ const ACTION_BLOCKS: Record<AIAction, string[]> = {
   suggestTodos: ["summary", "proposals (createTodo)"],
   reconcile: ["summary", "mapping", "proposals"],
   askWorkspace: ["answer", "summary?"],
+  chat: ["summary"],
 };
 
 function contractSection(action: AIAction, listId: string): string {
@@ -131,17 +76,7 @@ function contractSection(action: AIAction, listId: string): string {
   "proposals": ProposalAction[]
 }`,
     "```",
-    "ProposalAction is one of:",
-    "```",
-    `{"kind": "createTodo", "listId": "${listId}", "groupId": string|null, "title": string, "description": string}
-{"kind": "updateTodo", "todoId": string, "title": string|null, "description": string|null}
-{"kind": "changeStatus", "todoId": string, "status": "open"|"progress"|"done"|"cancelled"}
-{"kind": "addSubtask", "todoId": string, "text": string}
-{"kind": "updateSubtask", "subtaskId": string, "text": string|null, "checked": boolean|null}
-{"kind": "moveTodo", "todoId": string, "listId": "${listId}", "groupId": string|null}
-{"kind": "archiveTodo", "todoId": string}`,
-    "```",
-    "Rules: reference todos/subtasks/groups ONLY by the ids given in brackets above. Proposals are suggestions — the user reviews them; nothing is applied automatically. Never propose anything else (no SQL, no shell commands as proposals).",
+    proposalActionDoc(listId),
   ].join("\n");
 }
 
@@ -158,7 +93,7 @@ export function buildRunPrompt(
   const todo = params.todoId === null ? undefined : data.todos.find((t) => t.id === params.todoId);
   const sections: string[] = [
     "You are an AI agent working inside myTODO, a local todo workspace app. The current working directory is the workspace linked to the user's todo list — work in it directly.",
-    modeSection(params.action),
+    modeSection(ACTION_MODES[params.action]),
     `Workspace type: ${link.type === "git" ? "Git repository" : "generic directory"}. Todo list: "${list?.name ?? "?"}".`,
   ];
   if (link.brief.trim() !== "") {

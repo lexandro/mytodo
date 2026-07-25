@@ -6,15 +6,18 @@
 
 import { logActivity } from "$lib/core/activity";
 import { applyProposals } from "$lib/core/ai-apply";
+import { buildChatPrompt } from "$lib/core/ai-chat";
 import { buildRunPrompt } from "$lib/core/ai-context";
 import { selectProvider } from "$lib/core/ai-providers";
 import { resultFromText } from "$lib/core/ai-result";
 import {
-  capLog, hasActiveRunForWorkspace, rowsToRuns, runToRow,
+  capLog, conversationRuns, hasActiveRunForWorkspace, resumeSessionId,
+  rowsToRuns, runToRow,
 } from "$lib/core/ai-runs";
 import { parseStreamLine } from "$lib/core/ai-stream";
 import {
-  ACTION_LABELS, ACTION_MODES, PROVIDER_LABELS, type AIAction, type AIRun,
+  ACTION_LABELS, ACTION_MODES, PROVIDER_LABELS, runMode,
+  type AIAction, type AIMode, type AIRun,
 } from "$lib/core/ai-types";
 import { newId } from "$lib/core/ids";
 import {
@@ -55,19 +58,32 @@ class AiRunsState {
     return this.runs.filter((run) => run.todoId === todoId);
   }
 
+  /** One thread's turns, oldest first — what the panel renders. */
+  turnsOf(conversationId: string): AIRun[] {
+    return conversationRuns(this.runs, conversationId);
+  }
+
+  /** The turn still streaming in this thread, if any. */
+  activeTurn(conversationId: string): AIRun | undefined {
+    return this.turnsOf(conversationId).find((run) => run.status === "running");
+  }
+
   runById(runId: string): AIRun | undefined {
     return this.runs.find((run) => run.id === runId);
   }
 
   /**
-   * The normal entry point: builds the run context from the live domain
-   * data (AIContextBuilder) and starts the run.
+   * A preset action: builds the run context from the live domain data
+   * (AIContextBuilder) and opens a NEW conversation with it, so the user can
+   * keep talking to the same session afterwards.
    */
   async startAction(params: {
     listId: string;
     todoId: string | null;
     action: AIAction;
     question?: string;
+    /** Thread to append to; omitted = start a new one. */
+    conversationId?: string;
   }): Promise<StartRunError | null> {
     const link = aiConfig.linkFor(params.listId);
     if (link === undefined) return { message: "Link a workspace to use AI." };
@@ -78,7 +94,55 @@ class AiRunsState {
       todoId: params.todoId,
       question: question === "" ? null : question,
     });
-    return this.startRun({ ...params, prompt });
+    const conversationId = params.conversationId ?? newId();
+    // a preset re-run inside an open thread continues the same session, so
+    // the user can ask follow-up questions about its result
+    return this.startRun({
+      listId: params.listId,
+      todoId: params.todoId,
+      action: params.action,
+      prompt,
+      mode: ACTION_MODES[params.action],
+      conversationId,
+      userMessage: null,
+      resumeSessionId: resumeSessionId(this.runs, conversationId),
+    });
+  }
+
+  /**
+   * One conversation turn. The provider session of the thread is resumed
+   * when it reported one; without a session id the turn re-sends the full
+   * context instead, so a follow-up never lands without knowing the list.
+   */
+  async sendChatTurn(params: {
+    listId: string;
+    todoId: string | null;
+    conversationId: string;
+    message: string;
+    mode: AIMode;
+  }): Promise<StartRunError | null> {
+    const link = aiConfig.linkFor(params.listId);
+    if (link === undefined) return { message: "Link a workspace to use AI." };
+    const message = params.message.trim();
+    if (message === "") return null;
+    const resume = resumeSessionId(this.runs, params.conversationId);
+    const prompt = buildChatPrompt(store.data, link, {
+      listId: params.listId,
+      todoId: params.todoId,
+      message,
+      mode: params.mode,
+      firstTurn: resume === null,
+    });
+    return this.startRun({
+      listId: params.listId,
+      todoId: params.todoId,
+      action: "chat",
+      mode: params.mode,
+      prompt,
+      conversationId: params.conversationId,
+      userMessage: message,
+      resumeSessionId: resume,
+    });
   }
 
   /**
@@ -90,7 +154,11 @@ class AiRunsState {
     listId: string;
     todoId: string | null;
     action: AIAction;
+    mode: AIMode;
     prompt: string;
+    conversationId: string;
+    userMessage: string | null;
+    resumeSessionId: string | null;
   }): Promise<StartRunError | null> {
     const link = aiConfig.linkFor(params.listId);
     if (link === undefined) {
@@ -109,13 +177,17 @@ class AiRunsState {
       return { message: "Another AI operation is already running for this workspace." };
     }
 
+    const model = aiConfig.clients[selection.provider].model;
     const run: AIRun = {
       id: newId(),
       listId: params.listId,
       todoId: params.todoId,
+      conversationId: params.conversationId,
+      userMessage: params.userMessage,
       provider: selection.provider,
+      model,
       action: params.action,
-      mode: ACTION_MODES[params.action],
+      mode: runMode(params.action, params.mode),
       status: "running",
       startedAt: Date.now(),
       finishedAt: null,
@@ -145,6 +217,8 @@ class AiRunsState {
         workspaceDir: link.path,
         mode: run.mode,
         prompt: params.prompt,
+        model,
+        resumeSessionId: params.resumeSessionId,
       });
       this.logRunActivity(run, "started");
       return null;
