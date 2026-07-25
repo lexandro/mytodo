@@ -71,9 +71,20 @@ describe("codex JSONL", () => {
     expect(u.resultText).toBe("Done.");
   });
 
-  it("turn.failed / error events surface an error", () => {
+  it("turn.failed is the terminal failure", () => {
     expect(codex({ type: "turn.failed", message: "sandbox denied" }).error).toBe("sandbox denied");
-    expect(codex({ type: "error", error: { message: "boom" } }).error).toBe("boom");
+    expect(codex({ type: "turn.failed", error: { message: "boom" } }).error).toBe("boom");
+  });
+
+  it("bare error events are progress, not a verdict (codex retries them)", () => {
+    // real 0.128.0 output during an OpenAI outage: these are followed by a
+    // successful turn as often as by turn.failed
+    const retry = codex({ type: "error", message: "Reconnecting... 2/5 (high demand)" });
+    expect(retry.error).toBeNull();
+    expect(retry.progress).toBe("Reconnecting... 2/5 (high demand)");
+    const long = codex({ type: "error", message: "x".repeat(200) });
+    expect(long.error).toBeNull();
+    expect(long.progress?.length).toBeLessThanOrEqual(60);
   });
 
   it("unknown items/events are ignored", () => {

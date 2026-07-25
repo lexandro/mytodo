@@ -10,6 +10,7 @@
   let { run }: { run: AIRun } = $props();
 
   let elapsedSec = $state(0);
+  let detailsOpen = $state(false);
   $effect(() => {
     if (run.status !== "running") return;
     const timer = setInterval(() => {
@@ -61,6 +62,15 @@
           <p class="failed-message">{run.error}</p>
         {/if}
       </div>
+      {#if run.log.length > 0}
+        <!-- the progress lines often explain the failure (provider retries) -->
+        <button class="details" onclick={() => (detailsOpen = !detailsOpen)}>
+          {detailsOpen ? "Hide details" : "Show details"}
+        </button>
+        {#if detailsOpen}
+          <pre class="log">{run.log.join("\n")}</pre>
+        {/if}
+      {/if}
     {/if}
   </div>
 </div>
@@ -180,5 +190,30 @@
     line-height: 1.5;
     color: var(--color-neutral-400);
     white-space: pre-line;
+  }
+  .details {
+    align-self: flex-start;
+    border: none;
+    background: transparent;
+    color: var(--color-accent);
+    font: inherit;
+    font-size: 10.5px;
+    padding: 0;
+    cursor: pointer;
+  }
+  .details:hover {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .log {
+    font-family: var(--font-mono, "Cascadia Mono", Consolas, monospace);
+    font-size: 10.5px;
+    line-height: 1.5;
+    color: var(--color-neutral-400);
+    background: color-mix(in srgb, var(--color-text) 4%, transparent);
+    border-radius: 6px;
+    padding: 8px;
+    overflow-x: auto;
+    white-space: pre-wrap;
   }
 </style>

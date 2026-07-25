@@ -157,6 +157,11 @@ function parseCodexEvent(event: Record<string, unknown>): StreamUpdate {
         : typeof (event.error as Record<string, unknown> | undefined)?.message === "string"
           ? ((event.error as Record<string, unknown>).message as string)
           : "The run ended with an error.";
+    // Only turn.failed is terminal. Bare `error` events are also emitted for
+    // recoverable trouble ("Reconnecting... 2/5") — treating those as fatal
+    // would fail a run that then finishes fine, so they become progress and
+    // the real outcome is decided by turn.failed / the exit code.
+    if (type === "error") return update({ progress: truncate(message, 60) });
     return update({ error: message });
   }
   return EMPTY;

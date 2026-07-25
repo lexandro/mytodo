@@ -76,7 +76,9 @@ tükörfúrógép proj`).
       focusable and Enter sends, Shift+Enter adds a newline *(CDP ✓)*
 - [ ] G2 Ask something, then a follow-up that only a resumed session can
       answer ("what did I just ask?") → correct answer with Claude *(CDP ✓)*
-      AND with Codex *(codex exec resume — not yet exercised live)*
+      AND with Codex *(session continuity CDP ✓ — both turns reported the
+      same thread id, which only `exec resume` produces; the ANSWER could
+      not be checked, OpenAI was 503 during the test — redo when it is up)*
 - [ ] G3 Preset task first, then a chat follow-up about its result → the
       answer refers to the preset run (same session)
 - [ ] G4 Chat that proposes todo changes → proposals render and Apply
@@ -91,7 +93,13 @@ tükörfúrógép proj`).
       custom name → used verbatim; garbage like `--foo` is refused
 - [ ] G8 Codex with a non-default model (`openai/terra`) answers, and a
       resumed Codex turn still runs read-only (no file writes in a
-      read-only thread)
+      read-only thread) *(argv verified against the real CLI: `codex exec
+      resume -c sandbox_mode="read-only" --json --skip-git-repo-check -m
+      openai/terra <id> -` parses and loads the session; the answer itself
+      is pending the OpenAI outage)*
+- [ ] G9 Provider trouble mid-run (unplug the network / an outage): the
+      retry lines show as progress, the turn ends Failed with the provider's
+      message, and Show details lists the log *(CDP ✓ during the 503)*
 
 ## F — App behavior around runs
 
