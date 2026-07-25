@@ -81,6 +81,15 @@ export function paletteCommands(query: string): PaletteCommand[] {
         close();
       },
     },
+    {
+      emoji: "ⓘ",
+      name: "About myTODO (version, build)",
+      hint: "",
+      run: () => {
+        ui.aboutOpen = true;
+        close();
+      },
+    },
   ];
   return commands.filter((c) => fuzzyMatch(query, c.name)).slice(0, PALETTE_LIMIT);
 }

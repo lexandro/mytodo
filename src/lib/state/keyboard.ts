@@ -33,6 +33,10 @@ function handleEscape(): void {
     ui.shortcutsOpen = false;
     return;
   }
+  if (ui.aboutOpen) {
+    ui.aboutOpen = false;
+    return;
+  }
   if (ui.ctxMenu !== null) {
     ui.ctxMenu = null;
     return;

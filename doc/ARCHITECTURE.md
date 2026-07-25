@@ -122,6 +122,24 @@ AI result → proposed actions (strongly typed)
 - Releases: tag push (`vX.Y.Z`) → `.github/workflows/release.yml`
   (tauri-action).
 
+## Build identity (About dialog)
+
+- `vite.config.js` bakes `{version, channel, commit, builtAt}` into the
+  bundle as the `__MYTODO_BUILD__` define: version from `package.json`,
+  commit from `git rev-parse --short=7 HEAD` (`unknown` outside a checkout).
+- `src/lib/build-info.ts` is the single reader of that constant (same
+  boundary idea as `ipc.ts`); `core/build-info.ts` holds the pure formatting
+  with its tests.
+- Channel: `release` only when `MYTODO_BUILD_CHANNEL=release` is set, which
+  happens exclusively in `release.yml` for tag builds. Every other build
+  (local `build.bat`, CI, dev server) shows a `-dev` suffix — e.g.
+  `1.0.1-dev` — so a hand-built exe is never mistaken for the release.
+- `release.yml` also fails fast when the tag and the three version places
+  (`package.json`, `tauri.conf.json`, `Cargo.toml`) disagree.
+- `ui/AboutDialog.svelte` (Help → About myTODO, also in Ctrl+K) shows the
+  app icon imported straight from `src-tauri/icons/`, the version/commit/build
+  time and a copy button for bug reports.
+
 ## Portable storage
 
 - Everything lives inside the `myTODO/` folder: `data/todo.db` + settings

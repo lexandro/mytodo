@@ -124,7 +124,7 @@ function helpMenu(): MenuItem[] {
   return [
     item("Keyboard shortcuts", () => (ui.shortcutsOpen = true), "F1"),
     item("Check for updates…", () => void updater.check(true)),
-    item("About myTODO", () => ui.showToast("myTODO — fast local todo workspace")),
+    item("About myTODO", () => (ui.aboutOpen = true)),
   ];
 }
 

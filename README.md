@@ -168,9 +168,15 @@ One run per workspace at a time.
 1. Bump the version in all THREE places together: `package.json`,
    `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`
 2. `git tag vX.Y.Z && git push origin vX.Y.Z`
-3. GitHub Actions (`release.yml`) builds the signed MSI + NSIS installers
-   with updater artifacts (`latest.json`), publishes the release live and
-   attaches the portable zip — installed apps update from it automatically.
+3. GitHub Actions (`release.yml`) verifies that the tag matches all three
+   version places, then builds the signed MSI + NSIS installers with updater
+   artifacts (`latest.json`), publishes the release live and attaches the
+   portable zip — installed apps update from it automatically.
+
+Only these tag builds are marked as official: **Help → About myTODO** then
+shows a bare `1.0.1`, while every other build (local `build.bat`, CI, dev
+server) shows `1.0.1-dev`. The dialog also carries the git commit the binary
+was built from — ask for it in bug reports.
 
 The updater signing keypair lives in the owner's key vault
 (`E:\Mega\keys\mytodo-updater\`) and on the repo as the

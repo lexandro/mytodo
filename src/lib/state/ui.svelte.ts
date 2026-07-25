@@ -107,6 +107,8 @@ class UiState {
   menuOpen = $state<string | null>(null);
   /** Keyboard shortcuts dialog (F1). */
   shortcutsOpen = $state(false);
+  /** About dialog (Help → About myTODO). */
+  aboutOpen = $state(false);
   /** Scale controls popover in the title bar. */
   scalePopOpen = $state(false);
 
