@@ -1,9 +1,9 @@
 # AI-TESTS — manual AI integration checklist (aiprompt §44)
 
-Automated coverage already exists (218 TS + 37 Rust tests; CDP end-to-end
-runs incl. real `claude -p` runs, a resumed two-turn conversation, batch
-apply + single-undo, cancel and failure paths — see `doc/progress.md`
-AI1–AI8). This checklist covers what only a live user session can verify.
+Automated coverage already exists (the vitest + cargo suites, plus CDP
+end-to-end runs against the real app: real `claude -p` runs, a resumed
+multi-turn conversation, batch apply + single-undo, cancel and failure
+paths). This checklist covers what only a live user session can verify.
 Mark items as they are done.
 
 Prereqs: Claude Code and Codex installed + authenticated; a Git repo and a
