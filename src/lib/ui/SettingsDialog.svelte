@@ -5,10 +5,23 @@
     ACTION_LABELS, acceleratorFromEvent, validateAccelerator,
     type GlobalAction,
   } from "$lib/core/shortcuts";
+  import { appPaths, type AppPaths } from "$lib/ipc";
   import { shortcutManager } from "$lib/state/shortcut-manager.svelte";
   import { ui } from "$lib/state/ui.svelte";
+  import FolderRow from "./FolderRow.svelte";
 
   const actions: GlobalAction[] = ["summon", "quickAdd", "pinned", "search"];
+
+  // asked for when the dialog opens, never at startup
+  let paths = $state<AppPaths | null>(null);
+  $effect(() => {
+    if (!ui.settingsOpen || paths !== null) return;
+    void appPaths()
+      .then((p) => (paths = p))
+      .catch(() => {
+        // the paths are informational; a failure just leaves the rows empty
+      });
+  });
 
   let recording = $state<GlobalAction | null>(null);
   let errors = $state<Partial<Record<GlobalAction, string>>>({});
@@ -113,6 +126,14 @@
         </label>
       </div>
 
+      <div class="section-label">Files</div>
+      <FolderRow label="Data" path={paths?.dataDir ?? ""} />
+      <FolderRow label="Backups" path={paths?.backupDir ?? ""} />
+      <p class="files-note">
+        Everything lives next to the executable — copy the folder and your data
+        moves with it.
+      </p>
+
       <div class="dialog-actions">
         <button class="btn btn-ghost" onclick={() => void shortcutManager.resetDefaults()}>
           Reset defaults
@@ -125,7 +146,12 @@
 
 <style>
   .settings {
-    width: min(460px, 100%);
+    width: min(520px, 100%);
+  }
+  .files-note {
+    font-size: 10.5px;
+    color: var(--color-neutral-600);
+    line-height: 1.45;
   }
   .s-title {
     font-size: 16px;

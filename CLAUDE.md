@@ -68,6 +68,7 @@ Native Windows desktop app: **Tauri v2** (Rust shell) + **Svelte 5** (SvelteKit 
 
 - **Single instance**: a second launch focuses the existing window (plugin in `lib.rs`) — so a running installed/portable copy makes `bun run app` exit immediately.
 - **Build identity**: version + git hash are baked in by `vite.config.js`; only `release.yml` sets `MYTODO_BUILD_CHANNEL=release`, everything else is a `-dev` build with the DEV icon (`src-tauri/tauri.dev.conf.json` + `icons/dev/`). Help → About shows all of it.
+- **Startup budget**: the eager path is domain data → settings → window geometry, nothing else. New startup work goes into `state/startup.ts` (`startDeferredBoot`, idle-time) unless the first frame genuinely needs it.
 - **Strict CSP** (`tauri.conf.json`): no new external source/inline script without loosening the CSP — if you must loosen it, justify it.
 - **Version bump in THREE places** (always together): `package.json`, `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`.
 - `target/` sits in the project root (set by `.cargo/config.toml`) — gitignored; `release/` (local portable output) likewise.

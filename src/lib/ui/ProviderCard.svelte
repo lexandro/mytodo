@@ -6,8 +6,14 @@
   import { PROVIDER_LABELS, type AIProviderId } from "$lib/core/ai-types";
   import { aiClients } from "$lib/state/ai-clients.svelte";
   import { aiConfig } from "$lib/state/ai-config.svelte";
+  import { aiModels } from "$lib/state/ai-models.svelte";
 
   let { provider }: { provider: AIProviderId } = $props();
+
+  // the dialog is one of the few surfaces that shows models — fetch on open
+  $effect(() => {
+    aiModels.ensureLoaded(provider);
+  });
 
   const config = $derived(aiConfig.clients[provider]);
   const runtime = $derived(aiClients.runtime[provider]);
@@ -76,11 +82,17 @@
       Model
       <input
         class="input model"
-        placeholder="client default"
+        list="models-{provider}"
+        placeholder={aiModels.isLoading(provider) ? "reading…" : "client default"}
         value={config.model ?? ""}
         title="Passed to the CLI's --model flag; empty = the client's own default"
         onchange={onModelChange}
       />
+      <datalist id="models-{provider}">
+        {#each aiModels.options(provider) as option (option.value)}
+          <option value={option.value}>{option.label}</option>
+        {/each}
+      </datalist>
     </label>
   </div>
   {#if modelRejected}

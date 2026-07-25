@@ -73,6 +73,8 @@ cd src-tauri && cargo test   # Rust persistence tests
 - **Export / Import JSON**: `File → Export JSON… / Import JSON…` — a
   human-readable, portable format; imports are validated first and applied
   as a single undoable step — a bad file never touches the database
+- **Where are my files?** `File → Settings…` shows the data and backup
+  folders with an *Open folder* button next to each
 
 ## Keyboard (full map: F1 in the app)
 
@@ -133,10 +135,12 @@ apply** — nothing touches your todo data automatically.
   CLI supports a non-interactive check. Pick a global **Default AI client**;
   each workspace can override it.
 - **Model**: pick one per client in the AI Clients dialog or straight from
-  the panel's composer (Claude: Opus / Sonnet / Haiku / Fable, Codex: Sol /
-  Terra / Luna, or any model name you type). Empty = whatever the CLI is
-  configured to use. Neither CLI can list its models, so the built-in list is
-  curated — an unknown name simply fails visibly in the run.
+  the panel's composer; empty = whatever the CLI is configured to use.
+  Neither CLI has a "list models" command, so myTODO reads what they cache
+  themselves — Codex's account model list, and any extra options Claude Code
+  has beyond `opus` / `sonnet` / `haiku` / `fable`. The lists are read in the
+  background (never during startup), and if they cannot be read you still get
+  a built-in list plus a free-text field for any model name.
 - **Link a workspace**: right-click a list → *Link Workspace…* (or the panel's
   CTA). Linked lists get a **WS** badge next to their name (amber `WS!` when
   the directory has gone missing). The optional **AI Brief** is plain text

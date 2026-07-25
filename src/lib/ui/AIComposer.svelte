@@ -4,11 +4,12 @@
   // once the thread has turns — a resumed session keeps the sandbox it was
   // created with (see chatModeLocked).
   import {
-    CLIENT_DEFAULT_LABEL, MODEL_CATALOG, isCustomModel, isValidModelName,
+    CLIENT_DEFAULT_LABEL, isCustomModel, isValidModelName,
   } from "$lib/core/ai-models";
   import type { AIProviderId } from "$lib/core/ai-types";
   import { chatModeLocked, sendChatMessage, setChatMode } from "$lib/state/ai-actions";
   import { aiConfig } from "$lib/state/ai-config.svelte";
+  import { aiModels } from "$lib/state/ai-models.svelte";
   import type { AiPanelState } from "$lib/state/ui.svelte";
 
   let {
@@ -18,6 +19,13 @@
   const CUSTOM = "__custom__";
   const model = $derived(aiConfig.clients[provider].model);
   const locked = $derived(chatModeLocked(panel));
+
+  // the client's own list is fetched the first time a picker is shown, never
+  // on startup; the fallback catalog is what the select uses meanwhile
+  $effect(() => {
+    aiModels.ensureLoaded(provider);
+  });
+  const modelOptions = $derived(aiModels.options(provider));
   let customOpen = $state(false);
   const selectValue = $derived(
     customOpen || isCustomModel(provider, model) ? CUSTOM : (model ?? ""),
@@ -54,8 +62,8 @@
   <div class="controls">
     <select class="input pick" value={selectValue} onchange={onModelChange} title="Model">
       <option value="">{CLIENT_DEFAULT_LABEL}</option>
-      {#each MODEL_CATALOG[provider] as option (option.value)}
-        <option value={option.value}>{option.label} — {option.note}</option>
+      {#each modelOptions as option (option.value)}
+        <option value={option.value}>{option.label}{option.note === "" ? "" : ` — ${option.note}`}</option>
       {/each}
       <option value={CUSTOM}>Custom…</option>
     </select>
@@ -87,6 +95,10 @@
       {busy ? "Running…" : "Send"}
     </button>
   </div>
+
+  {#if aiModels.isLoading(provider)}
+    <p class="loading">Reading available models from the client…</p>
+  {/if}
 
   {#if selectValue === CUSTOM}
     <input
@@ -168,5 +180,9 @@
   .custom {
     min-height: 26px;
     font-size: 11.5px;
+  }
+  .loading {
+    font-size: 10px;
+    color: var(--color-neutral-600);
   }
 </style>

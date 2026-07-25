@@ -21,13 +21,16 @@ class AiConfigState {
   /** listId → linked directory is currently missing/unreadable. */
   missing = $state<Record<string, boolean>>({});
 
-  /** Startup: normalize persisted values; links to deleted lists are dropped. */
+  /**
+   * Startup: normalize persisted values; links to deleted lists are dropped.
+   * Pure settings work — the on-disk existence check is a separate, deferred
+   * step (state/startup.ts) so probing directories never delays first paint.
+   */
   restore(all: Record<string, unknown>, validListIds: readonly string[]): void {
     const links = normalizeWorkspaceLinks(all[WORKSPACES_KEY]);
     const valid = new Set(validListIds);
     this.workspaces = Object.fromEntries(Object.entries(links).filter(([id]) => valid.has(id)));
     this.clients = normalizeAiClients(all[AI_CLIENTS_KEY]);
-    void this.refreshAllMissing();
   }
 
   linkFor(listId: string | null): WorkspaceLink | undefined {

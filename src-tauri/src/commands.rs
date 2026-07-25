@@ -110,6 +110,33 @@ pub async fn ai_probe_provider(
         .map_err(|e| format!("probe task failed: {e}"))?
 }
 
+/// Where this portable copy keeps its files — shown in Settings so the user
+/// can open the folders without hunting for the exe.
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppPaths {
+    pub data_dir: String,
+    pub backup_dir: String,
+    pub database: String,
+}
+
+#[tauri::command]
+pub fn app_paths() -> Result<AppPaths, String> {
+    Ok(AppPaths {
+        data_dir: crate::paths::data_dir()?.display().to_string(),
+        backup_dir: crate::paths::backup_dir()?.display().to_string(),
+        database: crate::paths::db_path()?.display().to_string(),
+    })
+}
+
+/// What the provider itself says about its models: Codex's cached account
+/// list (complete) or Claude Code's cached extra options. Empty = the
+/// frontend keeps its built-in catalog.
+#[tauri::command]
+pub fn ai_list_models(provider: String) -> crate::ai::models::ModelList {
+    crate::ai::models::list(&provider)
+}
+
 /// Starts a streaming AI run; progress arrives as `ai-run:<id>` events.
 /// The wire shape lives next to the runner (ai::run::StartRequest).
 #[tauri::command]

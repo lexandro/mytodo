@@ -12,6 +12,7 @@ import { register, unregister } from "@tauri-apps/plugin-global-shortcut";
 import { openPath, openUrl } from "@tauri-apps/plugin-opener";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { check, type Update } from "@tauri-apps/plugin-updater";
+import type { DiscoveredModels } from "$lib/core/ai-models";
 import type { ProbeOutcome, TestOutcome } from "$lib/core/ai-providers";
 import type { AIRunRow } from "$lib/core/ai-runs";
 import type { AIProviderId } from "$lib/core/ai-types";
@@ -36,6 +37,17 @@ export function settingsAll(): Promise<Record<string, unknown>> {
 
 export function settingsSet(key: string, value: unknown): Promise<void> {
   return invoke<void>("settings_set", { key, value });
+}
+
+/** Where this portable copy stores its files (shown in Settings). */
+export interface AppPaths {
+  dataDir: string;
+  backupDir: string;
+  database: string;
+}
+
+export function appPaths(): Promise<AppPaths> {
+  return invoke<AppPaths>("app_paths");
 }
 
 // ── AI run history (AI Workspace Integration V1) ────────────────────────────
@@ -77,6 +89,15 @@ export function aiProbeProvider(provider: AIProviderId, path: string): Promise<P
 /** Probe + best-effort authentication readiness (never modifies anything). */
 export function aiTestProvider(provider: AIProviderId, path: string): Promise<TestOutcome> {
   return invoke<TestOutcome>("ai_test_provider", { provider, path });
+}
+
+/**
+ * Models the client itself reports: Codex caches its account's COMPLETE
+ * list, Claude Code only caches extra options beyond its built-in aliases —
+ * hence the `complete` flag. Empty models = fall back to the catalog.
+ */
+export function aiListModels(provider: AIProviderId): Promise<DiscoveredModels> {
+  return invoke<DiscoveredModels>("ai_list_models", { provider });
 }
 
 // ── AI runs (streaming execution) ───────────────────────────────────────────

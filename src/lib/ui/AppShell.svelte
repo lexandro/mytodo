@@ -6,16 +6,13 @@
   import { createTodo } from "$lib/core/todos-ops";
   import { onQuickAdd } from "$lib/ipc";
   import { aiConfig } from "$lib/state/ai-config.svelte";
-  import { aiRuns } from "$lib/state/ai-runs.svelte";
   import { handleKeydown } from "$lib/state/keyboard";
   import {
     TODO_FS_MAX, TODO_FS_MIN, persistAppearance, persistUiSettings, restoreUiSettings,
   } from "$lib/state/settings-sync.svelte";
-  import { SHORTCUT_SETTINGS_KEY, shortcutManager } from "$lib/state/shortcut-manager.svelte";
-  import { SHORTCUT_OFFER_KEY, shortcutOffer } from "$lib/state/shortcut-offer.svelte";
+  import { startDeferredBoot } from "$lib/state/startup";
   import { store } from "$lib/state/store.svelte";
   import { ui } from "$lib/state/ui.svelte";
-  import { updater } from "$lib/state/updater.svelte";
   import { WINDOW_STATE_KEY, restoreWindowState, startWindowStateSaving } from "$lib/state/window-state";
   import AboutDialog from "./AboutDialog.svelte";
   import AIClientsDialog from "./AIClientsDialog.svelte";
@@ -38,6 +35,9 @@
   import TrashView from "./TrashView.svelte";
   import WorkspaceSettingsDialog from "./WorkspaceSettingsDialog.svelte";
 
+  // Critical path only: domain data → UI settings → window geometry. The
+  // rest (hotkeys, probes, history, updater) is handed to startDeferredBoot,
+  // which waits for the browser to go idle.
   $effect(() => {
     void store
       .init((data) => {
@@ -46,13 +46,12 @@
       .then(() => restoreUiSettings())
       .then((all) => {
         settingsRestored = true;
-        // startup registration never blocks the app (shortcut.md §16)
-        void shortcutManager.init(all[SHORTCUT_SETTINGS_KEY]);
-        void restoreWindowState(all[WINDOW_STATE_KEY]).then(() => startWindowStateSaving());
-        updater.startAutoCheck();
-        void shortcutOffer.init(all[SHORTCUT_OFFER_KEY]);
+        // pure settings parsing: the workspace badges must be right in the
+        // first frame; the on-disk check happens in the deferred phase
         aiConfig.restore(all, store.data.lists.map((l) => l.id));
-        void aiRuns.load();
+        // geometry stays eager — restoring it later would visibly jump
+        void restoreWindowState(all[WINDOW_STATE_KEY]).then(() => startWindowStateSaving());
+        startDeferredBoot(all);
       });
   });
 

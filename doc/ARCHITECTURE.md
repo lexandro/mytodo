@@ -111,10 +111,17 @@ AI result → proposed actions (strongly typed)
   no `--sandbox` flag, so the sandbox goes as `-c sandbox_mode=…` and a
   resumed turn can never widen what the user agreed to.
 - **Model choice**: per client, global (`aiClients.<provider>.model`, null =
-  the CLI's own default) — neither CLI can enumerate its models, so
-  `core/ai-models.ts` holds a curated catalog plus a validated free-text
-  name. Model strings are charset-checked on both sides before entering argv
-  (a value starting with `-` would read as a flag).
+  the CLI's own default). Neither CLI has a "list models" command, but both
+  cache something usable and `ai/models.rs` reads it (idle-time, never at
+  startup): Codex's `~/.codex/models_cache.json` is the COMPLETE account list
+  and replaces the catalog; Claude Code's `~/.claude.json` only caches EXTRA
+  options (e.g. the 1M variant), which are appended to it. Anything missing
+  or in an unexpected format degrades to the curated catalog in
+  `core/ai-models.ts`. Model strings are charset-checked on both sides before
+  entering argv (a value starting with `-` would read as a flag; brackets are
+  allowed because `claude-fable-5[1m]` is a real name).
+  Codex slugs must be the real ones (`gpt-5.6-sol`): `openai/sol` works in
+  Codex's interactive TUI but `codex exec` rejects it for ChatGPT accounts.
 - **Persistence**: run history in the `ai_runs` table (capped log lines,
   newest 50 terminal runs per list, pruned on write; `conversation_id`,
   `user_message` and `model` since schema v3 — older rows load as
@@ -155,6 +162,22 @@ AI result → proposed actions (strongly typed)
 - `ui/AboutDialog.svelte` (Help → About myTODO, also in Ctrl+K) shows the
   app icon imported straight from `src-tauri/icons/`, the version/commit/build
   time and a copy button for bug reports.
+
+## Startup
+
+Only what the first frame needs runs eagerly: `db_load_all` → `settings_all`
+→ workspace-link parsing → window geometry (restoring geometry later would
+visibly jump). Everything else goes through `state/startup.ts`
+(`requestIdleCallback`, 1.5 s backstop): global-hotkey registration, the
+shortcut-offer probe, workspace existence checks, AI run history, model-list
+prefetch, and the updater's own 5 s delay.
+
+Measured on the release build (2026-07-25, one run each): before the split,
+seven IPC calls fired ~20 ms BEFORE first contentful paint and each took
+~68 ms as they queued behind one another; after it the probes start after
+paint and the geometry path — the visible one — dropped from 67 ms to 12 ms.
+**New startup work belongs in `startDeferredBoot` unless the first frame
+truly needs it.**
 
 ## Portable storage
 

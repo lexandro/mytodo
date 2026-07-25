@@ -120,14 +120,16 @@ fn validate_run_id(run_id: &str) -> Result<(), String> {
 
 /// Model names come from the user (custom field), so they are validated
 /// before entering argv: a value starting with '-' would be read as a flag.
+/// Brackets are allowed because real names use them (`claude-fable-5[1m]`);
+/// they are not metacharacters for CreateProcess or cmd.exe.
 /// Mirrors isValidModelName in src/lib/core/ai-models.ts.
 fn validate_model(model: &str) -> Result<(), String> {
     let ok = !model.is_empty()
         && model.len() <= 64
         && !model.starts_with('-')
-        && model
-            .chars()
-            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '/' | ':' | '-'));
+        && model.chars().all(|c| {
+            c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '/' | ':' | '-' | '[' | ']')
+        });
     if ok {
         Ok(())
     } else {
@@ -473,8 +475,10 @@ mod tests {
     #[test]
     fn model_and_session_values_can_never_smuggle_a_flag() {
         assert!(validate_model("sonnet").is_ok());
-        assert!(validate_model("openai/luna").is_ok());
+        assert!(validate_model("gpt-5.6-luna").is_ok());
         assert!(validate_model("claude-opus-5").is_ok());
+        // the 1M-context variants really are spelled with brackets
+        assert!(validate_model("claude-fable-5[1m]").is_ok());
         assert!(validate_model("--dangerously-skip-permissions").is_err());
         assert!(validate_model("sonnet --sandbox danger-full-access").is_err());
         assert!(validate_model("").is_err());
