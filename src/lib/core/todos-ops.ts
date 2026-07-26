@@ -7,7 +7,7 @@ import { orderForDrop, orderForIndex, sortedByOrder } from "./scope";
 import type { DomainData, Todo, TodoStatus } from "./types";
 
 /** Visible (non-trashed, non-archived) todos of one group scope, sorted. */
-function scopeSiblings(data: DomainData, listId: string, groupId: string | null, excludeId?: string): Todo[] {
+export function scopeSiblings(data: DomainData, listId: string, groupId: string | null, excludeId?: string): Todo[] {
   return sortedByOrder(
     data.todos.filter(
       (t) =>
@@ -67,26 +67,29 @@ export function renameTodo(data: DomainData, id: string, title: string, now: num
   logActivity(data, id, "renamed", "Renamed", now);
 }
 
-export function setStatus(data: DomainData, id: string, status: TodoStatus, now: number): void {
+/** Returns true when the status actually changed — callers hang follow-up
+ * work (status-driven repositioning) off that. */
+export function setStatus(data: DomainData, id: string, status: TodoStatus, now: number): boolean {
   const todo = findTodo(data, id);
-  if (todo === undefined || todo.status === status) return;
+  if (todo === undefined || todo.status === status) return false;
   const summary = `${STATUS_LABEL[todo.status]} → ${STATUS_LABEL[status]}`;
   todo.status = status;
   touch(todo, now);
   logActivity(data, id, "status", summary, now);
+  return true;
 }
 
 /** Status circle click: Open → In Progress → Done → Open (never Cancelled). */
-export function cycleStatus(data: DomainData, id: string, now: number): void {
+export function cycleStatus(data: DomainData, id: string, now: number): boolean {
   const todo = findTodo(data, id);
-  if (todo === undefined) return;
+  if (todo === undefined) return false;
   const next: Record<TodoStatus, TodoStatus> = {
     open: "progress",
     progress: "done",
     done: "open",
     cancelled: "open",
   };
-  setStatus(data, id, next[todo.status], now);
+  return setStatus(data, id, next[todo.status], now);
 }
 
 /** Move to another list/group (drop "into", context-menu Move to…, Alt+←). */

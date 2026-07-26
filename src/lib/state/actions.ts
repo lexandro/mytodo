@@ -6,9 +6,11 @@ import { createGroup, deleteGroup, renameGroup, toggleGroupCollapsed } from "$li
 import { createList, deleteList, renameList, reorderList } from "$lib/core/lists-ops";
 import { DEFAULT_SETTINGS_SECTION, type SettingsSectionId } from "$lib/core/settings-sections";
 import { createTodo, cycleStatus, findTodo, moveTodo, reorderTodo, setStatus, trashTodo } from "$lib/core/todos-ops";
+import type { TodoStatus } from "$lib/core/types";
 import { renameTodoAction } from "./actions-detail";
 import { detailOpened } from "./ai-actions";
 import { aiConfig } from "./ai-config.svelte";
+import { placeByStatusIfEnabled } from "./status-placement";
 import { store } from "./store.svelte";
 import { ui, type RenamingState } from "./ui.svelte";
 
@@ -62,8 +64,19 @@ export function quickAdd(paneIndex: number, title: string, openDetail: boolean):
   return true;
 }
 
+/** Every status change funnels through here — see status-placement.ts. */
+export function setTodoStatus(id: string, status: TodoStatus): void {
+  store.apply("status change", (data) => {
+    const now = Date.now();
+    if (setStatus(data, id, status, now)) placeByStatusIfEnabled(data, [id], now);
+  });
+}
+
 export function cycleTodoStatus(id: string): void {
-  store.apply("status change", (data) => cycleStatus(data, id, Date.now()));
+  store.apply("status change", (data) => {
+    const now = Date.now();
+    if (cycleStatus(data, id, now)) placeByStatusIfEnabled(data, [id], now);
+  });
 }
 
 /** Ctrl+Enter: toggle Done ↔ Open on the selected todo. */
@@ -72,8 +85,7 @@ export function toggleSelectedDone(): void {
   if (id === null) return;
   const todo = findTodo(store.data, id);
   if (todo === undefined) return;
-  const target = todo.status === "done" ? "open" : "done";
-  store.apply("status change", (data) => setStatus(data, id, target, Date.now()));
+  setTodoStatus(id, todo.status === "done" ? "open" : "done");
 }
 
 export function trashTodoAction(id: string): void {

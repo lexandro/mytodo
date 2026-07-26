@@ -5,6 +5,7 @@
   import { SETTINGS_SECTIONS, settingsSection } from "$lib/core/settings-sections";
   import { ui } from "$lib/state/ui.svelte";
   import SettingsAppearance from "./SettingsAppearance.svelte";
+  import SettingsBehavior from "./SettingsBehavior.svelte";
   import SettingsColors from "./SettingsColors.svelte";
   import SettingsFiles from "./SettingsFiles.svelte";
   import SettingsShortcuts from "./SettingsShortcuts.svelte";
@@ -47,6 +48,8 @@
             <SettingsColors kind="todo" />
           {:else if current.id === "list-colors"}
             <SettingsColors kind="list" />
+          {:else if current.id === "behavior"}
+            <SettingsBehavior />
           {:else if current.id === "shortcuts"}
             <SettingsShortcuts />
           {:else if current.id === "files"}

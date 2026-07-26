@@ -106,6 +106,12 @@ class UiState {
   uiScale = $state(100);
   /** Todo title font size in px (10–20) — todo rows only. */
   todoFs = $state(13);
+  /**
+   * Behavior: a status change repositions the todo inside its own group scope
+   * (in progress → top, done/cancelled → bottom). A real reorder, so turning
+   * this off leaves already-moved rows where they are.
+   */
+  moveByStatus = $state(true);
   /** Settings dialog (global shortcuts, …). */
   settingsOpen = $state(false);
   /** Which Settings section the sidebar has selected. */

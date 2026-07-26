@@ -29,6 +29,12 @@ inside the app.
   **Files**. Ctrl+K also jumps straight to a section ("Settings: appearance").
 - **Appearance section** — theme (follow system / dark / light), window scale
   and todo text size now have a proper home, not just the title-bar popover.
+- **Todos sort themselves as you work** — mark one **In Progress** and it jumps
+  to the top (under the pins), mark it **Done** or **Cancelled** and it sinks to
+  the bottom (above the archive). What you are working on stays in sight, what
+  is finished stops getting in the way. A todo only ever moves inside its own
+  group, and pinned todos stay put. Turn it off in the new **Settings →
+  Behavior** section.
 
 ### Fixed
 

@@ -64,6 +64,16 @@ describe("status", () => {
     setStatus(data, t.id, "progress", 2);
     expect(lastActivity(data, t.id)).toBe("Open → In Progress");
   });
+
+  it("reports whether the status actually changed", () => {
+    const { data, listId } = base();
+    const t = createTodo(data, listId, null, "x", 1);
+    expect(setStatus(data, t.id, "done", 2)).toBe(true);
+    expect(setStatus(data, t.id, "done", 3)).toBe(false);
+    expect(setStatus(data, "nope", "done", 4)).toBe(false);
+    expect(cycleStatus(data, t.id, 5)).toBe(true);
+    expect(cycleStatus(data, "nope", 6)).toBe(false);
+  });
 });
 
 describe("rename", () => {

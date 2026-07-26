@@ -3,15 +3,13 @@
   // description with auto-detected links, subtasks, meta, action row.
   import { STATUS_LABEL } from "$lib/core/activity";
   import { detectLinks } from "$lib/core/links";
-  import { setStatus } from "$lib/core/todos-ops";
   import { formatTimestamp } from "$lib/core/time";
   import type { Todo, TodoStatus } from "$lib/core/types";
-  import { trashTodoAction } from "$lib/state/actions";
+  import { setTodoStatus, trashTodoAction } from "$lib/state/actions";
   import {
     duplicateAction, openLink, renameTodoAction, setArchivedAction,
     setDescriptionAction, setEmojiAction, togglePinAction,
   } from "$lib/state/actions-detail";
-  import { store } from "$lib/state/store.svelte";
   import { ui } from "$lib/state/ui.svelte";
   import DetailLocation from "./DetailLocation.svelte";
   import ColorPicker from "./ColorPicker.svelte";
@@ -44,7 +42,7 @@
   });
 
   function pickStatus(status: TodoStatus): void {
-    store.apply("status change", (data) => setStatus(data, todo.id, status, Date.now()));
+    setTodoStatus(todo.id, status);
   }
 </script>
 

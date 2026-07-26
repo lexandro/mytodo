@@ -24,6 +24,7 @@ import {
   aiRunCancel, aiRunPut, aiRunStart, aiRunsLoad, onAiRunEvent, type UnlistenFn,
 } from "$lib/ipc";
 import { aiConfig } from "./ai-config.svelte";
+import { placeByStatusIfEnabled } from "./status-placement";
 import { store } from "./store.svelte";
 import { ui } from "./ui.svelte";
 
@@ -312,7 +313,15 @@ class AiRunsState {
     if (chosen.length === 0) return {};
     let outcome: ReturnType<typeof applyProposals> = { appliedIds: [], errors: {} };
     store.apply("apply AI proposals", (data) => {
-      outcome = applyProposals(data, chosen, run.listId, Date.now());
+      const now = Date.now();
+      outcome = applyProposals(data, chosen, run.listId, now);
+      // an AI status change repositions the row exactly like a manual one
+      const statusChanged = chosen.flatMap((p) =>
+        p.action.kind === "changeStatus" && outcome.appliedIds.includes(p.id)
+          ? [p.action.todoId]
+          : [],
+      );
+      placeByStatusIfEnabled(data, statusChanged, now);
     });
     if (outcome.appliedIds.length > 0) {
       const result = {

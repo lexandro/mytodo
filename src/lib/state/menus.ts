@@ -4,9 +4,8 @@
 
 import { STATUS_LABEL, locationPath } from "$lib/core/activity";
 import { ACTION_LABELS, ACTION_MODES, TODO_ACTIONS } from "$lib/core/ai-types";
-import { setStatus } from "$lib/core/todos-ops";
 import type { Todo, TodoStatus } from "$lib/core/types";
-import { moveTodoAction, openDetails, trashTodoAction } from "./actions";
+import { moveTodoAction, openDetails, setTodoStatus, trashTodoAction } from "./actions";
 import { duplicateAction, setArchivedAction, togglePinAction } from "./actions-detail";
 import { openAiPanel } from "./ai-actions";
 import { aiConfig } from "./ai-config.svelte";
@@ -41,9 +40,7 @@ export function todoMenuItems(todo: Todo): CtxItem[] {
     { separator: true },
     ...statuses.map((st): CtxItem => ({
       label: `${todo.status === st ? "●" : "○"}  ${STATUS_LABEL[st]}`,
-      action: closeAnd(() =>
-        store.apply("status change", (data) => setStatus(data, todo.id, st, Date.now())),
-      ),
+      action: closeAnd(() => setTodoStatus(todo.id, st)),
     })),
     { separator: true },
     {

@@ -8,7 +8,8 @@
   import { aiConfig } from "$lib/state/ai-config.svelte";
   import { handleKeydown } from "$lib/state/keyboard";
   import {
-    TODO_FS_MAX, TODO_FS_MIN, persistAppearance, persistUiSettings, restoreUiSettings,
+    TODO_FS_MAX, TODO_FS_MIN, persistAppearance, persistBehavior, persistUiSettings,
+    restoreUiSettings,
   } from "$lib/state/settings-sync.svelte";
   import { startDeferredBoot } from "$lib/state/startup";
   import { store } from "$lib/state/store.svelte";
@@ -116,6 +117,9 @@
   });
   $effect(() => {
     if (settingsRestored) persistAppearance();
+  });
+  $effect(() => {
+    if (settingsRestored) persistBehavior();
   });
 
   // Ctrl + wheel resizes todo text (SHORTCUTS.md); explicit non-passive

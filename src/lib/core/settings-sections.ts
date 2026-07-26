@@ -6,6 +6,7 @@ export type SettingsSectionId =
   | "appearance"
   | "todo-colors"
   | "list-colors"
+  | "behavior"
   | "shortcuts"
   | "files";
 
@@ -37,6 +38,12 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     label: "List colors",
     glyph: "◒",
     hint: "A separate palette for the lists themselves — rail, tabs and panes.",
+  },
+  {
+    id: "behavior",
+    label: "Behavior",
+    glyph: "⇅",
+    hint: "How todos react to what you do with them.",
   },
   {
     id: "shortcuts",

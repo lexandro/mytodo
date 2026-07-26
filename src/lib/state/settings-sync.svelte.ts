@@ -35,6 +35,15 @@ function isAppearance(value: unknown): value is AppearanceSettings {
   );
 }
 
+interface BehaviorSettings {
+  moveByStatus: boolean;
+}
+
+function isBehavior(value: unknown): value is BehaviorSettings {
+  if (typeof value !== "object" || value === null) return false;
+  return typeof (value as Record<string, unknown>).moveByStatus === "boolean";
+}
+
 function isLayoutSettings(value: unknown): value is LayoutSettings {
   if (typeof value !== "object" || value === null) return false;
   const v = value as Record<string, unknown>;
@@ -64,6 +73,10 @@ export async function restoreUiSettings(): Promise<Record<string, unknown>> {
     ui.uiScale = UI_SCALES.includes(appearance.uiScale) ? appearance.uiScale : 100;
     ui.todoFs = Math.max(TODO_FS_MIN, Math.min(TODO_FS_MAX, Math.round(appearance.todoFs)));
   }
+  const behavior = all["behavior"];
+  if (isBehavior(behavior)) {
+    ui.moveByStatus = behavior.moveByStatus;
+  }
   const raw = all["layout"];
   if (!isLayoutSettings(raw)) return all;
   ui.layout = raw.layout;
@@ -84,6 +97,14 @@ export function persistAppearance(): void {
     todoFs: ui.todoFs,
   };
   void settingsSet("appearance", snapshot).catch(() => {
+    // non-fatal
+  });
+}
+
+/** Effect body: persists the todo behavior switches on change. */
+export function persistBehavior(): void {
+  const snapshot: BehaviorSettings = { moveByStatus: ui.moveByStatus };
+  void settingsSet("behavior", snapshot).catch(() => {
     // non-fatal
   });
 }
