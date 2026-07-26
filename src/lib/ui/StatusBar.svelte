@@ -1,9 +1,14 @@
 <script lang="ts">
-  // StatusBar (23px): saved indicator left, update offer + shortcut hints
-  // right. On persist error the saved slot turns into a red retry
-  // affordance — data is never lost silently (daprompt §32).
+  // StatusBar (23px): saved indicator left, update offer + shortcut hints +
+  // running version right. On persist error the saved slot turns into a red
+  // retry affordance — data is never lost silently (daprompt §32).
+  import { BUILD_INFO } from "$lib/build-info";
+  import { displayVersion, versionSummary } from "$lib/core/build-info";
   import { persistQueue } from "$lib/state/persist.svelte";
+  import { ui } from "$lib/state/ui.svelte";
   import { updater } from "$lib/state/updater.svelte";
+
+  const isDev = $derived(BUILD_INFO.channel === "dev");
 </script>
 
 <footer class="statusbar">
@@ -30,6 +35,15 @@
     </span>
   {/if}
   <span class="hints">Ctrl+Z undo</span>
+  <!-- last thing on the line: which build is actually running -->
+  <button
+    class="version"
+    class:dev={isDev}
+    title={`${versionSummary(BUILD_INFO)} — click for details`}
+    onclick={() => (ui.aboutOpen = true)}
+  >
+    {displayVersion(BUILD_INFO)}
+  </button>
 </footer>
 
 <style>
@@ -109,5 +123,21 @@
   }
   .hints {
     color: var(--color-neutral-600);
+  }
+  .version {
+    border: none;
+    background: transparent;
+    font: inherit;
+    padding: 0;
+    cursor: pointer;
+    color: var(--color-neutral-600);
+    font-variant-numeric: tabular-nums;
+  }
+  .version:hover {
+    color: var(--color-accent);
+  }
+  /* a working-tree build must never be mistaken for the released one */
+  .version.dev {
+    color: var(--color-accent-600);
   }
 </style>

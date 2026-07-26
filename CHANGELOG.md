@@ -4,6 +4,15 @@ All notable changes to myTODO are documented here. This project adheres to
 [Semantic Versioning](https://semver.org). Help → What's new shows this file
 inside the app.
 
+## Unreleased
+
+### Added
+
+- **The running version sits in the status bar** — bottom right, after the
+  Ctrl+Z hint. A working-tree build shows as `1.2.0-dev` in a different colour,
+  so it is never mistaken for the released one; hovering names the exact commit
+  and clicking opens About.
+
 ## v1.2.0 — 2026-07-26
 
 The structure release: todos can hang under other todos, a toolbar puts the
