@@ -52,6 +52,36 @@ export function outdentTodo(data: DomainData, id: string, now: number): boolean 
   return true;
 }
 
+/**
+ * Alt+↑ / Alt+↓: swaps the todo with the row above or below it, staying inside
+ * its own scope — a keyboard equivalent of a short drag.
+ *
+ * "Above/below" means what the user sees: pinned rows live in their own
+ * section, so a pinned todo swaps with pinned neighbours only, and an
+ * unpinned one never trades places with a row rendered elsewhere. The order
+ * value is still computed against the full scope, so nothing else shifts.
+ */
+export function moveTodoInScope(
+  data: DomainData,
+  id: string,
+  direction: "up" | "down",
+  now: number,
+): boolean {
+  const todo = findTodo(data, id);
+  if (todo === undefined || todo.trashed || todo.archived) return false;
+  const siblings = scopeSiblings(data, todo.listId, todo.groupId, todo.parentId);
+  const pinned = todo.pinLocal || todo.pinGlobal;
+  const peers = siblings.filter((t) => (t.pinLocal || t.pinGlobal) === pinned);
+  const index = peers.findIndex((t) => t.id === id);
+  if (index === -1) return false;
+  const neighbour = peers[direction === "up" ? index - 1 : index + 1];
+  if (neighbour === undefined) return false; // already at the edge
+  const others = siblings.filter((t) => t.id !== id);
+  todo.order = orderForDrop(others, neighbour.id, direction === "up" ? "before" : "after");
+  todo.updatedAt = now;
+  return true;
+}
+
 /** Caret click: hides or shows the sub-items. View state, never undoable. */
 export function toggleTodoCollapsed(data: DomainData, id: string): void {
   const todo = findTodo(data, id);

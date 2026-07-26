@@ -8,7 +8,9 @@ import { childrenOf, indentCheck } from "$lib/core/todo-tree";
 import { MAX_TODO_DEPTH, type Todo, type TodoStatus } from "$lib/core/types";
 import { moveTodoAction, openDetails, setTodoStatus, trashTodoAction } from "./actions";
 import { duplicateAction, setArchivedAction, togglePinAction } from "./actions-detail";
-import { indentTodoAction, outdentTodoAction, setStatusDeepAction } from "./actions-tree";
+import {
+  indentTodoAction, moveTodoInScopeAction, outdentTodoAction, setStatusDeepAction,
+} from "./actions-tree";
 import { openAiPanel } from "./ai-actions";
 import { aiConfig } from "./ai-config.svelte";
 import { store } from "./store.svelte";
@@ -63,6 +65,8 @@ export function todoMenuItems(todo: Todo): CtxItem[] {
       label: todo.pinGlobal ? "Unpin globally" : "Pin globally",
       action: () => togglePinAction(todo.id, "global"),
     },
+    { label: "Move up", hint: "Alt+↑", action: () => moveTodoInScopeAction(todo.id, "up") },
+    { label: "Move down", hint: "Alt+↓", action: () => moveTodoInScopeAction(todo.id, "down") },
     indent.ok
       ? { label: "Make sub-item", hint: "Tab", action: () => indentTodoAction(todo.id) }
       : {

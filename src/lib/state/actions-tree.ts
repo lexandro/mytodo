@@ -6,7 +6,7 @@ import { MAX_TODO_DEPTH, type TodoStatus } from "$lib/core/types";
 import { indentCheck } from "$lib/core/todo-tree";
 import { findTodo } from "$lib/core/todos-ops";
 import {
-  nestTodo, outdentTodo, setStatusDeep, toggleTodoCollapsed,
+  moveTodoInScope, nestTodo, outdentTodo, setStatusDeep, toggleTodoCollapsed,
 } from "$lib/core/todos-tree-ops";
 import { placeByStatusIfEnabled } from "./status-placement";
 import { store } from "./store.svelte";
@@ -51,6 +51,16 @@ export function outdentTodoAction(id: string): void {
   ui.ctxMenu = null;
   // Tab says why nothing happened, so Shift+Tab should too
   ui.showToast(lifted ? "Lifted out" : "Already at the top level", lifted);
+}
+
+/** Alt+↑ / Alt+↓: one step up or down among the rows next to it. */
+export function moveTodoInScopeAction(id: string, direction: "up" | "down"): void {
+  let moved = false;
+  store.apply("reorder", (data) => {
+    moved = moveTodoInScope(data, id, direction, Date.now());
+  });
+  ui.ctxMenu = null;
+  if (!moved) ui.showToast(direction === "up" ? "Already first" : "Already last");
 }
 
 /** Caret click: show/hide the sub-items. A view toggle, so it is not undoable. */

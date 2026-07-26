@@ -3,11 +3,13 @@
 // renders them. Import/Export/Backup items arrive with F10.
 
 import { byOrder } from "$lib/core/ordering";
+import { indentCheck } from "$lib/core/todo-tree";
 import { findTodo } from "$lib/core/todos-ops";
 import { newList, openSettings, switchList, trashTodoAction, undoAction } from "./actions";
 import { backupNowAction, exportJsonAction, importJsonAction } from "./actions-data";
 import { aiClients } from "./ai-clients.svelte";
 import { duplicateAction } from "./actions-detail";
+import { indentTodoAction, moveTodoInScopeAction, outdentTodoAction } from "./actions-tree";
 import { moveUpOneLevel } from "./menus";
 import { showQuickAddWindow, windowClose } from "$lib/ipc";
 import { store } from "./store.svelte";
@@ -70,6 +72,31 @@ function editMenu(): MenuItem[] {
       ui.focusTitleTick += 1;
     }, "F2", !has),
     item("Duplicate", () => { if (selected !== undefined) duplicateAction(selected.id); }, "", !has),
+    SEP,
+    item(
+      "Move up",
+      () => { if (selected !== undefined) moveTodoInScopeAction(selected.id, "up"); },
+      "Alt+↑",
+      !has,
+    ),
+    item(
+      "Move down",
+      () => { if (selected !== undefined) moveTodoInScopeAction(selected.id, "down"); },
+      "Alt+↓",
+      !has,
+    ),
+    item(
+      "Make sub-item",
+      () => { if (selected !== undefined) indentTodoAction(selected.id); },
+      "Tab",
+      !has || !indentCheck(store.data, selected.id).ok,
+    ),
+    item(
+      "Lift out",
+      () => { if (selected !== undefined) outdentTodoAction(selected.id); },
+      "Shift+Tab",
+      !has || selected.parentId === null,
+    ),
     item(
       "Move up one level",
       () => { if (selected !== undefined) moveUpOneLevel(selected); },

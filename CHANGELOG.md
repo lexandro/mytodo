@@ -35,6 +35,12 @@ inside the app.
   is finished stops getting in the way. A todo only ever moves inside its own
   group, and pinned todos stay put. Turn it off in the new **Settings →
   Behavior** section.
+- **Reorder a todo from the keyboard** — **Alt+↑** and **Alt+↓** move the
+  selected todo one row up or down, so ordering no longer needs the mouse. It
+  stays inside its own group and under its own parent, and a pinned todo moves
+  among the pinned ones. Both are in the **Edit** menu and the right-click
+  menu, which is also where the whole sub-item block (Make sub-item, Lift out)
+  now lives with its shortcuts spelled out.
 - **New todos no longer land under the finished ones** — **Settings → Behavior
   → New todos go** picks between **to the top** (right under what you are
   working on) and **to the bottom** (the end of the list, but still above

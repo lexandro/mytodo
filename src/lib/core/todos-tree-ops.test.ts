@@ -8,7 +8,7 @@ import { setArchived } from "./todos-detail-ops";
 import {
   createTodo, deleteTodoPermanently, moveTodo, reorderTodo, restoreTodo, trashTodo,
 } from "./todos-ops";
-import { nestTodo, outdentTodo, setStatusDeep } from "./todos-tree-ops";
+import { moveTodoInScope, nestTodo, outdentTodo, setStatusDeep } from "./todos-tree-ops";
 import { emptyDomainData, type DomainData, type Group } from "./types";
 
 function base(): { data: DomainData; listId: string } {
@@ -133,6 +133,98 @@ describe("outdentTodo", () => {
     const solo = createTodo(data, listId, null, "solo", 1);
     expect(outdentTodo(data, solo.id, 2)).toBe(false);
     expect(outdentTodo(data, "nope", 2)).toBe(false);
+  });
+});
+
+describe("moveTodoInScope", () => {
+  /** Titles of one scope in render order. */
+  function order(data: DomainData, parentId: string | null = null): string[] {
+    return data.todos
+      .filter((t) => t.parentId === parentId && !t.trashed && !t.archived)
+      .sort(byOrder)
+      .map((t) => t.title);
+  }
+
+  it("swaps with the row above and below", () => {
+    const { data, listId } = base();
+    createTodo(data, listId, null, "a", 1);
+    const b = createTodo(data, listId, null, "b", 2);
+    createTodo(data, listId, null, "c", 3);
+
+    expect(moveTodoInScope(data, b.id, "up", 4)).toBe(true);
+    expect(order(data)).toEqual(["b", "a", "c"]);
+    expect(moveTodoInScope(data, b.id, "down", 5)).toBe(true);
+    expect(order(data)).toEqual(["a", "b", "c"]);
+    expect(moveTodoInScope(data, b.id, "down", 6)).toBe(true);
+    expect(order(data)).toEqual(["a", "c", "b"]);
+  });
+
+  it("stops at the edges instead of leaving the scope", () => {
+    const { data, listId } = base();
+    const a = createTodo(data, listId, null, "a", 1);
+    const b = createTodo(data, listId, null, "b", 2);
+    expect(moveTodoInScope(data, a.id, "up", 3)).toBe(false);
+    expect(moveTodoInScope(data, b.id, "down", 4)).toBe(false);
+    expect(order(data)).toEqual(["a", "b"]);
+  });
+
+  it("moves among sub-items without escaping the parent", () => {
+    const { data, listId } = base();
+    const parent = createTodo(data, listId, null, "parent", 1);
+    const first = createTodo(data, listId, null, "first", 2);
+    const second = createTodo(data, listId, null, "second", 3);
+    nestTodo(data, first.id, parent.id, 4);
+    nestTodo(data, second.id, parent.id, 5);
+
+    expect(moveTodoInScope(data, second.id, "up", 6)).toBe(true);
+    expect(order(data, parent.id)).toEqual(["second", "first"]);
+    expect(second.parentId).toBe(parent.id);
+    // the top sub-item cannot climb out to become a sibling of its parent
+    expect(moveTodoInScope(data, second.id, "up", 7)).toBe(false);
+  });
+
+  it("swaps a pinned todo with pinned neighbours only", () => {
+    const { data, listId } = base();
+    const pinnedA = createTodo(data, listId, null, "pin-a", 1);
+    createTodo(data, listId, null, "plain", 2);
+    const pinnedB = createTodo(data, listId, null, "pin-b", 3);
+    pinnedA.pinLocal = true;
+    pinnedB.pinLocal = true;
+
+    // in the Pinned section pin-b sits right under pin-a, so one step swaps them
+    expect(moveTodoInScope(data, pinnedB.id, "up", 4)).toBe(true);
+    expect(order(data)).toEqual(["pin-b", "pin-a", "plain"]);
+    expect(moveTodoInScope(data, pinnedB.id, "up", 5)).toBe(false);
+  });
+
+  it("leaves an unpinned todo's neighbours to the unpinned rows", () => {
+    const { data, listId } = base();
+    const pinned = createTodo(data, listId, null, "pinned", 1);
+    const plainA = createTodo(data, listId, null, "plain-a", 2);
+    createTodo(data, listId, null, "plain-b", 3);
+    pinned.pinLocal = true;
+    // plain-a is the first row of the list proper — nothing above it to swap with
+    expect(moveTodoInScope(data, plainA.id, "up", 4)).toBe(false);
+  });
+
+  it("refuses trashed, archived and unknown todos", () => {
+    const { data, listId } = base();
+    const a = createTodo(data, listId, null, "a", 1);
+    createTodo(data, listId, null, "b", 2);
+    a.archived = true;
+    expect(moveTodoInScope(data, a.id, "down", 3)).toBe(false);
+    a.archived = false;
+    a.trashed = true;
+    expect(moveTodoInScope(data, a.id, "down", 4)).toBe(false);
+    expect(moveTodoInScope(data, "nope", "up", 5)).toBe(false);
+  });
+
+  it("stamps updatedAt on a real move", () => {
+    const { data, listId } = base();
+    createTodo(data, listId, null, "a", 1);
+    const b = createTodo(data, listId, null, "b", 2);
+    moveTodoInScope(data, b.id, "up", 99);
+    expect(b.updatedAt).toBe(99);
   });
 });
 

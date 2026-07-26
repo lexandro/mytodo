@@ -11,7 +11,7 @@ import {
   trashTodoAction, undoAction,
 } from "./actions";
 import { togglePinAction } from "./actions-detail";
-import { indentTodoAction, outdentTodoAction } from "./actions-tree";
+import { indentTodoAction, moveTodoInScopeAction, outdentTodoAction } from "./actions-tree";
 import { moveUpOneLevel } from "./menus";
 import { store } from "./store.svelte";
 import { ui } from "./ui.svelte";
@@ -181,6 +181,12 @@ export function handleKeydown(e: KeyboardEvent): void {
     e.preventDefault();
     if (e.shiftKey) outdentTodoAction(ui.selectedId);
     else indentTodoAction(ui.selectedId);
+    return;
+  }
+  // Alt+↑/↓ reorders, plain ↑/↓ navigates
+  if (e.altKey && (e.key === "ArrowUp" || e.key === "ArrowDown") && ui.selectedId !== null) {
+    e.preventDefault();
+    moveTodoInScopeAction(ui.selectedId, e.key === "ArrowUp" ? "up" : "down");
     return;
   }
   if (e.altKey && e.key === "ArrowLeft" && ui.selectedId !== null) {
