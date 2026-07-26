@@ -35,6 +35,12 @@ export interface Todo {
   id: string;
   listId: string;
   groupId: string | null;
+  /**
+   * Parent TODO — a sub-item lives UNDER another todo. The whole chain always
+   * shares one listId/groupId: nesting happens inside a group, it never moves
+   * a todo out of it. null = top level of its group scope.
+   */
+  parentId: string | null;
   title: string;
   description: string;
   status: TodoStatus;
@@ -120,5 +126,7 @@ export function emptyDomainData(): DomainData {
 
 /** Group nesting cap — enforced in UI, import and drag & drop alike. */
 export const MAX_GROUP_DEPTH = 3;
+/** Sub-item nesting cap, counted from the top level of a group scope. */
+export const MAX_TODO_DEPTH = 3;
 /** Custom color label cap. */
 export const MAX_CUSTOM_LABELS = 12;

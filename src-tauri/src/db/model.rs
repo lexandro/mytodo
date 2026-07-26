@@ -33,6 +33,8 @@ pub struct Todo {
     pub id: String,
     pub list_id: String,
     pub group_id: Option<String>,
+    /// Parent TODO for sub-items; None = top level of its group scope
+    pub parent_id: Option<String>,
     pub title: String,
     pub description: String,
     /// 'open' | 'progress' | 'done' | 'cancelled' — validated on the TS side

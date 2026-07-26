@@ -70,6 +70,7 @@ mod tests {
             id: id.into(),
             list_id: list_id.into(),
             group_id: None,
+            parent_id: None,
             title: "Árvíztűrő tükörfúrógép".into(),
             description: "".into(),
             status: "open".into(),
@@ -159,6 +160,51 @@ mod tests {
         assert_eq!(data.activity, vec![act]);
         assert_eq!(data.color_labels, vec![label]);
         assert_eq!(data.label_names, vec![label_name]);
+    }
+
+    /// A sub-item survives a round trip, and deleting the parent takes the
+    /// child with it — the DB mirrors the frontend rule that a subtree is one
+    /// thing (src/lib/core/todos-ops.ts deleteTodoPermanently).
+    #[test]
+    fn deleting_a_parent_todo_cascades_its_sub_items() {
+        let mut conn = mem_db();
+        let list = List {
+            id: "l1".into(),
+            name: "Inbox".into(),
+            emoji: "".into(),
+            fixed: true,
+            color_label_id: None,
+            order: 1000.0,
+        };
+        let parent = sample_todo("t1", "l1");
+        let mut child = sample_todo("t2", "l1");
+        child.parent_id = Some("t1".into());
+
+        write::apply_ops(
+            &mut conn,
+            &[
+                DbOp::PutList { row: list },
+                DbOp::PutTodo { row: parent },
+                DbOp::PutTodo { row: child.clone() },
+            ],
+        )
+        .expect("seed");
+
+        let loaded = load::load_all(&conn).expect("load");
+        let stored = loaded
+            .todos
+            .iter()
+            .find(|t| t.id == "t2")
+            .expect("child todo");
+        assert_eq!(stored.parent_id, Some("t1".into()), "parent_id round trip");
+
+        write::apply_ops(&mut conn, &[DbOp::DelTodo { id: "t1".into() }]).expect("delete parent");
+
+        let data = load::load_all(&conn).expect("load");
+        assert!(
+            data.todos.is_empty(),
+            "deleting a parent must not leave orphaned sub-items behind"
+        );
     }
 
     #[test]

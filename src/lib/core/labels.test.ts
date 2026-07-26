@@ -91,7 +91,7 @@ describe("added colors", () => {
     addCustom(data, "c1", "Fontos");
     addCustom(data, "lc1", "Deep sea", "list");
     data.todos.push({
-      id: "t1", listId: "l1", groupId: null, title: "T", description: "", status: "open",
+      id: "t1", listId: "l1", groupId: null, parentId: null, title: "T", description: "", status: "open",
       emoji: "", colorLabelId: "c1", pinLocal: false, pinGlobal: false, archived: false,
       trashed: false, trashedAt: null, order: 1000, createdAt: 1, updatedAt: 1,
     });

@@ -3,8 +3,8 @@
 // can never corrupt the database. The apply itself is one undo-able step.
 
 import {
-  MAX_CUSTOM_LABELS, MAX_GROUP_DEPTH, PALETTE_KINDS, TODO_STATUSES, emptyDomainData,
-  isPaletteKind, type DomainData, type TodoStatus,
+  MAX_CUSTOM_LABELS, MAX_GROUP_DEPTH, MAX_TODO_DEPTH, PALETTE_KINDS, TODO_STATUSES,
+  emptyDomainData, isPaletteKind, type DomainData, type TodoStatus,
 } from "./types";
 import { ensureInbox, ensurePresetLabels } from "./bootstrap";
 import { labelNameId } from "./label-names";
@@ -127,7 +127,10 @@ export function parseImport(json: string): ImportResult {
     if (todoIds.has(t.id)) return { ok: false, error: `Duplicate todo id ${t.id}.` };
     todoIds.add(t.id);
     out.todos.push({
-      id: t.id, listId: t.listId, groupId, title: t.title,
+      id: t.id, listId: t.listId, groupId,
+      // files written before sub-items existed have no parentId — flat is valid
+      parentId: str(t.parentId) ? t.parentId : null,
+      title: t.title,
       description: str(t.description) ? t.description : "",
       status: STATUSES.includes(t.status as TodoStatus) ? (t.status as TodoStatus) : "open",
       emoji: str(t.emoji) ? t.emoji : "",
@@ -141,6 +144,27 @@ export function parseImport(json: string): ImportResult {
       createdAt: num(t.createdAt) ? t.createdAt : 0,
       updatedAt: num(t.updatedAt) ? t.updatedAt : 0,
     });
+  }
+
+  // sub-item refs: the parent must exist, share the todo's scope, and the
+  // chain must stay inside the depth cap (which also rules out cycles)
+  const todoParent = new Map(out.todos.map((t) => [t.id, t.parentId]));
+  for (const todo of out.todos) {
+    if (todo.parentId === null) continue;
+    const parent = out.todos.find((t) => t.id === todo.parentId);
+    if (parent === undefined) return { ok: false, error: `Todo "${todo.title}": unknown parent.` };
+    if (parent.listId !== todo.listId || parent.groupId !== todo.groupId) {
+      return { ok: false, error: `Todo "${todo.title}": parent sits elsewhere.` };
+    }
+    let depth = 1;
+    let cursor: string | null = todo.parentId;
+    while (cursor !== null) {
+      depth += 1;
+      if (depth > MAX_TODO_DEPTH) {
+        return { ok: false, error: `Todo "${todo.title}": exceeds the ${MAX_TODO_DEPTH}-level limit.` };
+      }
+      cursor = todoParent.get(cursor) ?? null;
+    }
   }
 
   for (const item of src.subtasks as unknown[]) {

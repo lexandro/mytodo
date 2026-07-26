@@ -92,6 +92,50 @@ describe("parseImport validation", () => {
     if (!result.ok) expect(result.error).toContain("3-level");
   });
 
+  it("reads a file from before sub-items existed as a flat list", () => {
+    const data = fixture();
+    const exported = JSON.parse(exportJson(data, 1));
+    for (const todo of exported.data.todos) delete todo.parentId;
+    const result = parseImport(JSON.stringify(exported));
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.data.todos.every((t) => t.parentId === null)).toBe(true);
+  });
+
+  it("rejects a sub-item whose parent is missing or sits elsewhere", () => {
+    const data = fixture();
+    const withGhost = JSON.parse(exportJson(data, 1));
+    withGhost.data.todos[0].parentId = "ghost";
+    const ghostResult = parseImport(JSON.stringify(withGhost));
+    expect(ghostResult.ok).toBe(false);
+    if (!ghostResult.ok) expect(ghostResult.error).toContain("unknown parent");
+
+    const elsewhere = JSON.parse(exportJson(data, 1));
+    const parent = elsewhere.data.todos[0];
+    elsewhere.data.todos.push({
+      ...parent, id: "t-elsewhere", groupId: null, parentId: parent.id,
+    });
+    const scopeResult = parseImport(JSON.stringify(elsewhere));
+    expect(scopeResult.ok).toBe(false);
+    if (!scopeResult.ok) expect(scopeResult.error).toContain("parent sits elsewhere");
+  });
+
+  it("rejects sub-item depth over 3 (import cannot bypass the cap)", () => {
+    const data = fixture();
+    const exported = JSON.parse(exportJson(data, 1));
+    const root = exported.data.todos[0];
+    for (const level of [2, 3, 4]) {
+      exported.data.todos.push({
+        ...root,
+        id: `t-l${level}`,
+        title: `level ${level}`,
+        parentId: level === 2 ? root.id : `t-l${level - 1}`,
+      });
+    }
+    const result = parseImport(JSON.stringify(exported));
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toContain("3-level");
+  });
+
   it("rejects duplicate ids", () => {
     const data = fixture();
     const exported = JSON.parse(exportJson(data, 1));

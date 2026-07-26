@@ -38,7 +38,7 @@ export function placeTodoByStatus(data: DomainData, id: string, now: number): bo
   if (todo.pinLocal || todo.pinGlobal) return false;
   const placement = statusPlacement(todo.status);
   if (placement === "none") return false;
-  const siblings = scopeSiblings(data, todo.listId, todo.groupId, id);
+  const siblings = scopeSiblings(data, todo.listId, todo.groupId, todo.parentId, id);
   if (siblings.length === 0) return false;
   // already there: writing a new order would churn the DB and the undo stack
   const edge = placement === "top" ? siblings[0] : siblings[siblings.length - 1];

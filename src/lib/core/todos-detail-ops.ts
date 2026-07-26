@@ -5,6 +5,7 @@ import { logActivity } from "./activity";
 import { newId } from "./ids";
 import { orderBetween } from "./ordering";
 import { sortedByOrder } from "./scope";
+import { subtreeOf } from "./todo-tree";
 import { findTodo } from "./todos-ops";
 import type { DomainData, Todo } from "./types";
 
@@ -41,18 +42,23 @@ export function togglePin(data: DomainData, id: string, kind: "local" | "global"
   logActivity(data, id, "pin", verb + suffix, now);
 }
 
+/** Archives/unarchives the whole subtree — sub-items follow their parent. */
 export function setArchived(data: DomainData, id: string, archived: boolean, now: number): void {
   const todo = findTodo(data, id);
   if (todo === undefined || todo.archived === archived) return;
-  todo.archived = archived;
-  todo.updatedAt = now;
+  for (const member of subtreeOf(data, id)) {
+    if (member.trashed || member.archived === archived) continue;
+    member.archived = archived;
+    member.updatedAt = now;
+  }
   logActivity(data, id, "archive", archived ? "Archived" : "Restored from archive", now);
 }
 
 /**
  * Duplicate (daprompt §27): copies title/description/emoji/color/subtasks;
  * new id, Open status, pins cleared, not archived, fresh activity log.
- * Placed right after the original in its scope.
+ * Placed right after the original in its scope — including under the same
+ * parent todo. Sub-items are NOT copied: the duplicate lands as a leaf.
  */
 export function duplicateTodo(data: DomainData, id: string, now: number): Todo | null {
   const original = findTodo(data, id);
@@ -62,6 +68,7 @@ export function duplicateTodo(data: DomainData, id: string, now: number): Todo |
       (t) =>
         t.listId === original.listId &&
         t.groupId === original.groupId &&
+        t.parentId === original.parentId &&
         !t.trashed &&
         !t.archived &&
         t.id !== id,

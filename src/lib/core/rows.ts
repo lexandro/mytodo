@@ -2,6 +2,10 @@
 // root todos → Archived section (prototype buildRows, made pure).
 // The optional matcher (list filter, F6) force-expands groups and prunes
 // branches without matches.
+//
+// Todos form a tree of their own (Todo.parentId): a todo renders UNDER its
+// parent wherever that parent renders, so a subtree is never split across
+// sections. Only a todo without a visible parent anchors a section.
 
 import { byOrder } from "./ordering";
 import type { DomainData, Group, Todo } from "./types";
@@ -47,32 +51,79 @@ export function listOpenCount(data: DomainData, listId: string): number {
   ).length;
 }
 
+/** A todo and the depth it renders at — one entry per visible row. */
+interface PlacedTodo {
+  todo: Todo;
+  depth: number;
+}
+
 export function buildPaneRows(data: DomainData, input: PaneRowsInput): PaneRows {
   const { listId, matches } = input;
   const filtering = matches !== undefined;
   const rows: PaneRow[] = [];
   const visibleTodoIds: string[] = [];
   const live = data.todos.filter((t) => t.listId === listId && !t.trashed);
-  const match = (t: Todo): boolean => !filtering || matches(t);
+  const liveById = new Map(live.map((t) => [t.id, t]));
   const isPinned = (t: Todo): boolean => t.pinLocal || t.pinGlobal;
 
-  const pushTodo = (todo: Todo, depth: number): void => {
-    rows.push({ kind: "todo", key: todo.id, todo, depth });
-    visibleTodoIds.push(todo.id);
-  };
-  const sortedTodos = (filter: (t: Todo) => boolean): Todo[] =>
-    live.filter(filter).sort(byOrder);
+  const childrenOf = (todo: Todo): Todo[] =>
+    live.filter((t) => t.parentId === todo.id && t.archived === todo.archived).sort(byOrder);
 
-  // pinned section (local + global pins of this list)
-  const pinned = sortedTodos((t) => !t.archived && isPinned(t) && match(t));
+  // a parent stays visible when any of its sub-items matches — otherwise the
+  // match would render with nothing to hang on
+  const subtreeMatches = (todo: Todo): boolean => {
+    if (!filtering || matches(todo)) return true;
+    return childrenOf(todo).some(subtreeMatches);
+  };
+
+  /**
+   * A todo renders under its parent whenever that parent renders in the same
+   * section; a missing parent (or one sitting in another section) makes it an
+   * anchor of its own.
+   */
+  const isAnchor = (todo: Todo): boolean => {
+    if (todo.parentId === null) return true;
+    const parent = liveById.get(todo.parentId);
+    return parent === undefined || parent.archived !== todo.archived;
+  };
+
+  /** Flattens anchors and their sub-item trees into render order. */
+  const place = (anchors: Todo[], depth: number): PlacedTodo[] =>
+    anchors.flatMap((todo) => [
+      { todo, depth },
+      ...place(childrenOf(todo).filter(subtreeMatches), depth + 1),
+    ]);
+
+  const anchorsWhere = (filter: (t: Todo) => boolean): Todo[] =>
+    live.filter((t) => isAnchor(t) && filter(t) && subtreeMatches(t)).sort(byOrder);
+
+  const pushPlaced = (placed: PlacedTodo[]): void => {
+    for (const { todo, depth } of placed) {
+      rows.push({ kind: "todo", key: todo.id, todo, depth });
+      visibleTodoIds.push(todo.id);
+    }
+  };
+
+  // pinned section (local + global pins of this list); an unpinned sub-item of
+  // a pinned todo travels with it rather than dangling in its group
+  const pinned = place(anchorsWhere((t) => !t.archived && isPinned(t)), 0);
   if (pinned.length > 0) {
     rows.push({ kind: "section", key: "sec-pinned", label: "Pinned", count: pinned.length, toggleable: false, open: true });
-    pinned.forEach((t) => pushTodo(t, 0));
+    pushPlaced(pinned);
   }
 
-  // group tree with its todos; filtering prunes non-matching branches
+  // group tree with its todos; filtering prunes non-matching branches. The
+  // anchors are computed once per group — walk() and groupHasMatch() both ask.
+  const anchorCache = new Map<string, Todo[]>();
+  const groupAnchors = (groupId: string): Todo[] => {
+    const cached = anchorCache.get(groupId);
+    if (cached !== undefined) return cached;
+    const anchors = anchorsWhere((t) => t.groupId === groupId && !t.archived && !isPinned(t));
+    anchorCache.set(groupId, anchors);
+    return anchors;
+  };
   const groupHasMatch = (group: Group): boolean => {
-    if (live.some((t) => t.groupId === group.id && !t.archived && !isPinned(t) && match(t))) return true;
+    if (groupAnchors(group.id).length > 0) return true;
     return data.groups.some((g) => g.parentId === group.id && groupHasMatch(g));
   };
   const walk = (parentId: string | null, depth: number): void => {
@@ -88,23 +139,21 @@ export function buildPaneRows(data: DomainData, input: PaneRowsInput): PaneRows 
       });
       if (open) {
         walk(group.id, depth + 1);
-        sortedTodos((t) => t.groupId === group.id && !t.archived && !isPinned(t) && match(t))
-          .forEach((t) => pushTodo(t, depth + 1));
+        pushPlaced(place(groupAnchors(group.id), depth + 1));
       }
     }
   };
   walk(null, 0);
 
   // root todos
-  sortedTodos((t) => t.groupId === null && !t.archived && !isPinned(t) && match(t))
-    .forEach((t) => pushTodo(t, 0));
+  pushPlaced(place(anchorsWhere((t) => t.groupId === null && !t.archived && !isPinned(t)), 0));
 
   // archived section (collapsed by default; filtering opens it)
-  const archived = sortedTodos((t) => t.archived && match(t));
+  const archived = place(anchorsWhere((t) => t.archived), 0);
   if (archived.length > 0) {
     const open = input.archivedOpen || filtering;
     rows.push({ kind: "section", key: "sec-archived", label: "Archived", count: archived.length, toggleable: true, open });
-    if (open) archived.forEach((t) => pushTodo(t, 0));
+    if (open) pushPlaced(archived);
   }
 
   return { rows, visibleTodoIds };

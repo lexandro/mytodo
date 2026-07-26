@@ -120,6 +120,13 @@ const MIGRATIONS: &[&str] = &[
     ALTER TABLE color_labels ADD COLUMN kind TEXT NOT NULL DEFAULT 'todo';
     ALTER TABLE lists ADD COLUMN color_label_id TEXT REFERENCES color_labels(id) ON DELETE SET NULL;
     ",
+    // v6 — sub-items: a todo may hang under another todo. Existing rows keep
+    // parent_id NULL and stay top level. CASCADE matches the frontend rule
+    // that a subtree is deleted as one (src/lib/core/todos-ops.ts).
+    "
+    ALTER TABLE todos ADD COLUMN parent_id TEXT REFERENCES todos(id) ON DELETE CASCADE;
+    CREATE INDEX idx_todos_parent ON todos(parent_id);
+    ",
 ];
 
 pub fn migrate(conn: &mut Connection) -> Result<(), String> {

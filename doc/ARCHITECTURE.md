@@ -38,6 +38,22 @@
   silently.
 - Schema versioning: `PRAGMA user_version` + an append-only migration array.
 
+## Todo hierarchy
+
+- Two independent nestings, both capped at 3 levels: **groups**
+  (`Group.parentId`) are the user's folders, **sub-items** (`Todo.parentId`)
+  hang one todo under another.
+- A sub-item chain always shares one list + group: nesting moves a todo
+  inside its group, never out of it. The ordering scope is therefore
+  (listId, groupId, parentId) — `core/todos-ops.ts scopeSiblings`.
+- A subtree is one thing: trash, archive, permanent delete and a cross-list
+  move all carry the descendants along. Status is the exception — it applies
+  to one todo unless the caller asks for `setStatusDeep`.
+- Structure queries live in `core/todo-tree.ts` (cycle-safe by construction),
+  reshaping mutations in `core/todos-tree-ops.ts`. `core/rows.ts` renders a
+  todo under its parent wherever that parent renders, so a branch is never
+  split across the Pinned/group/Archived sections.
+
 ## Undo
 
 - Snapshot stack (cap 30) inside `store.apply()`; undo writes back through
