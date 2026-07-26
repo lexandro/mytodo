@@ -149,6 +149,71 @@ describe("buildPaneRows", () => {
     expect(todoDepths(data, listId, true)).toEqual([0, 1]);
   });
 
+  it("hides the branch of a collapsed todo but keeps the todo itself", () => {
+    const { data, listId } = base();
+    const parent = createTodo(data, listId, null, "parent", 1);
+    const child = createTodo(data, listId, null, "child", 2);
+    const grandchild = createTodo(data, listId, null, "grandchild", 3);
+    const after = createTodo(data, listId, null, "after", 4);
+    nestTodo(data, child.id, parent.id, 5);
+    nestTodo(data, grandchild.id, child.id, 6);
+    parent.collapsed = true;
+
+    expect(rowKinds(data, listId)).toEqual(["t:parent", "t:after"]);
+    // keyboard navigation skips what the caret hides
+    const { visibleTodoIds } = buildPaneRows(data, { listId, archivedOpen: false });
+    expect(visibleTodoIds).toEqual([parent.id, after.id]);
+  });
+
+  it("reports the whole subtree size and open state for the caret", () => {
+    const { data, listId } = base();
+    const parent = createTodo(data, listId, null, "parent", 1);
+    const child = createTodo(data, listId, null, "child", 2);
+    const grandchild = createTodo(data, listId, null, "grandchild", 3);
+    const leaf = createTodo(data, listId, null, "leaf", 4);
+    nestTodo(data, child.id, parent.id, 5);
+    nestTodo(data, grandchild.id, child.id, 6);
+
+    const todoRows = buildPaneRows(data, { listId, archivedOpen: false }).rows
+      .filter((r) => r.kind === "todo")
+      .map((r) => (r.kind === "todo" ? { title: r.todo.title, childCount: r.childCount, open: r.open } : null));
+    expect(todoRows).toEqual([
+      { title: "parent", childCount: 2, open: true },
+      { title: "child", childCount: 1, open: true },
+      { title: "grandchild", childCount: 0, open: true },
+      { title: leaf.title, childCount: 0, open: true },
+    ]);
+  });
+
+  it("counts only the rows the caret would actually hide", () => {
+    const { data, listId } = base();
+    const parent = createTodo(data, listId, null, "parent", 1);
+    const child = createTodo(data, listId, null, "child", 2);
+    const grandchild = createTodo(data, listId, null, "grandchild", 3);
+    nestTodo(data, child.id, parent.id, 4);
+    nestTodo(data, grandchild.id, child.id, 5);
+    child.collapsed = true; // the grandchild is already out of sight
+
+    const parentRow = buildPaneRows(data, { listId, archivedOpen: false }).rows
+      .find((r) => r.kind === "todo" && r.todo.id === parent.id);
+    expect(parentRow?.kind === "todo" ? parentRow.childCount : -1).toBe(1);
+  });
+
+  it("force-expands a collapsed branch while filtering", () => {
+    const { data, listId } = base();
+    const parent = createTodo(data, listId, null, "parent", 1);
+    const child = createTodo(data, listId, null, "api timeout", 2);
+    nestTodo(data, child.id, parent.id, 3);
+    parent.collapsed = true;
+    const { rows } = buildPaneRows(data, {
+      listId, archivedOpen: false,
+      matches: (t) => t.title.includes("timeout"),
+    });
+    expect(rows.map((r) => (r.kind === "todo" ? r.todo.title : r.kind))).toEqual([
+      "parent", "api timeout",
+    ]);
+  });
+
   it("visibleTodoIds follows render order for keyboard navigation", () => {
     const { data, listId } = base();
     const g = createGroup(data, listId, null, "G") as Group;

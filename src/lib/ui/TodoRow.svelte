@@ -7,13 +7,23 @@
   import { canNest } from "$lib/core/todo-tree";
   import type { Todo } from "$lib/core/types";
   import { armRename, cycleTodoStatus, reorderTodoAction, selectTodo } from "$lib/state/actions";
-  import { nestTodoAction } from "$lib/state/actions-tree";
+  import { nestTodoAction, toggleTodoCollapsedAction } from "$lib/state/actions-tree";
   import { openContextMenu, todoMenuItems } from "$lib/state/menus";
   import { store } from "$lib/state/store.svelte";
   import { ui } from "$lib/state/ui.svelte";
   import InlineRename from "./InlineRename.svelte";
 
-  let { todo, depth, paneIndex }: { todo: Todo; depth: number; paneIndex: number } = $props();
+  let {
+    todo, depth, paneIndex, childCount = 0, open = true,
+  }: {
+    todo: Todo;
+    depth: number;
+    paneIndex: number;
+    /** Sub-items in the whole subtree; 0 means no caret. */
+    childCount?: number;
+    /** False when the sub-items are collapsed out of sight. */
+    open?: boolean;
+  } = $props();
 
   const selected = $derived(ui.selectedId === todo.id);
   const draggedId = $derived(ui.drag?.type === "todo" ? ui.drag.id : null);
@@ -120,6 +130,21 @@
   onkeydown={() => {}}
   oncontextmenu={onContextMenu}
 >
+  <!-- fixed slot, empty for leaves: carets line up with the group carets -->
+  {#if childCount > 0}
+    <button
+      class="caret"
+      title={open ? "Hide sub-items" : `Show ${childCount} sub-item${childCount === 1 ? "" : "s"}`}
+      onclick={(e) => {
+        e.stopPropagation();
+        toggleTodoCollapsedAction(todo.id);
+      }}
+    >
+      {open ? "▾" : "▸"}
+    </button>
+  {:else}
+    <span class="caret"></span>
+  {/if}
   <button
     class="status"
     title={meta.title}
@@ -141,6 +166,9 @@
   {/if}
   {#if todo.pinGlobal}
     <span class="tag tag-accent gtag" title="Pinned globally">G</span>
+  {/if}
+  {#if !open}
+    <span class="hidden-count" title="Hidden sub-items">{childCount}</span>
   {/if}
   {#if subtasks.length > 0}
     <span class="subcount">{subDone}/{subtasks.length}</span>
@@ -174,6 +202,30 @@
   .todo-row.drop-into {
     background: color-mix(in srgb, var(--color-accent) 16%, transparent);
     box-shadow: inset 0 0 0 1px var(--color-accent);
+  }
+  .caret {
+    flex: none;
+    width: 12px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    color: var(--color-neutral-500);
+    font-size: 9px;
+    line-height: 1;
+    text-align: center;
+    cursor: pointer;
+  }
+  button.caret:hover {
+    color: var(--color-accent);
+  }
+  .hidden-count {
+    flex: none;
+    font-size: 9.5px;
+    padding: 0 5px;
+    border-radius: 999px;
+    color: var(--color-neutral-500);
+    background: color-mix(in srgb, var(--color-text) 8%, transparent);
+    font-variant-numeric: tabular-nums;
   }
   .status {
     width: 15px;

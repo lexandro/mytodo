@@ -71,6 +71,7 @@ mod tests {
             list_id: list_id.into(),
             group_id: None,
             parent_id: None,
+            collapsed: false,
             title: "Árvíztűrő tükörfúrógép".into(),
             description: "".into(),
             status: "open".into(),

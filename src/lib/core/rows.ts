@@ -13,7 +13,11 @@ import type { DomainData, Group, Todo } from "./types";
 export type PaneRow =
   | { kind: "section"; key: string; label: string; count: number; toggleable: boolean; open: boolean }
   | { kind: "group"; key: string; group: Group; depth: number; count: number; open: boolean }
-  | { kind: "todo"; key: string; todo: Todo; depth: number };
+  /**
+   * `childCount` counts the whole sub-item subtree (0 = leaf, so no caret);
+   * `open` is false when that subtree is collapsed out of sight.
+   */
+  | { kind: "todo"; key: string; todo: Todo; depth: number; childCount: number; open: boolean };
 
 export interface PaneRowsInput {
   listId: string;
@@ -51,10 +55,12 @@ export function listOpenCount(data: DomainData, listId: string): number {
   ).length;
 }
 
-/** A todo and the depth it renders at — one entry per visible row. */
+/** A todo and how it renders — one entry per visible row. */
 interface PlacedTodo {
   todo: Todo;
   depth: number;
+  childCount: number;
+  open: boolean;
 }
 
 export function buildPaneRows(data: DomainData, input: PaneRowsInput): PaneRows {
@@ -87,19 +93,26 @@ export function buildPaneRows(data: DomainData, input: PaneRowsInput): PaneRows 
     return parent === undefined || parent.archived !== todo.archived;
   };
 
-  /** Flattens anchors and their sub-item trees into render order. */
+  /**
+   * Flattens anchors and their sub-item trees into render order. A collapsed
+   * todo keeps its row but hides the branch; filtering force-expands, the same
+   * way it does for groups. `childCount` is the branch as it would render —
+   * exactly the number of rows the caret makes disappear.
+   */
   const place = (anchors: Todo[], depth: number): PlacedTodo[] =>
-    anchors.flatMap((todo) => [
-      { todo, depth },
-      ...place(childrenOf(todo).filter(subtreeMatches), depth + 1),
-    ]);
+    anchors.flatMap((todo) => {
+      const branch = place(childrenOf(todo).filter(subtreeMatches), depth + 1);
+      const open = filtering || !todo.collapsed || branch.length === 0;
+      const row: PlacedTodo = { todo, depth, childCount: branch.length, open };
+      return open ? [row, ...branch] : [row];
+    });
 
   const anchorsWhere = (filter: (t: Todo) => boolean): Todo[] =>
     live.filter((t) => isAnchor(t) && filter(t) && subtreeMatches(t)).sort(byOrder);
 
   const pushPlaced = (placed: PlacedTodo[]): void => {
-    for (const { todo, depth } of placed) {
-      rows.push({ kind: "todo", key: todo.id, todo, depth });
+    for (const { todo, depth, childCount, open } of placed) {
+      rows.push({ kind: "todo", key: todo.id, todo, depth, childCount, open });
       visibleTodoIds.push(todo.id);
     }
   };

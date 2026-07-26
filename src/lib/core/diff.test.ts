@@ -8,7 +8,8 @@ function list(id: string, name = "L"): List {
 
 function todo(id: string, listId: string, title = "T"): Todo {
   return {
-    id, listId, groupId: null, parentId: null, title, description: "", status: "open",
+    id, listId, groupId: null, parentId: null, collapsed: false,
+    title, description: "", status: "open",
     emoji: "", colorLabelId: null, pinLocal: false, pinGlobal: false,
     archived: false, trashed: false, trashedAt: null,
     order: 1000, createdAt: 1, updatedAt: 1,

@@ -127,6 +127,11 @@ const MIGRATIONS: &[&str] = &[
     ALTER TABLE todos ADD COLUMN parent_id TEXT REFERENCES todos(id) ON DELETE CASCADE;
     CREATE INDEX idx_todos_parent ON todos(parent_id);
     ",
+    // v7 — a todo with sub-items can be collapsed, like a group. View state,
+    // so it is persisted but never undoable (src/lib/state/actions-tree.ts).
+    "
+    ALTER TABLE todos ADD COLUMN collapsed INTEGER NOT NULL DEFAULT 0;
+    ",
 ];
 
 pub fn migrate(conn: &mut Connection) -> Result<(), String> {

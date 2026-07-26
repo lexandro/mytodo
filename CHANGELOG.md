@@ -47,6 +47,9 @@ inside the app.
   another list and the whole branch goes with it. Statuses stay independent,
   except for the new **Done with sub-items** in the right-click menu, which
   closes a todo and everything under it in one undoable step.
+  A todo with sub-items gets a caret, exactly like a group: fold the branch
+  away and the row shows how many items are hiding under it. Searching opens
+  everything up, so nothing stays hidden from a filter.
 
 ### Fixed
 

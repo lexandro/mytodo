@@ -52,6 +52,13 @@ export function outdentTodo(data: DomainData, id: string, now: number): boolean 
   return true;
 }
 
+/** Caret click: hides or shows the sub-items. View state, never undoable. */
+export function toggleTodoCollapsed(data: DomainData, id: string): void {
+  const todo = findTodo(data, id);
+  if (todo === undefined) return;
+  todo.collapsed = !todo.collapsed;
+}
+
 /**
  * Context-menu "… with sub-items": one status for the whole subtree, inside a
  * single undo step. Returns the ids that actually changed — the caller

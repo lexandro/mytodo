@@ -41,6 +41,8 @@ export interface Todo {
    * a todo out of it. null = top level of its group scope.
    */
   parentId: string | null;
+  /** Sub-items hidden under this todo (view state, like Group.collapsed). */
+  collapsed: boolean;
   title: string;
   description: string;
   status: TodoStatus;

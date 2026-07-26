@@ -45,6 +45,7 @@ export function createTodo(
     listId,
     groupId,
     parentId: null,
+    collapsed: false,
     title,
     description: "",
     status: "open",

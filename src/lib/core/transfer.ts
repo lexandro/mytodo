@@ -130,6 +130,7 @@ export function parseImport(json: string): ImportResult {
       id: t.id, listId: t.listId, groupId,
       // files written before sub-items existed have no parentId — flat is valid
       parentId: str(t.parentId) ? t.parentId : null,
+      collapsed: bool(t.collapsed) ? t.collapsed : false,
       title: t.title,
       description: str(t.description) ? t.description : "",
       status: STATUSES.includes(t.status as TodoStatus) ? (t.status as TodoStatus) : "open",

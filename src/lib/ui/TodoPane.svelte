@@ -106,7 +106,13 @@
         {:else if row.kind === "group"}
           <GroupRow group={row.group} depth={row.depth} count={row.count} open={row.open} {paneIndex} />
         {:else}
-          <TodoRow todo={row.todo} depth={row.depth} {paneIndex} />
+          <TodoRow
+            todo={row.todo}
+            depth={row.depth}
+            childCount={row.childCount}
+            open={row.open}
+            {paneIndex}
+          />
         {/if}
       {/each}
       {#if paneRows.rows.length === 0}

@@ -64,20 +64,21 @@ pub fn apply_ops(conn: &mut Connection, ops: &[DbOp]) -> Result<(), String> {
                 .map_err(|e| fail("delGroup", e))?,
             DbOp::PutTodo { row } => tx
                 .execute(
-                    "INSERT INTO todos (id, list_id, group_id, parent_id, title, description,
-                        status, emoji, color_label_id, pin_local, pin_global, archived,
-                        trashed, trashed_at, ord, created_at, updated_at)
-                     VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17)
+                    "INSERT INTO todos (id, list_id, group_id, parent_id, collapsed, title,
+                        description, status, emoji, color_label_id, pin_local, pin_global,
+                        archived, trashed, trashed_at, ord, created_at, updated_at)
+                     VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18)
                      ON CONFLICT(id) DO UPDATE SET
-                       list_id=?2, group_id=?3, parent_id=?4, title=?5, description=?6,
-                       status=?7, emoji=?8, color_label_id=?9, pin_local=?10,
-                       pin_global=?11, archived=?12, trashed=?13, trashed_at=?14,
-                       ord=?15, created_at=?16, updated_at=?17",
+                       list_id=?2, group_id=?3, parent_id=?4, collapsed=?5, title=?6,
+                       description=?7, status=?8, emoji=?9, color_label_id=?10,
+                       pin_local=?11, pin_global=?12, archived=?13, trashed=?14,
+                       trashed_at=?15, ord=?16, created_at=?17, updated_at=?18",
                     params![
                         row.id,
                         row.list_id,
                         row.group_id,
                         row.parent_id,
+                        row.collapsed,
                         row.title,
                         row.description,
                         row.status,
