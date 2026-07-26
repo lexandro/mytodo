@@ -33,6 +33,7 @@
   import PinnedView from "./PinnedView.svelte";
   import StatusBar from "./StatusBar.svelte";
   import TitleBar from "./TitleBar.svelte";
+  import Toolbar from "./Toolbar.svelte";
   import Toast from "./Toast.svelte";
   import TodoPane from "./TodoPane.svelte";
   import TrashView from "./TrashView.svelte";
@@ -146,6 +147,7 @@
 
 <div class="shell">
   <TitleBar />
+  <Toolbar />
   <GlobalPinnedStrip />
   <div class="main-row">
     {#if store.loadError !== null}

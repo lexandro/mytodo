@@ -50,6 +50,12 @@ inside the app.
   A todo with sub-items gets a caret, exactly like a group: fold the branch
   away and the row shows how many items are hiding under it. Searching opens
   everything up, so nothing stays hidden from a filter.
+- **Toolbar** — a slim row under the title bar for the things you reach for
+  constantly on the selected todo: undo, make sub-item / lift out, done, pin
+  and delete. Every button has a tooltip with its shortcut, and greys out when
+  it does not apply — so the toolbar also tells you what is possible right now.
+  The title bar is untouched; hide the row from **View → Toolbar** if you would
+  rather have the space.
 
 ### Fixed
 

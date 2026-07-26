@@ -112,6 +112,8 @@ class UiState {
    * this off leaves already-moved rows where they are.
    */
   moveByStatus = $state(true);
+  /** Toolbar row under the title bar (View → Toolbar). */
+  toolbarOpen = $state(true);
   /** Settings dialog (global shortcuts, …). */
   settingsOpen = $state(false);
   /** Which Settings section the sidebar has selected. */

@@ -89,6 +89,8 @@ function viewMenu(): MenuItem[] {
     layout("Split horizontal", "2h"),
     layout("2 × 2 grid", "4"),
     SEP,
+    item("Toolbar", () => (ui.toolbarOpen = !ui.toolbarOpen), ui.toolbarOpen ? "✓" : ""),
+    SEP,
     item("Pinned todos", () => (ui.view = "pinned")),
     item("Trash", () => (ui.view = "trash")),
     SEP,

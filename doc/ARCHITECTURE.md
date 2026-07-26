@@ -19,6 +19,9 @@
 
 - **core**: all real logic is pure TS with colocated vitest tests
   (ops modules, row builder, search, links, shortcuts, transfer…).
+- **Toolbar** (under the title bar, View → Toolbar): reach, never power —
+  every button mirrors an existing action + shortcut, and its disabled state
+  is derived from the same core predicates the menu uses.
 - **ipc.ts**: the only module that imports `@tauri-apps/*` — the entire
   native surface is auditable in one place.
 - **Rust**: small and focused — SQLite (rusqlite), backups (VACUUM INTO),

@@ -10,6 +10,8 @@ interface LayoutSettings {
   paneLists: (string | null)[];
   activePane: number;
   view: ViewName;
+  /** Optional: settings written before the toolbar existed just show it. */
+  toolbarOpen?: boolean;
 }
 
 const LAYOUTS: LayoutName[] = ["1", "2v", "2h", "4"];
@@ -86,6 +88,7 @@ export async function restoreUiSettings(): Promise<Record<string, unknown>> {
   });
   ui.activePane = Math.max(0, Math.min(3, raw.activePane));
   ui.view = raw.view;
+  if (typeof raw.toolbarOpen === "boolean") ui.toolbarOpen = raw.toolbarOpen;
   return all;
 }
 
@@ -119,6 +122,7 @@ export function persistUiSettings(): void {
     paneLists: ui.panes.map((p) => p.listId),
     activePane: ui.activePane,
     view: ui.view,
+    toolbarOpen: ui.toolbarOpen,
   };
   void settingsSet("layout", snapshot).catch(() => {
     // non-fatal: layout persistence failure never blocks the UI
