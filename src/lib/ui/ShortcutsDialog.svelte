@@ -18,6 +18,8 @@
     ["Toggle Done", "Ctrl+Enter"],
     ["Pin / unpin to list", "Ctrl+P"],
     ["Rename selected", "F2"],
+    ["Make sub-item of the todo above", "Tab"],
+    ["Lift sub-item out one level", "Shift+Tab"],
     ["Move up one level", "Alt+←"],
     ["Delete (to Trash)", "Delete"],
     ["Undo", "Ctrl+Z"],

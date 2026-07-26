@@ -11,6 +11,7 @@ import {
   trashTodoAction, undoAction,
 } from "./actions";
 import { togglePinAction } from "./actions-detail";
+import { indentTodoAction, outdentTodoAction } from "./actions-tree";
 import { moveUpOneLevel } from "./menus";
 import { store } from "./store.svelte";
 import { ui } from "./ui.svelte";
@@ -174,6 +175,14 @@ export function handleKeydown(e: KeyboardEvent): void {
   }
   // plain keys below never fire while typing
   if (editing) return;
+  // Tab / Shift+Tab reshape the sub-item tree, the outliner convention. Only
+  // with a selected todo — otherwise Tab stays the normal focus key.
+  if (e.key === "Tab" && !e.ctrlKey && !e.altKey && ui.selectedId !== null && !ui.overlayOpen) {
+    e.preventDefault();
+    if (e.shiftKey) outdentTodoAction(ui.selectedId);
+    else indentTodoAction(ui.selectedId);
+    return;
+  }
   if (e.altKey && e.key === "ArrowLeft" && ui.selectedId !== null) {
     e.preventDefault();
     const todo = findTodo(store.data, ui.selectedId);

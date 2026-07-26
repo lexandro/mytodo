@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { ensureInbox } from "./bootstrap";
 import { createList } from "./lists-ops";
 import {
-  canNest, childrenOf, indentTargetOf, isSelfOrAncestor, subtreeHeight, subtreeOf, todoDepth,
+  canNest, childrenOf, indentCheck, isSelfOrAncestor, subtreeHeight, subtreeOf, todoDepth,
 } from "./todo-tree";
 import { createTodo } from "./todos-ops";
 import { nestTodo } from "./todos-tree-ops";
@@ -112,35 +112,38 @@ describe("canNest", () => {
   });
 });
 
-describe("indentTargetOf", () => {
+describe("indentCheck", () => {
   it("points at the preceding sibling", () => {
     const { data, listId } = base();
     createTodo(data, listId, null, "first", 1);
     const second = createTodo(data, listId, null, "second", 2);
-    expect(indentTargetOf(data, second.id)?.title).toBe("first");
+    const check = indentCheck(data, second.id);
+    expect(check.ok).toBe(true);
+    if (check.ok) expect(check.target.title).toBe("first");
   });
 
-  it("returns null for the first todo of a scope", () => {
+  it("reports no-sibling for the first todo of a scope", () => {
     const { data, listId } = base();
     const first = createTodo(data, listId, null, "first", 1);
     createTodo(data, listId, null, "second", 2);
-    expect(indentTargetOf(data, first.id)).toBeNull();
+    expect(indentCheck(data, first.id)).toEqual({ ok: false, reason: "no-sibling" });
+    expect(indentCheck(data, "nope")).toEqual({ ok: false, reason: "no-sibling" });
   });
 
-  it("returns null when the depth cap blocks the move", () => {
+  it("reports too-deep when the cap blocks the move", () => {
     const { data, listId, b, c } = chain();
     // a sibling of c, so both sit at level 3 — indenting would make level 4
     const sibling = createTodo(data, listId, null, "sibling", 7);
     expect(nestTodo(data, sibling.id, b.id, 8)).toBe(true);
     expect(todoDepth(data, sibling.id)).toBe(3);
     expect(childrenOf(data, b.id).map((t) => t.id)).toEqual([c.id, sibling.id]);
-    expect(indentTargetOf(data, sibling.id)).toBeNull();
+    expect(indentCheck(data, sibling.id)).toEqual({ ok: false, reason: "too-deep" });
   });
 
   it("only considers siblings of the same scope", () => {
     const { data, a, b } = chain();
     // b is a's only child — nothing precedes it under a
-    expect(indentTargetOf(data, b.id)).toBeNull();
+    expect(indentCheck(data, b.id)).toEqual({ ok: false, reason: "no-sibling" });
     expect(childrenOf(data, a.id)).toHaveLength(1);
   });
 });

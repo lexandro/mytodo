@@ -2,9 +2,12 @@
   // One todo row: status circle (click cycles), emoji, title, G-tag, subtask
   // progress; 3px color stripe; drag source + before/after drop target.
   // Double-click puts the title into an inline input (edit mode).
+  import { dropZoneAt } from "$lib/core/drop-zone";
   import { labelColor } from "$lib/core/labels";
+  import { canNest } from "$lib/core/todo-tree";
   import type { Todo } from "$lib/core/types";
   import { armRename, cycleTodoStatus, reorderTodoAction, selectTodo } from "$lib/state/actions";
+  import { nestTodoAction } from "$lib/state/actions-tree";
   import { openContextMenu, todoMenuItems } from "$lib/state/menus";
   import { store } from "$lib/state/store.svelte";
   import { ui } from "$lib/state/ui.svelte";
@@ -13,6 +16,9 @@
   let { todo, depth, paneIndex }: { todo: Todo; depth: number; paneIndex: number } = $props();
 
   const selected = $derived(ui.selectedId === todo.id);
+  const draggedId = $derived(ui.drag?.type === "todo" ? ui.drag.id : null);
+  // lazily evaluated: only the row actually being hovered asks
+  const nestable = $derived(draggedId !== null && canNest(store.data, draggedId, todo.id));
   const editing = $derived(
     ui.renaming?.type === "todo" && ui.renaming.id === todo.id && ui.renaming.paneIndex === paneIndex,
   );
@@ -53,13 +59,18 @@
     ui.drag = { type: "todo", id: todo.id };
   }
 
+  /**
+   * Three zones (core/drop-zone.ts): the wide middle makes the dragged todo a
+   * sub-item of this row, the thin edges put it between two rows. A row that
+   * cannot take the drop as a child keeps the plain before/after split.
+   */
   function onDragOver(e: DragEvent): void {
     const drag = ui.drag;
     if (drag === null || drag.type !== "todo" || drag.id === todo.id) return;
     e.preventDefault();
     e.stopPropagation();
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const pos = e.clientY - rect.top < rect.height / 2 ? "before" : "after";
+    const pos = dropZoneAt(e.clientY - rect.top, rect.height, nestable);
     if (ui.drop?.key !== dropKey || ui.drop.pos !== pos) ui.drop = { key: dropKey, pos };
   }
 
@@ -71,8 +82,9 @@
       ui.clearDragState();
       return;
     }
-    const pos = ui.drop?.key === dropKey && ui.drop.pos !== "into" ? ui.drop.pos : "after";
-    reorderTodoAction(drag.id, todo.id, pos);
+    const pos = ui.drop?.key === dropKey ? ui.drop.pos : "after";
+    if (pos === "into") nestTodoAction(drag.id, todo.id);
+    else reorderTodoAction(drag.id, todo.id, pos);
   }
 
   function onContextMenu(e: MouseEvent): void {
@@ -92,6 +104,7 @@
   class:selected
   class:drop-before={dropPos === "before"}
   class:drop-after={dropPos === "after"}
+  class:drop-into={dropPos === "into"}
   style:padding-left={`${10 + depth * 16}px`}
   style:border-left-color={stripe}
   role="button"
@@ -100,6 +113,7 @@
   ondragstart={onDragStart}
   ondragend={() => ui.clearDragState()}
   ondragover={onDragOver}
+  ondragleave={() => { if (ui.drop?.key === dropKey) ui.drop = null; }}
   ondrop={onDrop}
   onclick={() => selectTodo(todo.id, paneIndex)}
   ondblclick={onDblClick}
@@ -155,6 +169,11 @@
   }
   .todo-row.drop-after {
     box-shadow: inset 0 -2px 0 var(--color-accent);
+  }
+  /* whole-row highlight = the drop becomes a sub-item of this row */
+  .todo-row.drop-into {
+    background: color-mix(in srgb, var(--color-accent) 16%, transparent);
+    box-shadow: inset 0 0 0 1px var(--color-accent);
   }
   .status {
     width: 15px;

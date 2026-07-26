@@ -4,9 +4,11 @@
 
 import { STATUS_LABEL, locationPath } from "$lib/core/activity";
 import { ACTION_LABELS, ACTION_MODES, TODO_ACTIONS } from "$lib/core/ai-types";
-import type { Todo, TodoStatus } from "$lib/core/types";
+import { childrenOf, indentCheck } from "$lib/core/todo-tree";
+import { MAX_TODO_DEPTH, type Todo, type TodoStatus } from "$lib/core/types";
 import { moveTodoAction, openDetails, setTodoStatus, trashTodoAction } from "./actions";
 import { duplicateAction, setArchivedAction, togglePinAction } from "./actions-detail";
+import { indentTodoAction, outdentTodoAction, setStatusDeepAction } from "./actions-tree";
 import { openAiPanel } from "./ai-actions";
 import { aiConfig } from "./ai-config.svelte";
 import { store } from "./store.svelte";
@@ -35,6 +37,8 @@ export function closeAnd(action: () => void): () => void {
 
 export function todoMenuItems(todo: Todo): CtxItem[] {
   const statuses: TodoStatus[] = ["open", "progress", "done", "cancelled"];
+  const hasSubItems = childrenOf(store.data, todo.id).length > 0;
+  const indent = indentCheck(store.data, todo.id);
   return [
     { label: "Open details", action: closeAnd(() => openDetails(todo.id)) },
     { separator: true },
@@ -42,6 +46,13 @@ export function todoMenuItems(todo: Todo): CtxItem[] {
       label: `${todo.status === st ? "●" : "○"}  ${STATUS_LABEL[st]}`,
       action: closeAnd(() => setTodoStatus(todo.id, st)),
     })),
+    // only worth offering when there is a branch to close in one go
+    ...(hasSubItems
+      ? [{
+          label: "✓  Done with sub-items",
+          action: () => setStatusDeepAction(todo.id, "done"),
+        } satisfies CtxItem]
+      : []),
     { separator: true },
     {
       label: todo.pinLocal ? "Unpin from list" : "Pin to list",
@@ -52,6 +63,17 @@ export function todoMenuItems(todo: Todo): CtxItem[] {
       label: todo.pinGlobal ? "Unpin globally" : "Pin globally",
       action: () => togglePinAction(todo.id, "global"),
     },
+    indent.ok
+      ? { label: "Make sub-item", hint: "Tab", action: () => indentTodoAction(todo.id) }
+      : {
+          label: "Make sub-item",
+          hint: indent.reason === "too-deep" ? `max ${MAX_TODO_DEPTH} levels` : "nothing above",
+          disabled: true,
+          action: () => {},
+        },
+    todo.parentId !== null
+      ? { label: "Lift out", hint: "Shift+Tab", action: () => outdentTodoAction(todo.id) }
+      : { label: "Lift out", hint: "not a sub-item", disabled: true, action: () => {} },
     todo.groupId !== null
       ? { label: "Move up one level", hint: "Alt+←", action: closeAnd(() => moveUpOneLevel(todo)) }
       : { label: "Move up one level", hint: "at root", disabled: true, action: () => {} },

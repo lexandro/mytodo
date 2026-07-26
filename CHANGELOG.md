@@ -36,6 +36,18 @@ inside the app.
   group, and pinned todos stay put. Turn it off in the new **Settings →
   Behavior** section.
 
+- **A todo can become a sub-item of another** — for when something turns out
+  to be part of a bigger job rather than a job of its own. Drag a todo **onto**
+  another one and it slides underneath it; aim for the thin strip at the top or
+  bottom edge of a row instead and a line shows it will land *between* two rows,
+  as before. **Tab** nests the selected todo under the one above it,
+  **Shift+Tab** lifts it back out, and the right-click menu has both. Three
+  levels deep at most — the same limit groups have.
+  Sub-items travel with their parent: pin, archive, delete or move a todo to
+  another list and the whole branch goes with it. Statuses stay independent,
+  except for the new **Done with sub-items** in the right-click menu, which
+  closes a todo and everything under it in one undoable step.
+
 ### Fixed
 
 - Text inside input fields could not be selected with the mouse.

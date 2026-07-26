@@ -71,12 +71,16 @@ export function canNest(data: DomainData, id: string, parentId: string): boolean
 }
 
 /**
- * May `id` be indented one step — i.e. is there a preceding sibling to slide
- * under? Returns that sibling, or null when the move is not available.
+ * Whether Tab can indent this todo, and why not when it cannot — the menu
+ * shows the reason and the action reports it, both from this one answer.
  */
-export function indentTargetOf(data: DomainData, id: string): Todo | null {
+export type IndentCheck =
+  | { ok: true; target: Todo }
+  | { ok: false; reason: "no-sibling" | "too-deep" };
+
+export function indentCheck(data: DomainData, id: string): IndentCheck {
   const todo = data.todos.find((t) => t.id === id);
-  if (todo === undefined) return null;
+  if (todo === undefined) return { ok: false, reason: "no-sibling" };
   const siblings = data.todos
     .filter(
       (t) =>
@@ -88,7 +92,8 @@ export function indentTargetOf(data: DomainData, id: string): Todo | null {
     )
     .sort(byOrder);
   const index = siblings.findIndex((t) => t.id === id);
-  if (index <= 0) return null;
+  if (index <= 0) return { ok: false, reason: "no-sibling" };
   const previous = siblings[index - 1];
-  return canNest(data, id, previous.id) ? previous : null;
+  if (!canNest(data, id, previous.id)) return { ok: false, reason: "too-deep" };
+  return { ok: true, target: previous };
 }
