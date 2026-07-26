@@ -4,7 +4,12 @@ All notable changes to myTODO are documented here. This project adheres to
 [Semantic Versioning](https://semver.org). Help → What's new shows this file
 inside the app.
 
-## Unreleased
+## v1.2.0 — 2026-07-26
+
+The structure release: todos can hang under other todos, a toolbar puts the
+common moves one click away, and the list keeps itself in a sensible order —
+what you are working on stays in sight, finished work sinks, and new todos
+never land under it.
 
 ### Added
 
