@@ -1,6 +1,7 @@
 // Layout/UI settings persistence: restores on startup, saves on change.
 // Stored in the portable SQLite settings table (never the registry).
 
+import type { NewTodoPlacement } from "$lib/core/status-order";
 import { settingsAll, settingsSet } from "$lib/ipc";
 import { store } from "./store.svelte";
 import { ui, type LayoutName, type ViewName } from "./ui.svelte";
@@ -39,7 +40,11 @@ function isAppearance(value: unknown): value is AppearanceSettings {
 
 interface BehaviorSettings {
   moveByStatus: boolean;
+  /** Optional: settings written before the setting existed default to bottom. */
+  newTodoPlacement?: NewTodoPlacement;
 }
+
+const NEW_TODO_PLACEMENTS: NewTodoPlacement[] = ["top", "bottom"];
 
 function isBehavior(value: unknown): value is BehaviorSettings {
   if (typeof value !== "object" || value === null) return false;
@@ -78,6 +83,10 @@ export async function restoreUiSettings(): Promise<Record<string, unknown>> {
   const behavior = all["behavior"];
   if (isBehavior(behavior)) {
     ui.moveByStatus = behavior.moveByStatus;
+    const placement = behavior.newTodoPlacement;
+    if (placement !== undefined && NEW_TODO_PLACEMENTS.includes(placement)) {
+      ui.newTodoPlacement = placement;
+    }
   }
   const raw = all["layout"];
   if (!isLayoutSettings(raw)) return all;
@@ -106,7 +115,10 @@ export function persistAppearance(): void {
 
 /** Effect body: persists the todo behavior switches on change. */
 export function persistBehavior(): void {
-  const snapshot: BehaviorSettings = { moveByStatus: ui.moveByStatus };
+  const snapshot: BehaviorSettings = {
+    moveByStatus: ui.moveByStatus,
+    newTodoPlacement: ui.newTodoPlacement,
+  };
   void settingsSet("behavior", snapshot).catch(() => {
     // non-fatal
   });

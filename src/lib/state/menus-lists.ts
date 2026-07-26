@@ -7,6 +7,7 @@ import { MAX_GROUP_DEPTH, type Group, type List } from "$lib/core/types";
 import { armRename, deleteGroupAction, deleteListAction, newGroup, openDetails } from "./actions";
 import { aiConfig } from "./ai-config.svelte";
 import { closeAnd } from "./menus";
+import { placeNewTodos } from "./status-placement";
 import { store } from "./store.svelte";
 import { ui, type CtxItem } from "./ui.svelte";
 
@@ -28,6 +29,7 @@ function newTodoInGroup(group: Group): void {
   let id = "";
   store.apply("add todo", (data) => {
     id = createTodo(data, group.listId, group.id, "New todo", Date.now()).id;
+    placeNewTodos(data, [id]);
   });
   openDetails(id);
 }

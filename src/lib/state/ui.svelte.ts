@@ -3,6 +3,7 @@
 // parts (layout, pane lists, archOpen…) are synced to settings in F7/F9.
 
 import { DEFAULT_SETTINGS_SECTION, type SettingsSectionId } from "$lib/core/settings-sections";
+import type { NewTodoPlacement } from "$lib/core/status-order";
 
 export type LayoutName = "1" | "2v" | "2h" | "4";
 export type ViewName = "main" | "pinned" | "trash";
@@ -112,6 +113,12 @@ class UiState {
    * this off leaves already-moved rows where they are.
    */
   moveByStatus = $state(true);
+  /**
+   * Where a new todo lands in its scope: "top" under the in-progress rows,
+   * "bottom" above the done/cancelled ones. Either way it never lands under
+   * finished work — see core/status-order.ts.
+   */
+  newTodoPlacement = $state<NewTodoPlacement>("bottom");
   /** Toolbar row under the title bar (View → Toolbar). */
   toolbarOpen = $state(true);
   /** Settings dialog (global shortcuts, …). */

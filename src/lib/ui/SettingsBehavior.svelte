@@ -1,8 +1,33 @@
 <script lang="ts">
   // Settings → Behavior: how a todo reacts to what you do with it.
-  // Today that is one switch; the section exists so the next one has a home.
+  import type { NewTodoPlacement } from "$lib/core/status-order";
   import { ui } from "$lib/state/ui.svelte";
+
+  const PLACEMENTS: { value: NewTodoPlacement; label: string; hint: string }[] = [
+    { value: "top", label: "To the top", hint: "Under the in-progress ones." },
+    { value: "bottom", label: "To the bottom", hint: "Above the done and cancelled ones." },
+  ];
 </script>
+
+<div class="field">
+  <span class="field-label">New todos go</span>
+  <div class="chips">
+    {#each PLACEMENTS as placement (placement.value)}
+      <button
+        class="chip"
+        class:active={ui.newTodoPlacement === placement.value}
+        onclick={() => (ui.newTodoPlacement = placement.value)}
+      >
+        {placement.label}
+      </button>
+    {/each}
+  </div>
+  <span class="note">
+    {PLACEMENTS.find((p) => p.value === ui.newTodoPlacement)?.hint}
+    Either way a new todo never lands under finished work. Pinned todos are
+    left out of the decision — they have their own section.
+  </span>
+</div>
 
 <div class="field">
   <button
@@ -31,6 +56,33 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+  }
+  /* same chip look as Settings → Appearance */
+  .field-label {
+    font-size: 12.5px;
+  }
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .chip {
+    border: 1px solid var(--color-divider);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 11.5px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .chip:hover {
+    border-color: var(--color-accent);
+  }
+  .chip.active {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+    background: color-mix(in srgb, var(--color-accent) 10%, transparent);
   }
   .switch-row {
     display: flex;

@@ -12,6 +12,7 @@
     restoreUiSettings,
   } from "$lib/state/settings-sync.svelte";
   import { startDeferredBoot } from "$lib/state/startup";
+  import { placeNewTodos } from "$lib/state/status-placement";
   import { store } from "$lib/state/store.svelte";
   import { ui } from "$lib/state/ui.svelte";
   import { WINDOW_STATE_KEY, restoreWindowState, startWindowStateSaving } from "$lib/state/window-state";
@@ -66,7 +67,8 @@
       const list = store.data.lists.find((l) => l.id === listId);
       if (list === undefined) return;
       store.apply("add todo", (data) => {
-        createTodo(data, listId, null, title, Date.now());
+        const created = createTodo(data, listId, null, title, Date.now());
+        placeNewTodos(data, [created.id]);
       });
       ui.showToast(`Added to ${list.name}`, true);
     });

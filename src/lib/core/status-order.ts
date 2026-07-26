@@ -8,7 +8,7 @@
 
 import { orderForIndex } from "./scope";
 import { findTodo, scopeSiblings } from "./todos-ops";
-import type { DomainData, TodoStatus } from "./types";
+import type { DomainData, Todo, TodoStatus } from "./types";
 
 /** Where a status wants its todo: the scope's top, its bottom, or nowhere. */
 export type StatusPlacement = "top" | "bottom" | "none";
@@ -46,4 +46,58 @@ export function placeTodoByStatus(data: DomainData, id: string, now: number): bo
   todo.order = orderForIndex(siblings, placement === "top" ? 0 : siblings.length);
   todo.updatedAt = now;
   return true;
+}
+
+/** Where a freshly created todo lands inside its scope. */
+export type NewTodoPlacement = "top" | "bottom";
+
+/**
+ * Slots a new todo into its scope: "top" puts it UNDER the in-progress rows
+ * (what you are working on stays first), "bottom" puts it ABOVE the done and
+ * cancelled ones (finished work never buries a fresh todo).
+ *
+ * Pinned rows are ignored on purpose — they render in their own section, so
+ * where they sit in the ordering says nothing about what the list looks like.
+ */
+export function placeNewTodo(data: DomainData, id: string, placement: NewTodoPlacement): boolean {
+  const todo = findTodo(data, id);
+  if (todo === undefined) return false;
+  const siblings = scopeSiblings(data, todo.listId, todo.groupId, todo.parentId, id);
+  const unpinned = siblings.filter((t) => !t.pinLocal && !t.pinGlobal);
+  if (unpinned.length === 0) return false; // nothing to slot between
+  const neighbour =
+    placement === "top"
+      ? unpinned.find((t) => t.status !== "progress")
+      : findLast(unpinned, (t) => t.status !== "done" && t.status !== "cancelled");
+  const index = edgeIndex(siblings, unpinned, neighbour, placement);
+  todo.order = orderForIndex(siblings, index);
+  return true;
+}
+
+/**
+ * Turns the neighbour into an insertion index in the FULL scope: "top" lands
+ * before it, "bottom" after it. With no neighbour every visible row is of the
+ * kind we must stay clear of, so we go to the far side of them instead.
+ */
+function edgeIndex(
+  siblings: Todo[],
+  unpinned: Todo[],
+  neighbour: Todo | undefined,
+  placement: NewTodoPlacement,
+): number {
+  if (neighbour === undefined) {
+    // all in progress → after them; all done/cancelled → before them
+    const edge = placement === "top" ? unpinned[unpinned.length - 1] : unpinned[0];
+    return placement === "top" ? siblings.indexOf(edge) + 1 : siblings.indexOf(edge);
+  }
+  const at = siblings.indexOf(neighbour);
+  return placement === "top" ? at : at + 1;
+}
+
+/** Array.prototype.findLast is ES2023; the build targets an older baseline. */
+function findLast(items: Todo[], match: (todo: Todo) => boolean): Todo | undefined {
+  for (let i = items.length - 1; i >= 0; i -= 1) {
+    if (match(items[i])) return items[i];
+  }
+  return undefined;
 }

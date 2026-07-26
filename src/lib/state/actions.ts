@@ -10,7 +10,7 @@ import type { TodoStatus } from "$lib/core/types";
 import { renameTodoAction } from "./actions-detail";
 import { detailOpened } from "./ai-actions";
 import { aiConfig } from "./ai-config.svelte";
-import { placeByStatusIfEnabled } from "./status-placement";
+import { placeByStatusIfEnabled, placeNewTodos } from "./status-placement";
 import { store } from "./store.svelte";
 import { ui, type RenamingState } from "./ui.svelte";
 
@@ -58,6 +58,7 @@ export function quickAdd(paneIndex: number, title: string, openDetail: boolean):
   let newId = "";
   store.apply("add todo", (data) => {
     newId = createTodo(data, listId, groupId, trimmed, Date.now()).id;
+    placeNewTodos(data, [newId]);
   });
   ui.updatePane(paneIndex, { quickDraft: "" });
   if (openDetail) openDetails(newId, paneIndex);

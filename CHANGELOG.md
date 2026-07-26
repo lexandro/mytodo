@@ -35,6 +35,12 @@ inside the app.
   is finished stops getting in the way. A todo only ever moves inside its own
   group, and pinned todos stay put. Turn it off in the new **Settings →
   Behavior** section.
+- **New todos no longer land under the finished ones** — **Settings → Behavior
+  → New todos go** picks between **to the top** (right under what you are
+  working on) and **to the bottom** (the end of the list, but still above
+  everything done and cancelled). Applies wherever a todo is born: quick add,
+  the global quick-add window, a group's right-click menu, or an applied AI
+  proposal.
 
 - **A todo can become a sub-item of another** — for when something turns out
   to be part of a bigger job rather than a job of its own. Drag a todo **onto**

@@ -69,12 +69,13 @@ export function validateProposal(
   }
 }
 
-function applyAction(data: DomainData, action: ProposalAction, now: number): void {
+/** Returns the id of the todo this action created, or null for the rest. */
+function applyAction(data: DomainData, action: ProposalAction, now: number): string | null {
   switch (action.kind) {
     case "createTodo": {
       const todo = createTodo(data, action.listId, action.groupId, action.title, now);
       if (action.description !== "") setDescription(data, todo.id, action.description, now);
-      break;
+      return todo.id;
     }
     case "updateTodo":
       if (action.title !== null) renameTodo(data, action.todoId, action.title, now);
@@ -101,6 +102,7 @@ function applyAction(data: DomainData, action: ProposalAction, now: number): voi
       setArchived(data, action.todoId, true, now);
       break;
   }
+  return null;
 }
 
 /** The todo whose activity log records the AI-applied entry. */
@@ -119,6 +121,8 @@ function activityTargetId(data: DomainData, action: ProposalAction): string | nu
 
 export interface ApplyOutcome {
   appliedIds: string[];
+  /** Todos the batch created — the caller slots them per the Behavior setting. */
+  createdTodoIds: string[];
   /** proposalId → human error for the ones that failed validation. */
   errors: Record<string, string>;
 }
@@ -134,14 +138,15 @@ export function applyProposals(
   runListId: string,
   now: number,
 ): ApplyOutcome {
-  const outcome: ApplyOutcome = { appliedIds: [], errors: {} };
+  const outcome: ApplyOutcome = { appliedIds: [], createdTodoIds: [], errors: {} };
   for (const proposal of proposals) {
     const error = validateProposal(data, proposal.action, runListId);
     if (error !== null) {
       outcome.errors[proposal.id] = error;
       continue;
     }
-    applyAction(data, proposal.action, now);
+    const createdId = applyAction(data, proposal.action, now);
+    if (createdId !== null) outcome.createdTodoIds.push(createdId);
     const targetId = activityTargetId(data, proposal.action);
     if (targetId !== null) {
       logActivity(data, targetId, "ai", `AI applied — ${proposal.label}`, now);

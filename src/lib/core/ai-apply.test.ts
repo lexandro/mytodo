@@ -88,6 +88,8 @@ describe("applyProposals — batch through normal domain ops", () => {
     expect(data.subtasks.find((s) => s.id === subtaskId)?.checked).toBe(true);
     const created = data.todos.find((t) => t.title === "New one");
     expect(created?.description).toBe("desc");
+    // the caller slots new todos per the Behavior setting, so it needs their ids
+    expect(outcome.createdTodoIds).toEqual([created?.id]);
     const aiEntries = data.activity.filter((e) => e.type === "ai");
     expect(aiEntries.length).toBe(4); // createTodo logs "Created" instead
     expect(aiEntries[0].summary).toBe("AI applied — label p1");

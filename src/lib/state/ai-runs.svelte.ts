@@ -24,7 +24,7 @@ import {
   aiRunCancel, aiRunPut, aiRunStart, aiRunsLoad, onAiRunEvent, type UnlistenFn,
 } from "$lib/ipc";
 import { aiConfig } from "./ai-config.svelte";
-import { placeByStatusIfEnabled } from "./status-placement";
+import { placeByStatusIfEnabled, placeNewTodos } from "./status-placement";
 import { store } from "./store.svelte";
 import { ui } from "./ui.svelte";
 
@@ -311,11 +311,15 @@ class AiRunsState {
       (p) => proposalIds.includes(p.id) && !p.applied,
     );
     if (chosen.length === 0) return {};
-    let outcome: ReturnType<typeof applyProposals> = { appliedIds: [], errors: {} };
+    let outcome: ReturnType<typeof applyProposals> = {
+      appliedIds: [], createdTodoIds: [], errors: {},
+    };
     store.apply("apply AI proposals", (data) => {
       const now = Date.now();
       outcome = applyProposals(data, chosen, run.listId, now);
-      // an AI status change repositions the row exactly like a manual one
+      // AI-made todos land where the Behavior setting says, and an AI status
+      // change repositions the row exactly like a manual one
+      placeNewTodos(data, outcome.createdTodoIds);
       const statusChanged = chosen.flatMap((p) =>
         p.action.kind === "changeStatus" && outcome.appliedIds.includes(p.id)
           ? [p.action.todoId]
