@@ -13,6 +13,13 @@ inside the app.
   so it is never mistaken for the released one; hovering names the exact commit
   and clicking opens About.
 
+### Fixed
+
+- **The emoji field in a todo's details said the wrong shortcut** — its hint
+  was too wide for the box, so it was cut down to "Win +", which is the zoom
+  shortcut, not the emoji picker. It now reads **Win + .** in full. The field
+  also stood taller than the Pin buttons beside it; the row lines up now.
+
 ## v1.2.0 — 2026-07-26
 
 The structure release: todos can hang under other todos, a toolbar puts the

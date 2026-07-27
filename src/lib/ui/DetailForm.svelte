@@ -78,6 +78,7 @@
     <input
       class="input emoji-input"
       placeholder="Win + ."
+      title="Press Win + . for the Windows emoji picker"
       bind:value={emojiDraft}
       onblur={() => setEmojiAction(todo.id, emojiDraft)}
     />
@@ -191,8 +192,17 @@
   }
   .emoji-input {
     text-align: center;
-    min-height: 30px;
+    /* matches .pin-btn next to it — the row must read as one line of controls.
+       line-height must be pinned too: the inherited 1.5 would push it to 31px */
+    min-height: 28px;
+    padding: 4px 6px;
     font-size: 14px;
+    line-height: 1;
+  }
+  /* the hint is longer than the field is wide: shrink it rather than let the
+     browser clip it to "Win +", which is a different (zoom) shortcut */
+  .emoji-input::placeholder {
+    font-size: 10px;
   }
   .pin-field {
     flex: 1;
@@ -203,12 +213,13 @@
   }
   .pin-btn {
     flex: 1;
+    min-height: 28px;
     border: 1px solid var(--color-divider);
     color: var(--color-neutral-400);
     background: transparent;
     font: inherit;
     font-size: 11.5px;
-    padding: 5px 4px;
+    padding: 4px;
     border-radius: 6px;
     cursor: pointer;
   }
