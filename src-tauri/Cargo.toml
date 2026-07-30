@@ -1,6 +1,6 @@
 [package]
 name = "mytodo"
-version = "1.2.0"
+version = "1.2.1"
 description = "mytodo — Tauri desktop app"
 authors = ["lexandro"]
 edition = "2021"

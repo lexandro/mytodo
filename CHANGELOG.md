@@ -4,7 +4,11 @@ All notable changes to myTODO are documented here. This project adheres to
 [Semantic Versioning](https://semver.org). Help → What's new shows this file
 inside the app.
 
-## Unreleased
+## v1.2.1 — 2026-07-30
+
+Batch work: pick as many todos as you like — the way you already select files —
+and finish, move, colour, archive or delete the lot in one go, with one undo to
+take it all back.
 
 ### Added
 
