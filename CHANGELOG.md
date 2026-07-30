@@ -4,6 +4,26 @@ All notable changes to myTODO are documented here. This project adheres to
 [Semantic Versioning](https://semver.org). Help → What's new shows this file
 inside the app.
 
+## Unreleased
+
+### Added
+
+- **Home, End, Page Up and Page Down walk the list** — jump to the first or
+  last todo, or a screenful at a time. Page steps are measured from the pane
+  you are in, so one press really is one page, and the selected row is always
+  scrolled into view. Hold **Shift** with any of them (and with ↑ / ↓) to
+  extend the selection all the way there — Shift+End takes everything from
+  where you are to the bottom.
+
+### Fixed
+
+- **Moving several todos with Alt+↑ / Alt+↓ scrambled them at the ends of the
+  list** — once the block reached the top or bottom, one more press swapped the
+  selected rows with each other and from then on they only flip-flopped in
+  place. The block now moves as one piece or not at all: at the edge nothing
+  happens, the selection keeps its order, and moving back the other way works
+  as it should.
+
 ## v1.2.1 — 2026-07-30
 
 Batch work: pick as many todos as you like — the way you already select files —

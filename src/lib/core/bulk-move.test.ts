@@ -108,4 +108,42 @@ describe("moveManyInScope", () => {
     expect(moveManyInScope(data, [ids.a], "up", 10)).toBe(0);
     expect(titlesIn(data, listId)).toEqual(["a", "b", "c", "d"]);
   });
+
+  // the block must not shuffle itself when one of its rows has nowhere to go —
+  // that used to swap the pair and then flip-flop forever
+  it("refuses to move at all once the block reaches the top", () => {
+    const { data, listId, ids } = base();
+    expect(moveManyInScope(data, [ids.a, ids.b], "up", 10)).toBe(0);
+    expect(titlesIn(data, listId)).toEqual(["a", "b", "c", "d"]);
+    expect(moveManyInScope(data, [ids.a, ids.b], "up", 11)).toBe(0);
+    expect(titlesIn(data, listId)).toEqual(["a", "b", "c", "d"]);
+  });
+
+  it("refuses to move at all once the block reaches the bottom", () => {
+    const { data, listId, ids } = base();
+    expect(moveManyInScope(data, [ids.c, ids.d], "down", 10)).toBe(0);
+    expect(titlesIn(data, listId)).toEqual(["a", "b", "c", "d"]);
+  });
+
+  it("still moves back the other way after hitting an edge", () => {
+    const { data, listId, ids } = base();
+    moveManyInScope(data, [ids.a, ids.b], "up", 10); // refused
+    expect(moveManyInScope(data, [ids.a, ids.b], "down", 11)).toBe(2);
+    expect(titlesIn(data, listId)).toEqual(["c", "a", "b", "d"]);
+    expect(moveManyInScope(data, [ids.a, ids.b], "up", 12)).toBe(2);
+    expect(titlesIn(data, listId)).toEqual(["a", "b", "c", "d"]);
+  });
+
+  it("holds a non-contiguous selection together at the edge", () => {
+    const { data, listId, ids } = base();
+    // "a" cannot go up, so "c" must not sneak past "b" on its own
+    expect(moveManyInScope(data, [ids.a, ids.c], "up", 10)).toBe(0);
+    expect(titlesIn(data, listId)).toEqual(["a", "b", "c", "d"]);
+  });
+
+  it("moves as one block even when the caller's ids are out of row order", () => {
+    const { data, listId, ids } = base();
+    expect(moveManyInScope(data, [ids.b, ids.a], "down", 10)).toBe(2);
+    expect(titlesIn(data, listId)).toEqual(["c", "a", "b", "d"]);
+  });
 });

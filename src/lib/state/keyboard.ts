@@ -3,6 +3,7 @@
 // typing (except Ctrl+Z = native text undo in inputs); plain keys are
 // ignored when an input/textarea/select has focus.
 
+import type { RowMove } from "$lib/core/selection";
 import { findTodo } from "$lib/core/todos-ops";
 import { openAiPanelForSelection } from "./ai-actions";
 import { cancelRename, newList, openDetails, switchList, undoAction } from "./actions";
@@ -12,8 +13,9 @@ import {
 import { moveSelectionInScopeAction } from "./actions-bulk-move";
 import { indentTodoAction, outdentTodoAction } from "./actions-tree";
 import { moveUpOneLevel } from "./menus";
+import { pageSizeOf } from "./row-scroll";
 import {
-  clearMultiSelection, extendSelection, selectAllInPane, visibleIdsOf,
+  clearMultiSelection, extendSelectionTo, navigateTo, selectAllInPane,
 } from "./selection";
 import { store } from "./store.svelte";
 import { ui } from "./ui.svelte";
@@ -95,17 +97,19 @@ function handleEscape(): void {
   if (ui.detailOpen) ui.detailOpen = false;
 }
 
-/** Plain ↑/↓: one row, and the selection collapses onto it. */
-function navigateTodos(direction: 1 | -1): void {
-  const visibleTodoIds = visibleIdsOf(ui.activePane);
-  if (visibleTodoIds.length === 0) return;
-  const current = ui.selectedId === null ? -1 : visibleTodoIds.indexOf(ui.selectedId);
-  const next =
-    current < 0
-      ? 0
-      : Math.min(visibleTodoIds.length - 1, Math.max(0, current + direction));
-  ui.multi = null;
-  ui.selectedId = visibleTodoIds[next];
+/**
+ * The six list-navigation keys, or null for anything else. A page is measured
+ * from the pane itself, so PageUp/PageDown really do move by what you can see.
+ */
+function rowMoveFor(key: string): RowMove | null {
+  if (key === "Home") return { to: "first" };
+  if (key === "End") return { to: "last" };
+  if (key === "ArrowUp") return { by: -1 };
+  if (key === "ArrowDown") return { by: 1 };
+  const page = pageSizeOf(ui.activePane);
+  if (key === "PageUp") return { by: -page };
+  if (key === "PageDown") return { by: page };
+  return null;
 }
 
 export function handleKeydown(e: KeyboardEvent): void {
@@ -191,18 +195,20 @@ export function handleKeydown(e: KeyboardEvent): void {
     else indentTodoAction(ui.selectedId);
     return;
   }
-  // Alt+↑/↓ reorders (the whole selection), Shift+↑/↓ grows it, plain ↑/↓ walks
+  // Alt+↑/↓ reorders the whole selection; the navigation keys below only move it
   if (e.altKey && (e.key === "ArrowUp" || e.key === "ArrowDown") && ui.selectedId !== null) {
     e.preventDefault();
     moveSelectionInScopeAction(e.key === "ArrowUp" ? "up" : "down");
     return;
   }
-  if (
-    e.shiftKey && !e.altKey && !e.ctrlKey && !ui.overlayOpen &&
-    (e.key === "ArrowUp" || e.key === "ArrowDown")
-  ) {
+  // ↑/↓, PageUp/PageDown, Home/End — Shift extends the selection to where they
+  // land. preventDefault also stops the browser scrolling the list out from
+  // under the selection.
+  const rowMove = e.altKey || e.ctrlKey || ui.overlayOpen ? null : rowMoveFor(e.key);
+  if (rowMove !== null) {
     e.preventDefault();
-    extendSelection(e.key === "ArrowDown" ? 1 : -1);
+    if (e.shiftKey) extendSelectionTo(rowMove);
+    else navigateTo(rowMove);
     return;
   }
   if (e.altKey && e.key === "ArrowLeft" && ui.selectedId !== null) {
@@ -225,10 +231,5 @@ export function handleKeydown(e: KeyboardEvent): void {
   }
   if (e.key === "Delete" && ui.selectedId !== null) {
     trashSelectionAction();
-    return;
-  }
-  if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-    e.preventDefault();
-    navigateTodos(e.key === "ArrowDown" ? 1 : -1);
   }
 }

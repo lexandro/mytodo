@@ -3,10 +3,11 @@
 // and its own sub-item never place themselves independently, the branch travels
 // as one. Row order in, row order out.
 
+import { byOrder } from "./ordering";
 import { isSelfOrAncestor, selectionRoots } from "./todo-tree";
 import { findTodo, moveTodo, reorderTodo } from "./todos-ops";
-import { moveTodoInScope, nestTodo } from "./todos-tree-ops";
-import type { DomainData } from "./types";
+import { canMoveInScope, moveTodoInScope, nestTodo } from "./todos-tree-ops";
+import type { DomainData, Todo } from "./types";
 
 /** Move to…: each root lands at the end of the destination, in row order. */
 export function moveMany(
@@ -74,9 +75,17 @@ export function nestMany(
 }
 
 /**
- * Alt+↑/↓ on a selection: the whole block steps one row. Moving down walks the
- * roots bottom-up (and moving up walks them top-down) — the other way round the
- * first row would step over the next one and the block would fold onto itself.
+ * Alt+↑/↓ on a selection: the whole block steps one row, or nothing does.
+ *
+ * All-or-nothing is the point. Letting the rows that still CAN move go while
+ * one of them sits at the edge would reshuffle the selection against itself —
+ * two selected rows at the top of a list would just swap places and then keep
+ * swapping, never moving anywhere.
+ *
+ * Moving down walks the roots bottom-up (and moving up walks them top-down),
+ * otherwise the first row would step over the next one and the block would fold
+ * onto itself. The order comes from the data, not from the caller's array, so a
+ * selection that drifted out of row order still moves as one piece.
  */
 export function moveManyInScope(
   data: DomainData,
@@ -84,11 +93,16 @@ export function moveManyInScope(
   direction: "up" | "down",
   now: number,
 ): number {
-  const roots = selectionRoots(data, ids);
-  const ordered = direction === "down" ? [...roots].reverse() : roots;
+  const roots = selectionRoots(data, ids)
+    .map((id) => findTodo(data, id))
+    .filter((todo): todo is Todo => todo !== undefined)
+    .sort(byOrder);
+  if (roots.length === 0) return 0;
+  if (!roots.every((todo) => canMoveInScope(data, todo.id, direction))) return 0;
+  const sequence = direction === "down" ? [...roots].reverse() : roots;
   let moved = 0;
-  for (const id of ordered) {
-    if (moveTodoInScope(data, id, direction, now)) moved += 1;
+  for (const todo of sequence) {
+    if (moveTodoInScope(data, todo.id, direction, now)) moved += 1;
   }
   return moved;
 }

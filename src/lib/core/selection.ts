@@ -39,20 +39,26 @@ export function toggleInSelection(
 }
 
 /**
- * Shift+↑/↓: the focus steps one row while the anchor stays put — so the range
- * grows away from the anchor, shrinks back onto it, then flips to the other
- * side. Returns null at the ends of the list (nothing to step onto), and the
- * nearest end when the focus row is not on screen at all.
+ * What a navigation key asks for: an end of the list (Home/End) or a signed row
+ * step (±1 for the arrows, ±a page for PageUp/PageDown).
  */
-export function stepFocus(
+export type RowMove = { to: "first" | "last" } | { by: number };
+
+/**
+ * Where a navigation key lands. A step that runs off the edge lands ON the last
+ * row rather than nowhere — Page Down near the bottom of a list must reach the
+ * bottom, and holding ↓ must stop there instead of doing nothing. With no focus
+ * yet, moving down starts at the top of the list and moving up at its end.
+ */
+export function rowAt(
   visible: readonly string[],
-  focusId: string,
-  direction: 1 | -1,
+  focusId: string | null,
+  move: RowMove,
 ): string | null {
   if (visible.length === 0) return null;
-  const at = visible.indexOf(focusId);
-  if (at < 0) return visible[direction === 1 ? 0 : visible.length - 1];
-  const next = at + direction;
-  if (next < 0 || next >= visible.length) return null;
-  return visible[next];
+  const last = visible.length - 1;
+  if ("to" in move) return move.to === "first" ? visible[0] : visible[last];
+  const at = focusId === null ? -1 : visible.indexOf(focusId);
+  const from = at < 0 ? (move.by > 0 ? -1 : visible.length) : at;
+  return visible[Math.min(last, Math.max(0, from + move.by))];
 }

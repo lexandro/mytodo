@@ -136,6 +136,7 @@
 
 <div
   class="todo-row"
+  data-todo-id={todo.id}
   class:selected
   class:focused
   class:drop-before={dropPos === "before"}

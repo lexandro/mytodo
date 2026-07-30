@@ -195,6 +195,9 @@ class UiState {
   /** Quick-add input elements per pane — for Ctrl+N focus. Not reactive. */
   quickAddEls: (HTMLInputElement | null)[] = [null, null, null, null];
 
+  /** Row-list scroll containers per pane — page steps and scroll-into-view. */
+  paneRowsEls: (HTMLElement | null)[] = [null, null, null, null];
+
   /** Bumped by F2 to make the detail title focus + select itself. */
   focusTitleTick = $state(0);
 

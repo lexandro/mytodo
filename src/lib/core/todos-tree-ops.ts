@@ -7,7 +7,7 @@ import { logActivity } from "./activity";
 import { orderForDrop, orderForIndex } from "./scope";
 import { canNest, subtreeOf } from "./todo-tree";
 import { adoptSubtree, findTodo, scopeSiblings, setStatus } from "./todos-ops";
-import type { DomainData, TodoStatus } from "./types";
+import type { DomainData, Todo, TodoStatus } from "./types";
 
 /**
  * Makes `id` a sub-item of `parentId`, appended after the parent's existing
@@ -52,33 +52,59 @@ export function outdentTodo(data: DomainData, id: string, now: number): boolean 
   return true;
 }
 
+interface ScopeStep {
+  todo: Todo;
+  /** The scope without the todo itself — what the new order is measured against. */
+  others: Todo[];
+  /** The row it would trade places with. */
+  neighbour: Todo;
+}
+
 /**
- * Alt+↑ / Alt+↓: swaps the todo with the row above or below it, staying inside
- * its own scope — a keyboard equivalent of a short drag.
+ * What Alt+↑ / Alt+↓ would do to one todo, or undefined when it is already at
+ * the edge of its own scope.
  *
  * "Above/below" means what the user sees: pinned rows live in their own
- * section, so a pinned todo swaps with pinned neighbours only, and an
- * unpinned one never trades places with a row rendered elsewhere. The order
- * value is still computed against the full scope, so nothing else shifts.
+ * section, so a pinned todo swaps with pinned neighbours only, and an unpinned
+ * one never trades places with a row rendered elsewhere. The order value is
+ * still computed against the full scope, so nothing else shifts.
+ *
+ * Split out from the mutation so a caller can ask BEFORE touching anything —
+ * a block move must not half-happen (core/bulk-move.ts).
  */
+function scopeStep(data: DomainData, id: string, direction: "up" | "down"): ScopeStep | undefined {
+  const todo = findTodo(data, id);
+  if (todo === undefined || todo.trashed || todo.archived) return undefined;
+  const siblings = scopeSiblings(data, todo.listId, todo.groupId, todo.parentId);
+  const pinned = todo.pinLocal || todo.pinGlobal;
+  const peers = siblings.filter((t) => (t.pinLocal || t.pinGlobal) === pinned);
+  const index = peers.findIndex((t) => t.id === id);
+  if (index === -1) return undefined;
+  const neighbour = peers[direction === "up" ? index - 1 : index + 1];
+  if (neighbour === undefined) return undefined; // already at the edge
+  return { todo, others: siblings.filter((t) => t.id !== id), neighbour };
+}
+
+/** Whether Alt+↑ / Alt+↓ has anywhere to put this todo. */
+export function canMoveInScope(data: DomainData, id: string, direction: "up" | "down"): boolean {
+  return scopeStep(data, id, direction) !== undefined;
+}
+
+/** Alt+↑ / Alt+↓: one step up or down inside the todo's own scope. */
 export function moveTodoInScope(
   data: DomainData,
   id: string,
   direction: "up" | "down",
   now: number,
 ): boolean {
-  const todo = findTodo(data, id);
-  if (todo === undefined || todo.trashed || todo.archived) return false;
-  const siblings = scopeSiblings(data, todo.listId, todo.groupId, todo.parentId);
-  const pinned = todo.pinLocal || todo.pinGlobal;
-  const peers = siblings.filter((t) => (t.pinLocal || t.pinGlobal) === pinned);
-  const index = peers.findIndex((t) => t.id === id);
-  if (index === -1) return false;
-  const neighbour = peers[direction === "up" ? index - 1 : index + 1];
-  if (neighbour === undefined) return false; // already at the edge
-  const others = siblings.filter((t) => t.id !== id);
-  todo.order = orderForDrop(others, neighbour.id, direction === "up" ? "before" : "after");
-  todo.updatedAt = now;
+  const step = scopeStep(data, id, direction);
+  if (step === undefined) return false;
+  step.todo.order = orderForDrop(
+    step.others,
+    step.neighbour.id,
+    direction === "up" ? "before" : "after",
+  );
+  step.todo.updatedAt = now;
   return true;
 }
 

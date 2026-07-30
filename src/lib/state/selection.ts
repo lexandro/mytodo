@@ -9,8 +9,9 @@
 
 import { buildPaneRows } from "$lib/core/rows";
 import { todoMatches } from "$lib/core/search";
-import { rangeBetween, stepFocus, toggleInSelection } from "$lib/core/selection";
+import { rangeBetween, rowAt, toggleInSelection, type RowMove } from "$lib/core/selection";
 import { selectTodo } from "./actions";
+import { revealFocus } from "./row-scroll";
 import { store } from "./store.svelte";
 import { ui, type MultiSelectState } from "./ui.svelte";
 
@@ -85,22 +86,34 @@ export function clickTodo(id: string, paneIndex: number, mods: ClickMods): void 
   applySelection(paneIndex, id, toggleInSelection(visible, base, id), id);
 }
 
-/** Shift+↑/↓: step the focus, keep the anchor where the selection started. */
-export function extendSelection(direction: 1 | -1): void {
+/** ↑/↓, PageUp/PageDown, Home/End: move the focus, collapse onto that one row. */
+export function navigateTo(move: RowMove): void {
+  const paneIndex = ui.activePane;
+  const nextFocus = rowAt(visibleIdsOf(paneIndex), ui.selectedId, move);
+  if (nextFocus === null) return;
+  ui.multi = null;
+  selectTodo(nextFocus, paneIndex);
+  revealFocus(paneIndex, "to" in move ? move.to : undefined);
+}
+
+/**
+ * The same moves with Shift: the focus travels, the anchor stays where the
+ * selection started, and everything between them comes along.
+ */
+export function extendSelectionTo(move: RowMove): void {
   const paneIndex = ui.activePane;
   const visible = visibleIdsOf(paneIndex);
-  if (visible.length === 0) return;
+  const nextFocus = rowAt(visible, ui.selectedId, move);
+  if (nextFocus === null) return;
   const anchorId = multiIn(paneIndex)?.anchorId ?? ui.selectedId;
-  const focusId = ui.selectedId;
-  if (anchorId === null || focusId === null || !visible.includes(anchorId)) {
-    // nothing to extend from — land on an end of the list, like ↑/↓ does
+  if (anchorId === null || !visible.includes(anchorId)) {
+    // nothing to extend from — this is just a move
     ui.multi = null;
-    selectTodo(visible[direction === 1 ? 0 : visible.length - 1], paneIndex);
-    return;
+    selectTodo(nextFocus, paneIndex);
+  } else {
+    applySelection(paneIndex, anchorId, rangeBetween(visible, anchorId, nextFocus), nextFocus);
   }
-  const nextFocus = stepFocus(visible, focusId, direction);
-  if (nextFocus === null) return; // already at the edge
-  applySelection(paneIndex, anchorId, rangeBetween(visible, anchorId, nextFocus), nextFocus);
+  revealFocus(paneIndex, "to" in move ? move.to : undefined);
 }
 
 /** Ctrl+A: every visible row of the active pane, focus left where it was. */

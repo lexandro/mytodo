@@ -48,6 +48,16 @@
     if (ui.drag !== null) e.preventDefault();
   }
 
+  /** The scroll container, so Page keys and scroll-into-view can measure it. */
+  function registerRows(el: HTMLElement): { destroy: () => void } {
+    ui.paneRowsEls[paneIndex] = el;
+    return {
+      destroy: () => {
+        if (ui.paneRowsEls[paneIndex] === el) ui.paneRowsEls[paneIndex] = null;
+      },
+    };
+  }
+
   /**
    * A mousedown inside the row list that missed every row clears the selection,
    * the way clicking empty space in a file manager does. Only the row list —
@@ -110,7 +120,7 @@
       <div class="inbox-watermark" style:background-image={`url(${inboxWatermark})`}></div>
     {/if}
     <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div class="rows" onmousedown={onRowsMouseDown}>
+    <div class="rows" use:registerRows onmousedown={onRowsMouseDown}>
       {#each paneRows.rows as row (row.key)}
         {#if row.kind === "section"}
           <SectionRow

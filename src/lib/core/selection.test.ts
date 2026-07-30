@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { rangeBetween, stepFocus, toggleInSelection } from "./selection";
+import { rangeBetween, rowAt, toggleInSelection } from "./selection";
 
 const ROWS = ["a", "b", "c", "d", "e"];
 
@@ -33,41 +33,62 @@ describe("toggleInSelection", () => {
   });
 });
 
-describe("stepFocus", () => {
+describe("rowAt", () => {
   it("steps one row in either direction", () => {
-    expect(stepFocus(ROWS, "c", 1)).toBe("d");
-    expect(stepFocus(ROWS, "c", -1)).toBe("b");
+    expect(rowAt(ROWS, "c", { by: 1 })).toBe("d");
+    expect(rowAt(ROWS, "c", { by: -1 })).toBe("b");
   });
 
-  it("stops at the ends instead of wrapping", () => {
-    expect(stepFocus(ROWS, "e", 1)).toBeNull();
-    expect(stepFocus(ROWS, "a", -1)).toBeNull();
+  it("jumps to the ends for Home and End", () => {
+    expect(rowAt(ROWS, "c", { to: "first" })).toBe("a");
+    expect(rowAt(ROWS, "c", { to: "last" })).toBe("e");
+    expect(rowAt(ROWS, null, { to: "last" })).toBe("e");
   });
 
-  it("lands on the nearest end when the focus is not on screen", () => {
-    expect(stepFocus(ROWS, "gone", 1)).toBe("a");
-    expect(stepFocus(ROWS, "gone", -1)).toBe("e");
+  it("clamps a page step to the end of the list instead of overshooting", () => {
+    expect(rowAt(ROWS, "d", { by: 10 })).toBe("e");
+    expect(rowAt(ROWS, "b", { by: -10 })).toBe("a");
+  });
+
+  it("stays put at the very edge rather than doing nothing surprising", () => {
+    expect(rowAt(ROWS, "e", { by: 1 })).toBe("e");
+    expect(rowAt(ROWS, "a", { by: -1 })).toBe("a");
+  });
+
+  it("starts at the near end when nothing is focused yet", () => {
+    expect(rowAt(ROWS, null, { by: 1 })).toBe("a");
+    expect(rowAt(ROWS, null, { by: -1 })).toBe("e");
+    expect(rowAt(ROWS, "gone", { by: 1 })).toBe("a");
   });
 
   it("has nowhere to go in an empty list", () => {
-    expect(stepFocus([], "a", 1)).toBeNull();
+    expect(rowAt([], "a", { by: 1 })).toBeNull();
+    expect(rowAt([], null, { to: "first" })).toBeNull();
   });
 });
 
 describe("growing and shrinking a range", () => {
-  // Shift+↓ ×2 then Shift+↑ ×2 must land back on the row it started from
+  // Shift+↓ ×2 then Shift+↑ ×3 must pass back through the starting row
   it("shrinks back onto the anchor and then flips to the other side", () => {
     const anchor = "c";
     let focus = "c";
-    focus = stepFocus(ROWS, focus, 1) as string;
+    focus = rowAt(ROWS, focus, { by: 1 }) as string;
     expect(rangeBetween(ROWS, anchor, focus)).toEqual(["c", "d"]);
-    focus = stepFocus(ROWS, focus, 1) as string;
+    focus = rowAt(ROWS, focus, { by: 1 }) as string;
     expect(rangeBetween(ROWS, anchor, focus)).toEqual(["c", "d", "e"]);
-    focus = stepFocus(ROWS, focus, -1) as string;
+    focus = rowAt(ROWS, focus, { by: -1 }) as string;
     expect(rangeBetween(ROWS, anchor, focus)).toEqual(["c", "d"]);
-    focus = stepFocus(ROWS, focus, -1) as string;
+    focus = rowAt(ROWS, focus, { by: -1 }) as string;
     expect(rangeBetween(ROWS, anchor, focus)).toEqual(["c"]);
-    focus = stepFocus(ROWS, focus, -1) as string;
+    focus = rowAt(ROWS, focus, { by: -1 }) as string;
     expect(rangeBetween(ROWS, anchor, focus)).toEqual(["b", "c"]);
+  });
+
+  // Shift+End then Shift+Home sweeps the whole list either way
+  it("takes everything to an end of the list", () => {
+    expect(rangeBetween(ROWS, "c", rowAt(ROWS, "c", { to: "last" }) as string))
+      .toEqual(["c", "d", "e"]);
+    expect(rangeBetween(ROWS, "c", rowAt(ROWS, "c", { to: "first" }) as string))
+      .toEqual(["a", "b", "c"]);
   });
 });

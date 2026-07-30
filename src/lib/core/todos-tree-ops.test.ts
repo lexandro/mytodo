@@ -6,9 +6,11 @@ import { byOrder } from "./ordering";
 import { childrenOf, subtreeOf, todoDepth } from "./todo-tree";
 import { setArchived } from "./todos-detail-ops";
 import {
-  createTodo, deleteTodoPermanently, moveTodo, reorderTodo, restoreTodo, trashTodo,
+  createTodo, deleteTodoPermanently, moveTodo, reorderTodo, restoreTodo, scopeSiblings, trashTodo,
 } from "./todos-ops";
-import { moveTodoInScope, nestTodo, outdentTodo, setStatusDeep } from "./todos-tree-ops";
+import {
+  canMoveInScope, moveTodoInScope, nestTodo, outdentTodo, setStatusDeep,
+} from "./todos-tree-ops";
 import { emptyDomainData, type DomainData, type Group } from "./types";
 
 function base(): { data: DomainData; listId: string } {
@@ -364,5 +366,31 @@ describe("reorderTodo with sub-items", () => {
     expect(parent.groupId).toBe(group.id);
     expect(child.groupId).toBe(group.id);
     expect(child.parentId).toBe(parent.id);
+  });
+});
+
+describe("canMoveInScope", () => {
+  it("answers before anything moves, so a block move can refuse as a whole", () => {
+    const { data, listId } = base();
+    const first = createTodo(data, listId, null, "first", 1);
+    const middle = createTodo(data, listId, null, "middle", 2);
+    const last = createTodo(data, listId, null, "last", 3);
+    expect(canMoveInScope(data, first.id, "up")).toBe(false);
+    expect(canMoveInScope(data, first.id, "down")).toBe(true);
+    expect(canMoveInScope(data, middle.id, "up")).toBe(true);
+    expect(canMoveInScope(data, middle.id, "down")).toBe(true);
+    expect(canMoveInScope(data, last.id, "down")).toBe(false);
+    // asking must not have moved anything
+    expect(scopeSiblings(data, listId, null, null).map((t) => t.title))
+      .toEqual(["first", "middle", "last"]);
+  });
+
+  it("says no for an unknown, trashed or archived todo", () => {
+    const { data, listId } = base();
+    const todo = createTodo(data, listId, null, "only", 1);
+    createTodo(data, listId, null, "other", 2);
+    expect(canMoveInScope(data, "nope", "down")).toBe(false);
+    todo.archived = true;
+    expect(canMoveInScope(data, todo.id, "down")).toBe(false);
   });
 });
