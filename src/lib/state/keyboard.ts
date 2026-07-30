@@ -3,16 +3,18 @@
 // typing (except Ctrl+Z = native text undo in inputs); plain keys are
 // ignored when an input/textarea/select has focus.
 
-import { buildPaneRows } from "$lib/core/rows";
 import { findTodo } from "$lib/core/todos-ops";
 import { openAiPanelForSelection } from "./ai-actions";
+import { cancelRename, newList, openDetails, switchList, undoAction } from "./actions";
 import {
-  cancelRename, newList, openDetails, switchList, toggleSelectedDone,
-  trashTodoAction, undoAction,
-} from "./actions";
-import { togglePinAction } from "./actions-detail";
-import { indentTodoAction, moveTodoInScopeAction, outdentTodoAction } from "./actions-tree";
+  toggleDoneSelectionAction, togglePinSelectionAction, trashSelectionAction,
+} from "./actions-bulk";
+import { moveSelectionInScopeAction } from "./actions-bulk-move";
+import { indentTodoAction, outdentTodoAction } from "./actions-tree";
 import { moveUpOneLevel } from "./menus";
+import {
+  clearMultiSelection, extendSelection, selectAllInPane, visibleIdsOf,
+} from "./selection";
 import { store } from "./store.svelte";
 import { ui } from "./ui.svelte";
 
@@ -83,6 +85,8 @@ function handleEscape(): void {
     ui.panes.forEach((_, i) => ui.updatePane(i, { pickerOpen: false }));
     return;
   }
+  // a multi-selection is more recent state than the filter bar behind it
+  if (clearMultiSelection()) return;
   const pane = ui.activePaneState;
   if (pane.filterOpen) {
     ui.updatePane(ui.activePane, { filterOpen: false, filterText: "" });
@@ -91,19 +95,16 @@ function handleEscape(): void {
   if (ui.detailOpen) ui.detailOpen = false;
 }
 
+/** Plain ↑/↓: one row, and the selection collapses onto it. */
 function navigateTodos(direction: 1 | -1): void {
-  const pane = ui.activePaneState;
-  if (ui.view !== "main" || pane.listId === null) return;
-  const { visibleTodoIds } = buildPaneRows(store.data, {
-    listId: pane.listId,
-    archivedOpen: ui.archOpen[pane.listId] === true,
-  });
+  const visibleTodoIds = visibleIdsOf(ui.activePane);
   if (visibleTodoIds.length === 0) return;
   const current = ui.selectedId === null ? -1 : visibleTodoIds.indexOf(ui.selectedId);
   const next =
     current < 0
       ? 0
       : Math.min(visibleTodoIds.length - 1, Math.max(0, current + direction));
+  ui.multi = null;
   ui.selectedId = visibleTodoIds[next];
 }
 
@@ -141,6 +142,12 @@ export function handleKeydown(e: KeyboardEvent): void {
     ui.palette = { query: "", index: 0 };
     return;
   }
+  // Ctrl+A selects the list, but inside an input it stays "select all text"
+  if (e.ctrlKey && !e.shiftKey && key === "a" && !editing && !ui.overlayOpen) {
+    e.preventDefault();
+    selectAllInPane();
+    return;
+  }
   if (e.ctrlKey && !e.shiftKey && key === "f") {
     e.preventDefault();
     const pane = ui.activePaneState;
@@ -163,14 +170,15 @@ export function handleKeydown(e: KeyboardEvent): void {
     if (list !== undefined) switchList(list.id);
     return;
   }
+  // the selection actions below serve one row and many identically
   if (e.ctrlKey && e.key === "Enter") {
     e.preventDefault();
-    toggleSelectedDone();
+    toggleDoneSelectionAction();
     return;
   }
   if (e.ctrlKey && !e.shiftKey && key === "p") {
     e.preventDefault();
-    if (ui.selectedId !== null) togglePinAction(ui.selectedId, "local");
+    togglePinSelectionAction("local");
     return;
   }
   // plain keys below never fire while typing
@@ -183,10 +191,18 @@ export function handleKeydown(e: KeyboardEvent): void {
     else indentTodoAction(ui.selectedId);
     return;
   }
-  // Alt+↑/↓ reorders, plain ↑/↓ navigates
+  // Alt+↑/↓ reorders (the whole selection), Shift+↑/↓ grows it, plain ↑/↓ walks
   if (e.altKey && (e.key === "ArrowUp" || e.key === "ArrowDown") && ui.selectedId !== null) {
     e.preventDefault();
-    moveTodoInScopeAction(ui.selectedId, e.key === "ArrowUp" ? "up" : "down");
+    moveSelectionInScopeAction(e.key === "ArrowUp" ? "up" : "down");
+    return;
+  }
+  if (
+    e.shiftKey && !e.altKey && !e.ctrlKey && !ui.overlayOpen &&
+    (e.key === "ArrowUp" || e.key === "ArrowDown")
+  ) {
+    e.preventDefault();
+    extendSelection(e.key === "ArrowDown" ? 1 : -1);
     return;
   }
   if (e.altKey && e.key === "ArrowLeft" && ui.selectedId !== null) {
@@ -208,7 +224,7 @@ export function handleKeydown(e: KeyboardEvent): void {
     return;
   }
   if (e.key === "Delete" && ui.selectedId !== null) {
-    trashTodoAction(ui.selectedId);
+    trashSelectionAction();
     return;
   }
   if (e.key === "ArrowDown" || e.key === "ArrowUp") {

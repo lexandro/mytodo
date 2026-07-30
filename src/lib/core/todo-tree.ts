@@ -43,6 +43,26 @@ export function subtreeOf(data: DomainData, id: string): Todo[] {
   return out;
 }
 
+/**
+ * The ids of a selection whose parent chain holds no other selected id — the
+ * ROOTS of that selection. A branch is one thing to move, archive or trash, so
+ * every cascading bulk operation runs on these and the descendants ride along
+ * (see core/bulk-move.ts). Input order is preserved.
+ */
+export function selectionRoots(data: DomainData, ids: readonly string[]): string[] {
+  const selected = new Set(ids);
+  return ids.filter((id) => {
+    const seen = new Set<string>([id]);
+    let cursor = data.todos.find((t) => t.id === id)?.parentId ?? null;
+    while (cursor !== null && !seen.has(cursor)) {
+      if (selected.has(cursor)) return false;
+      seen.add(cursor);
+      cursor = data.todos.find((t) => t.id === cursor)?.parentId ?? null;
+    }
+    return true;
+  });
+}
+
 /** How many levels the subtree spans: 1 for a childless todo. */
 export function subtreeHeight(data: DomainData, id: string, seen: Set<string> = new Set()): number {
   if (seen.has(id)) return 0; // corrupted cycle: stop instead of recursing forever

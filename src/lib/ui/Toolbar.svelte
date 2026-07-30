@@ -3,10 +3,13 @@
   // constantly on the selected todo, one click instead of a menu. Everything
   // here also has a shortcut and a menu entry — the toolbar adds no power,
   // only reach. Hidden from View → Toolbar.
+  import { everyDone, everyPinned } from "$lib/core/bulk-ops";
   import { indentCheck } from "$lib/core/todo-tree";
   import { findTodo } from "$lib/core/todos-ops";
-  import { toggleSelectedDone, trashTodoAction, undoAction } from "$lib/state/actions";
-  import { togglePinAction } from "$lib/state/actions-detail";
+  import { undoAction } from "$lib/state/actions";
+  import {
+    toggleDoneSelectionAction, togglePinSelectionAction, trashSelectionAction,
+  } from "$lib/state/actions-bulk";
   import { indentTodoAction, outdentTodoAction } from "$lib/state/actions-tree";
   import { store } from "$lib/state/store.svelte";
   import { ui } from "$lib/state/ui.svelte";
@@ -30,6 +33,13 @@
   const indent = $derived(
     selected === undefined ? null : indentCheck(store.data, selected.id),
   );
+  // the three selection buttons work on every selected row; the tree buttons
+  // stay on the focus row, where "the todo above" still means something
+  const ids = $derived(ui.selectedIds);
+  const allDone = $derived(everyDone(store.data, ids));
+  const allPinned = $derived(everyPinned(store.data, ids, "local"));
+  /** " (4)" once more than one row is in play, so the count is never a surprise. */
+  const many = $derived(ids.length > 1 ? ` (${ids.length})` : "");
 
   const entries = $derived<ToolbarEntry[]>([
     {
@@ -53,21 +63,21 @@
     { kind: "separator" },
     {
       kind: "button", icon: "done",
-      title: selected?.status === "done" ? "Reopen — Ctrl+Enter" : "Mark done — Ctrl+Enter",
-      disabled: selected === undefined, active: selected?.status === "done",
-      action: toggleSelectedDone,
+      title: `${allDone ? "Reopen" : "Mark done"}${many} — Ctrl+Enter`,
+      disabled: ids.length === 0, active: allDone,
+      action: toggleDoneSelectionAction,
     },
     {
       kind: "button", icon: "pin",
-      title: selected?.pinLocal === true ? "Unpin from list — Ctrl+P" : "Pin to list — Ctrl+P",
-      disabled: selected === undefined, active: selected?.pinLocal === true,
-      action: () => selected !== undefined && togglePinAction(selected.id, "local"),
+      title: `${allPinned ? "Unpin from list" : "Pin to list"}${many} — Ctrl+P`,
+      disabled: ids.length === 0, active: allPinned,
+      action: () => togglePinSelectionAction("local"),
     },
     { kind: "separator" },
     {
-      kind: "button", icon: "delete", title: "Move to Trash — Delete",
-      disabled: selected === undefined, danger: true,
-      action: () => selected !== undefined && trashTodoAction(selected.id),
+      kind: "button", icon: "delete", title: `Move to Trash${many} — Delete`,
+      disabled: ids.length === 0, danger: true,
+      action: trashSelectionAction,
     },
   ]);
 </script>

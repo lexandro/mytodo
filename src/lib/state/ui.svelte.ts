@@ -30,6 +30,23 @@ export interface RenamingState {
   paneIndex: number;
 }
 
+/**
+ * Multi-selection inside ONE pane's row list. null means there is no
+ * multi-selection at all: `selectedId` alone is selected, so every single-todo
+ * path (detail panel, F2, Enter) keeps working untouched and one state has
+ * exactly one representation.
+ *
+ * `ids` is kept in row order, `anchorId` is the base Shift+click and Shift+↑/↓
+ * extend from, and `selectedId` is the FOCUS — the row the range reaches to.
+ * Selections belong to the pane they were made in: the same list can be open in
+ * several panes, and a range means nothing outside the row list it came from.
+ */
+export interface MultiSelectState {
+  paneIndex: number;
+  anchorId: string;
+  ids: string[];
+}
+
 export type DragPayload = { type: "todo" | "list"; id: string } | null;
 export type DropTarget = { key: string; pos: "before" | "after" | "into" } | null;
 
@@ -84,6 +101,8 @@ class UiState {
   activePane = $state(0);
   view = $state<ViewName>("main");
   selectedId = $state<string | null>(null);
+  /** Multi-selection; null = only `selectedId`. See state/selection.ts. */
+  multi = $state<MultiSelectState | null>(null);
   detailOpen = $state(false);
   detailTab = $state<"details" | "activity" | "ai">("details");
   renaming = $state<RenamingState | null>(null);
@@ -185,6 +204,26 @@ class UiState {
     return this.panes[this.activePane];
   }
 
+  /**
+   * The multi-selection where it means something. It describes one pane's row
+   * list, and only the main view has those — Pinned and Trash fall back to the
+   * single selected todo instead of acting on rows that are not on screen.
+   */
+  get multiSelection(): MultiSelectState | null {
+    return this.view === "main" ? this.multi : null;
+  }
+
+  /**
+   * Every selected todo id, in row order. A single selection is just a
+   * one-element selection, which is why the bulk actions can serve the keyboard
+   * and the toolbar unconditionally.
+   */
+  get selectedIds(): string[] {
+    const multi = this.multiSelection;
+    if (multi !== null) return multi.ids;
+    return this.selectedId === null ? [] : [this.selectedId];
+  }
+
   showToast(message: string, undoable = false): void {
     clearTimeout(this.toastTimer);
     this.toast = { message, undoable };
@@ -197,7 +236,16 @@ class UiState {
   }
 
   updatePane(index: number, patch: Partial<PaneState>): void {
-    this.panes[index] = { ...this.panes[index], ...patch };
+    const before = this.panes[index];
+    this.panes[index] = { ...before, ...patch };
+    // A selection describes one row list. Showing different rows (another list,
+    // a changed filter) would leave it pointing at rows nobody can see, so it
+    // is dropped instead — the one place every such change funnels through.
+    const rowsChanged =
+      (patch.listId !== undefined && patch.listId !== before.listId) ||
+      (patch.filterText !== undefined && patch.filterText !== before.filterText) ||
+      (patch.filterOpen !== undefined && patch.filterOpen !== before.filterOpen);
+    if (rowsChanged && this.multi?.paneIndex === index) this.multi = null;
   }
 }
 

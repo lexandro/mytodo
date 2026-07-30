@@ -24,6 +24,9 @@
     </span>
   {/if}
   <span class="spacer"></span>
+  {#if ui.multiSelection !== null}
+    <span class="selection">{ui.multiSelection.ids.length} selected · Esc clears</span>
+  {/if}
   {#if updater.status === "downloading"}
     <span class="update-chip">Downloading update…</span>
   {:else if updater.availableVersion !== null && !updater.dismissed}
@@ -123,6 +126,10 @@
   }
   .hints {
     color: var(--color-neutral-600);
+  }
+  .selection {
+    color: var(--color-accent);
+    font-variant-numeric: tabular-nums;
   }
   .version {
     border: none;

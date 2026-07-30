@@ -7,8 +7,11 @@
   import { canNest } from "$lib/core/todo-tree";
   import type { Todo } from "$lib/core/types";
   import { armRename, cycleTodoStatus, reorderTodoAction, selectTodo } from "$lib/state/actions";
+  import { nestSelectionAction, reorderSelectionAction } from "$lib/state/actions-bulk-move";
   import { nestTodoAction, toggleTodoCollapsedAction } from "$lib/state/actions-tree";
   import { openContextMenu, todoMenuItems } from "$lib/state/menus";
+  import { selectionMenuItems } from "$lib/state/menus-selection";
+  import { clickTodo, isMultiDrag, isTodoSelected } from "$lib/state/selection";
   import { store } from "$lib/state/store.svelte";
   import { ui } from "$lib/state/ui.svelte";
   import InlineRename from "./InlineRename.svelte";
@@ -25,7 +28,11 @@
     open?: boolean;
   } = $props();
 
-  const selected = $derived(ui.selectedId === todo.id);
+  const selected = $derived(isTodoSelected(todo.id));
+  /** The row a range extends from/to — only worth marking inside a selection. */
+  const focused = $derived(ui.multiSelection !== null && ui.selectedId === todo.id);
+  /** A drag that carries the whole selection, not just this one row. */
+  const multiDrag = $derived(isMultiDrag());
   const draggedId = $derived(ui.drag?.type === "todo" ? ui.drag.id : null);
   // lazily evaluated: only the row actually being hovered asks
   const nestable = $derived(draggedId !== null && canNest(store.data, draggedId, todo.id));
@@ -62,6 +69,12 @@
       e.preventDefault();
       return;
     }
+    // grabbing a row outside the selection starts over on it, so what moves is
+    // always what is highlighted
+    if (!selected) {
+      ui.multi = null;
+      selectTodo(todo.id, paneIndex);
+    }
     if (e.dataTransfer !== null) {
       e.dataTransfer.effectAllowed = "move";
       e.dataTransfer.setData("text/plain", todo.id);
@@ -77,6 +90,7 @@
   function onDragOver(e: DragEvent): void {
     const drag = ui.drag;
     if (drag === null || drag.type !== "todo" || drag.id === todo.id) return;
+    if (multiDrag && selected) return; // no drop marker inside the block being dragged
     e.preventDefault();
     e.stopPropagation();
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -93,11 +107,22 @@
       return;
     }
     const pos = ui.drop?.key === dropKey ? ui.drop.pos : "after";
+    if (multiDrag) {
+      if (pos === "into") nestSelectionAction(todo.id);
+      else reorderSelectionAction(todo.id, pos);
+      return;
+    }
     if (pos === "into") nestTodoAction(drag.id, todo.id);
     else reorderTodoAction(drag.id, todo.id, pos);
   }
 
+  /** Right-clicking inside a selection acts on all of it; outside it starts over. */
   function onContextMenu(e: MouseEvent): void {
+    if (ui.multiSelection !== null && selected) {
+      openContextMenu(e, selectionMenuItems());
+      return;
+    }
+    ui.multi = null;
     selectTodo(todo.id, paneIndex);
     openContextMenu(e, todoMenuItems(todo));
   }
@@ -112,6 +137,7 @@
 <div
   class="todo-row"
   class:selected
+  class:focused
   class:drop-before={dropPos === "before"}
   class:drop-after={dropPos === "after"}
   class:drop-into={dropPos === "into"}
@@ -125,7 +151,7 @@
   ondragover={onDragOver}
   ondragleave={() => { if (ui.drop?.key === dropKey) ui.drop = null; }}
   ondrop={onDrop}
-  onclick={() => selectTodo(todo.id, paneIndex)}
+  onclick={(e) => clickTodo(todo.id, paneIndex, { ctrl: e.ctrlKey, shift: e.shiftKey })}
   ondblclick={onDblClick}
   onkeydown={() => {}}
   oncontextmenu={onContextMenu}
@@ -191,6 +217,11 @@
   .todo-row.selected,
   .todo-row.selected:hover {
     background: color-mix(in srgb, var(--color-accent) 13%, transparent);
+  }
+  /* which row Shift+↑/↓ moves from — only drawn while several are selected */
+  .todo-row.focused {
+    outline: 1px solid color-mix(in srgb, var(--color-accent) 55%, transparent);
+    outline-offset: -1px;
   }
   .todo-row.drop-before {
     box-shadow: inset 0 2px 0 var(--color-accent);

@@ -5,12 +5,14 @@
 import { byOrder } from "$lib/core/ordering";
 import { indentCheck } from "$lib/core/todo-tree";
 import { findTodo } from "$lib/core/todos-ops";
-import { newList, openSettings, switchList, trashTodoAction, undoAction } from "./actions";
+import { newList, openSettings, switchList, undoAction } from "./actions";
+import { duplicateSelectionAction, trashSelectionAction } from "./actions-bulk";
+import { moveSelectionInScopeAction } from "./actions-bulk-move";
 import { backupNowAction, exportJsonAction, importJsonAction } from "./actions-data";
 import { aiClients } from "./ai-clients.svelte";
-import { duplicateAction } from "./actions-detail";
-import { indentTodoAction, moveTodoInScopeAction, outdentTodoAction } from "./actions-tree";
+import { indentTodoAction, outdentTodoAction } from "./actions-tree";
 import { moveUpOneLevel } from "./menus";
+import { clearMultiSelection, selectAllInPane } from "./selection";
 import { showQuickAddWindow, windowClose } from "$lib/ipc";
 import { store } from "./store.svelte";
 import { ui, type LayoutName } from "./ui.svelte";
@@ -63,28 +65,24 @@ function fileMenu(): MenuItem[] {
 function editMenu(): MenuItem[] {
   const selected = ui.selectedId !== null ? findTodo(store.data, ui.selectedId) : undefined;
   const has = selected !== undefined;
+  // the items that work on a whole selection say how much they will touch
+  const count = ui.selectedIds.length;
+  const many = count > 1 ? ` (${count})` : "";
   return [
     item("Undo", () => undoAction(), "Ctrl+Z"),
+    SEP,
+    item("Select all in list", () => selectAllInPane(), "Ctrl+A"),
+    item("Clear selection", () => clearMultiSelection(), "Esc", ui.multiSelection === null),
     SEP,
     item("Rename", () => {
       ui.detailOpen = true;
       ui.detailTab = "details";
       ui.focusTitleTick += 1;
     }, "F2", !has),
-    item("Duplicate", () => { if (selected !== undefined) duplicateAction(selected.id); }, "", !has),
+    item(`Duplicate${many}`, () => duplicateSelectionAction(), "", !has),
     SEP,
-    item(
-      "Move up",
-      () => { if (selected !== undefined) moveTodoInScopeAction(selected.id, "up"); },
-      "Alt+↑",
-      !has,
-    ),
-    item(
-      "Move down",
-      () => { if (selected !== undefined) moveTodoInScopeAction(selected.id, "down"); },
-      "Alt+↓",
-      !has,
-    ),
+    item(`Move up${many}`, () => moveSelectionInScopeAction("up"), "Alt+↑", !has),
+    item(`Move down${many}`, () => moveSelectionInScopeAction("down"), "Alt+↓", !has),
     item(
       "Make sub-item",
       () => { if (selected !== undefined) indentTodoAction(selected.id); },
@@ -103,7 +101,7 @@ function editMenu(): MenuItem[] {
       "Alt+←",
       !has || selected.groupId === null,
     ),
-    item("Delete", () => { if (selected !== undefined) trashTodoAction(selected.id); }, "Del", !has),
+    item(`Delete${many}`, () => trashSelectionAction(), "Del", !has),
   ];
 }
 

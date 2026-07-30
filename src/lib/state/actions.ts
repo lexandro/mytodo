@@ -80,14 +80,8 @@ export function cycleTodoStatus(id: string): void {
   });
 }
 
-/** Ctrl+Enter: toggle Done ↔ Open on the selected todo. */
-export function toggleSelectedDone(): void {
-  const id = ui.selectedId;
-  if (id === null) return;
-  const todo = findTodo(store.data, id);
-  if (todo === undefined) return;
-  setTodoStatus(id, todo.status === "done" ? "open" : "done");
-}
+// Ctrl+Enter lives in actions-bulk.ts (toggleDoneSelectionAction): it toggles
+// the whole selection, and one row is just a selection of one.
 
 export function trashTodoAction(id: string): void {
   store.apply("delete", (data) => trashTodo(data, id, Date.now()));

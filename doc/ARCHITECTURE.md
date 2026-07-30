@@ -57,6 +57,28 @@
   todo under its parent wherever that parent renders, so a branch is never
   split across the Pinned/group/Archived sections.
 
+## Selection
+
+- One model for one and for many: `ui.selectedId` is the **focus** row and
+  `ui.multi` (`{paneIndex, anchorId, ids}`) is the multi-selection, which is
+  `null` whenever a single row is selected — so one state has exactly one
+  representation and the single-todo paths never learned about selections.
+  `ui.selectedIds` reads either shape; `ui.multiSelection` hides the
+  multi-selection outside the main view, where pane rows do not exist.
+- A selection belongs to the pane it was made in: `ui.updatePane` drops it
+  when that pane starts showing different rows (another list, a new filter).
+- `core/selection.ts` is pure list arithmetic over one pane's
+  `visibleTodoIds` (anchor/focus/range); `state/selection.ts` turns the
+  gestures (Ctrl+click, Shift+click, Shift+↑/↓, Ctrl+A) into it, and is also
+  the single source of the visible-row order the keyboard walks.
+- Bulk operations live in `core/bulk-ops.ts` (a todo's own fields) and
+  `core/bulk-move.ts` (placement). Anything that cascades into sub-items runs
+  on the selection's **roots** (`todo-tree.ts selectionRoots`) so a branch
+  travels as one; a per-todo field is set on every selected row.
+- `state/actions-bulk*.ts` wraps each one in a single `store.apply` — a batch
+  is one undo step and one toast — and behaves identically for a selection of
+  one, which is why the keyboard and toolbar route through it unconditionally.
+
 ## Undo
 
 - Snapshot stack (cap 30) inside `store.apply()`; undo writes back through

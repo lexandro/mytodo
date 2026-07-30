@@ -7,6 +7,8 @@
   import { buildPaneRows } from "$lib/core/rows";
   import { todoMatches } from "$lib/core/search";
   import { moveTodoAction } from "$lib/state/actions";
+  import { moveSelectionAction } from "$lib/state/actions-bulk-move";
+  import { isMultiDrag } from "$lib/state/selection";
   import { store } from "$lib/state/store.svelte";
   import { ui } from "$lib/state/ui.svelte";
   import EmptyState from "./EmptyState.svelte";
@@ -46,11 +48,25 @@
     if (ui.drag !== null) e.preventDefault();
   }
 
+  /**
+   * A mousedown inside the row list that missed every row clears the selection,
+   * the way clicking empty space in a file manager does. Only the row list —
+   * clicking into quick add or the filter is not "letting go of the rows".
+   */
+  function onRowsMouseDown(e: MouseEvent): void {
+    const target = e.target;
+    if (target instanceof HTMLElement && target.closest(".todo-row") === null) ui.multi = null;
+  }
+
   function onBgDrop(e: DragEvent): void {
     e.preventDefault();
     const drag = ui.drag;
     if (drag?.type !== "todo" || list === undefined) {
       ui.clearDragState();
+      return;
+    }
+    if (isMultiDrag()) {
+      moveSelectionAction(list.id, null, list.name);
       return;
     }
     const todo = store.data.todos.find((t) => t.id === drag.id);
@@ -93,7 +109,8 @@
       <!-- faint app-icon watermark — Inbox only, behind the rows -->
       <div class="inbox-watermark" style:background-image={`url(${inboxWatermark})`}></div>
     {/if}
-    <div class="rows">
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="rows" onmousedown={onRowsMouseDown}>
       {#each paneRows.rows as row (row.key)}
         {#if row.kind === "section"}
           <SectionRow

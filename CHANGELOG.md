@@ -8,12 +8,33 @@ inside the app.
 
 ### Added
 
+- **Select several todos and act on all of them at once** — the selection
+  gestures you already know from Explorer: **Ctrl+click** adds one row,
+  **Shift+click** takes everything from the last one you touched, **Shift+↑ /
+  Shift+↓** grows the selection and shrinks it back again from wherever you
+  started, **Ctrl+A** takes the whole list and **Esc** lets go. The status bar
+  says how many rows are in play.
+- **What you can do with a selection**: set a status on all of them, pin or
+  unpin, give them a color, move them into another list or group, move the
+  block up and down with Alt+↑ / Alt+↓, duplicate, copy the titles to the
+  clipboard, archive, and delete. Right-click anywhere inside the selection for
+  the menu; the toolbar's Done, Pin and Delete buttons follow the selection too.
+  Whatever a batch changes, **one Ctrl+Z takes all of it back**.
+- **Dragging works on the whole selection** — grab any selected row and every
+  one of them travels: between two rows, onto a row to make them sub-items, or
+  onto another list. Sub-items always follow their parent, so a branch never
+  gets torn apart.
 - **The running version sits in the status bar** — bottom right, after the
   Ctrl+Z hint. A working-tree build shows as `1.2.0-dev` in a different colour,
   so it is never mistaken for the released one; hovering names the exact commit
   and clicking opens About.
 
 ### Fixed
+
+- **↑ / ↓ walked past the rows a filter had hidden** — with Ctrl+F open, the
+  arrow keys stepped through the whole list instead of the matches, so the
+  highlight could vanish onto a row that was not on screen. They now walk
+  exactly what you can see.
 
 - **The emoji field in a todo's details said the wrong shortcut** — its hint
   was too wide for the box, so it was cut down to "Win +", which is the zoom

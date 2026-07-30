@@ -30,16 +30,35 @@ export function setColorLabel(data: DomainData, id: string, colorLabelId: string
   todo.updatedAt = now;
 }
 
+/**
+ * Sets a pin to an explicit value; returns true when it actually moved. A bulk
+ * pin needs this rather than the toggle: over a mixed selection toggling each
+ * row one by one would just swap which half is pinned.
+ */
+export function setPin(
+  data: DomainData,
+  id: string,
+  kind: "local" | "global",
+  value: boolean,
+  now: number,
+): boolean {
+  const todo = findTodo(data, id);
+  if (todo === undefined) return false;
+  const pinned = kind === "local" ? todo.pinLocal : todo.pinGlobal;
+  if (pinned === value) return false;
+  if (kind === "local") todo.pinLocal = value;
+  else todo.pinGlobal = value;
+  todo.updatedAt = now;
+  const verb = value ? "Pinned" : "Unpinned";
+  const suffix = kind === "global" ? " globally" : " to list";
+  logActivity(data, id, "pin", verb + suffix, now);
+  return true;
+}
+
 export function togglePin(data: DomainData, id: string, kind: "local" | "global", now: number): void {
   const todo = findTodo(data, id);
   if (todo === undefined) return;
-  const wasPinned = kind === "local" ? todo.pinLocal : todo.pinGlobal;
-  if (kind === "local") todo.pinLocal = !wasPinned;
-  else todo.pinGlobal = !wasPinned;
-  todo.updatedAt = now;
-  const verb = wasPinned ? "Unpinned" : "Pinned";
-  const suffix = kind === "global" ? " globally" : " to list";
-  logActivity(data, id, "pin", verb + suffix, now);
+  setPin(data, id, kind, !(kind === "local" ? todo.pinLocal : todo.pinGlobal), now);
 }
 
 /** Archives/unarchives the whole subtree — sub-items follow their parent. */

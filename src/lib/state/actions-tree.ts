@@ -12,7 +12,7 @@ import { placeByStatusIfEnabled } from "./status-placement";
 import { store } from "./store.svelte";
 import { ui } from "./ui.svelte";
 
-const DEPTH_LIMIT_MESSAGE = `Sub-items only go ${MAX_TODO_DEPTH} levels deep`;
+export const DEPTH_LIMIT_MESSAGE = `Sub-items only go ${MAX_TODO_DEPTH} levels deep`;
 
 /** Drop "onto" a row, and the context menu's Make sub-item. */
 export function nestTodoAction(id: string, parentId: string): void {

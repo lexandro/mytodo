@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { ensureInbox } from "./bootstrap";
 import { createList } from "./lists-ops";
 import {
-  canNest, childrenOf, indentCheck, isSelfOrAncestor, subtreeHeight, subtreeOf, todoDepth,
+  canNest, childrenOf, indentCheck, isSelfOrAncestor, selectionRoots, subtreeHeight, subtreeOf,
+  todoDepth,
 } from "./todo-tree";
 import { createTodo } from "./todos-ops";
 import { nestTodo } from "./todos-tree-ops";
@@ -145,5 +146,27 @@ describe("indentCheck", () => {
     // b is a's only child — nothing precedes it under a
     expect(indentCheck(data, b.id)).toEqual({ ok: false, reason: "no-sibling" });
     expect(childrenOf(data, a.id)).toHaveLength(1);
+  });
+});
+
+describe("selectionRoots", () => {
+  it("drops rows whose parent is selected too", () => {
+    const { data, a, b, c, loose } = chain();
+    // a → b → c: only a anchors the branch, however much of it is selected
+    expect(selectionRoots(data, [a.id, b.id, c.id])).toEqual([a.id]);
+    expect(selectionRoots(data, [a.id, c.id])).toEqual([a.id]);
+    expect(selectionRoots(data, [a.id, loose.id])).toEqual([a.id, loose.id]);
+  });
+
+  it("keeps a sub-item whose parent is not part of the selection", () => {
+    const { data, b, c } = chain();
+    expect(selectionRoots(data, [b.id, c.id])).toEqual([b.id]);
+    expect(selectionRoots(data, [c.id])).toEqual([c.id]);
+  });
+
+  it("preserves the input order and survives ids that are gone", () => {
+    const { data, a, loose } = chain();
+    expect(selectionRoots(data, [loose.id, a.id])).toEqual([loose.id, a.id]);
+    expect(selectionRoots(data, ["nope"])).toEqual(["nope"]);
   });
 });
