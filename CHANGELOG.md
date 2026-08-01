@@ -4,7 +4,12 @@ All notable changes to myTODO are documented here. This project adheres to
 [Semantic Versioning](https://semver.org). Help → What's new shows this file
 inside the app.
 
-## Unreleased
+## v1.2.2 — 2026-08-01
+
+Getting around the list with fewer keystrokes: the detail panel is now one
+click away, and Home / End / Page Up / Page Down move through a long list the
+way you would expect — on their own, or with Shift to take everything on the
+way with them.
 
 ### Added
 
