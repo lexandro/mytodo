@@ -8,6 +8,12 @@ inside the app.
 
 ### Added
 
+- **Click a selected todo again to open its details** — and once more to close
+  them, so the panel is now a click away instead of only Enter or the
+  right-click menu. Double-click still renames the title in place: the toggle
+  waits a moment for a possible second click, so renaming never opens the panel
+  behind your back.
+
 - **Home, End, Page Up and Page Down walk the list** — jump to the first or
   last todo, or a screenful at a time. Page steps are measured from the pane
   you are in, so one press really is one page, and the selected row is always

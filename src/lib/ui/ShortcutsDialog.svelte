@@ -22,6 +22,7 @@
     ["Clear the selection", "Esc"],
     ["Edit todo title in place", "Double-click"],
     ["Open details", "Enter / Shift+Enter"],
+    ["Open / close details", "Click the selected todo again"],
     ["Toggle Done", "Ctrl+Enter"],
     ["Pin / unpin to list", "Ctrl+P"],
     ["Rename selected", "F2"],

@@ -1,7 +1,8 @@
 <script lang="ts">
   // One todo row: status circle (click cycles), emoji, title, G-tag, subtask
   // progress; 3px color stripe; drag source + before/after drop target.
-  // Double-click puts the title into an inline input (edit mode).
+  // Double-click puts the title into an inline input (edit mode); clicking the
+  // already selected row again opens or closes the detail panel.
   import { dropZoneAt } from "$lib/core/drop-zone";
   import { labelColor } from "$lib/core/labels";
   import { canNest } from "$lib/core/todo-tree";
@@ -9,6 +10,7 @@
   import { armRename, cycleTodoStatus, reorderTodoAction, selectTodo } from "$lib/state/actions";
   import { nestSelectionAction, reorderSelectionAction } from "$lib/state/actions-bulk-move";
   import { nestTodoAction, toggleTodoCollapsedAction } from "$lib/state/actions-tree";
+  import { handleRowClick, handleRowDoubleClick } from "$lib/state/detail-reclick";
   import { openContextMenu, todoMenuItems } from "$lib/state/menus";
   import { selectionMenuItems } from "$lib/state/menus-selection";
   import { clickTodo, isMultiDrag, isTodoSelected } from "$lib/state/selection";
@@ -127,8 +129,28 @@
     openContextMenu(e, todoMenuItems(todo));
   }
 
+  /**
+   * The detail toggle is decided from the state the click ARRIVED in, so it is
+   * read before `clickTodo` moves the selection.
+   */
+  function onClick(e: MouseEvent): void {
+    handleRowClick({
+      todoId: todo.id,
+      paneIndex,
+      ctrl: e.ctrlKey,
+      shift: e.shiftKey,
+      clickCount: e.detail,
+      editing,
+      selectedId: ui.selectedId,
+      multiSelected: ui.multiSelection !== null,
+      activePane: ui.activePane,
+    });
+    clickTodo(todo.id, paneIndex, { ctrl: e.ctrlKey, shift: e.shiftKey });
+  }
+
   /** Double-click on the row = edit the title in place. */
   function onDblClick(): void {
+    handleRowDoubleClick(); // its first click must not toggle the detail panel
     if (editing) return; // a double-click inside the input just selects a word
     armRename("todo", todo.id);
   }
@@ -152,7 +174,7 @@
   ondragover={onDragOver}
   ondragleave={() => { if (ui.drop?.key === dropKey) ui.drop = null; }}
   ondrop={onDrop}
-  onclick={(e) => clickTodo(todo.id, paneIndex, { ctrl: e.ctrlKey, shift: e.shiftKey })}
+  onclick={onClick}
   ondblclick={onDblClick}
   onkeydown={() => {}}
   oncontextmenu={onContextMenu}
